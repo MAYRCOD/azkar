@@ -52,6 +52,9 @@ body {
   overflow: hidden;
 }
 [hidden] { display: none !important; }
+/* Убираем серую вспышку, которой iPhone подсвечивает нажатую кнопку.
+   Вместо неё у кнопок своя анимация: лёгкое «проседание» */
+* { -webkit-tap-highlight-color: transparent; }
 /* Полосы прокрутки не показываем нигде */
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; width: 0; height: 0; }
@@ -207,8 +210,9 @@ html.standalone #reader { padding-top: 34px; }
 .switch[aria-checked="true"]::after { transform: translateX(18px); }
 
 /* Окно выбора, которое выезжает снизу */
-.sheet-back { position: fixed; inset: 0; background: rgba(30, 43, 35, .3); z-index: 20; display: flex; align-items: flex-end; justify-content: center; animation: fade .25s ease; }
-.sheet-back.closing { animation: fade-out .22s ease forwards; }
+.sheet-back { position: fixed; inset: 0; background: rgba(30, 43, 35, .3); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet-back { animation: dim-in .25s ease; }
+.sheet-back.closing { animation: dim-out .22s ease forwards; }
 .sheet-back.closing .sheet { animation: down .22s var(--ease) forwards; }
 .sheet {
   width: min(560px, 100%); background: var(--surface); border-radius: 20px 20px 0 0;
@@ -234,7 +238,8 @@ html.standalone #reader { padding-top: 34px; }
 @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes down { to { transform: translateY(100%); } }
 @keyframes fade { from { opacity: 0; } }
-@keyframes fade-out { to { opacity: 0; } }
+@keyframes dim-in { from { background: rgba(30, 43, 35, 0); } }
+@keyframes dim-out { to { background: rgba(30, 43, 35, 0); } }
 
 /* Что показывать в азкарах: классы на <body> прячут нужные части */
 body.no-ar .ar, body.no-ru .ru, body.no-tr .tr { display: none; }
