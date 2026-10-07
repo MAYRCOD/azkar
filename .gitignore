@@ -1,0 +1,5 @@
+# Результат сборки для предпросмотра — пересобирается командой python3 tools/build.py
+build/
+# Установленные пакеты для проверок — ставятся командой (cd tests && npm install)
+node_modules/
+package-lock.json

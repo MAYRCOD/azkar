@@ -1,0 +1,905 @@
+<title>Азкары утра и вечера</title>
+<style>
+/* Шрифт для арабского текста: KFGQPC HAFS Uthmanic Script (встроен без изменений) */
+@font-face {
+  font-family: "Hafs";
+  src: url("data:font/otf;base64,__FONT__") format("opentype");
+  font-display: swap;
+}
+/* Шрифт для русского текста: Nexa. Два начертания —
+   обычное (400) для чтения и жирное (700) для заголовков и кнопок */
+@font-face {
+  font-family: "Nexa";
+  src: url("data:font/otf;base64,__NEXA_REGULAR__") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nexa";
+  src: url("data:font/otf;base64,__NEXA_BOLD__") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+/* Макет: приложение на весь экран, белый фон.
+   Главная — две большие кнопки-картинки в ряд по центру экрана.
+   Чтение — лента карточек, одна на экран, листается свайпом; счётчик всегда внизу.
+   Тема одна, светлая: белый фон задан явно, чтобы приложение выглядело одинаково везде. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --fg: #1e2b23;
+  --muted: #6b776f;
+  --line: #e6ece8;
+  --accent: #34c759;       /* зелёный из настроек iPhone — для заливок */
+  --accent-ink: #248a3d;   /* тот же зелёный, но темнее — для мелкого текста, чтобы читался на белом */
+  --counter-bg: #e8ece9;     /* серый фон счётчика — заметно темнее белого фона */
+  --counter-fill: #d3d9d5;   /* серое заполнение, пока азкар не дочитан */
+  --gold: #b0802a;
+  --shadow: 0 1px 3px rgba(30, 43, 35, .04), 0 8px 24px rgba(30, 43, 35, .08);
+  --edge: rgba(30, 43, 35, .05);
+  --ease: cubic-bezier(.22, .8, .3, 1);   /* быстро стартует и мягко тормозит */   /* почти невидимая граница, чтобы края были мягкими */
+  --f-display: "Nexa", system-ui, sans-serif;
+  --f-body: "Nexa", system-ui, sans-serif;
+  --f-arabic: "Hafs", "Amiri", "Traditional Arabic", serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: 15.5px; line-height: 1.5;
+  padding-inline: 8px; padding-block: 0;
+  overflow: hidden;
+}
+[hidden] { display: none !important; }
+/* Полосы прокрутки не показываем нигде */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.counter .label:empty { display: none; }
+/* Жирным — заголовки и надписи на кнопках, обычным — тексты для чтения */
+h1, h2, b, .back, .tab-item, .counter .label, .counter .num, .btn, .sheet-btn, .choice-row .txt { font-weight: 700; }
+.choice-row small { font-weight: 400; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.screen { height: 100%; max-width: 576px; margin: 0 auto; padding-inline: 8px; display: flex; flex-direction: column; }
+
+/* ---------- Главная ---------- */
+#home { gap: clamp(28px, 6vh, 56px); padding-block: 24px 110px; overflow-y: auto; justify-content: center; }
+.home-title { display: grid; gap: 2px; text-align: center; }
+.home-title h1 { font-size: clamp(28px, 4.4vh, 38px); }
+.home-title .ar-title { font-family: var(--f-arabic); font-size: clamp(44px, 7vh, 60px); line-height: 1.5; color: var(--gold); }
+h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.choice {
+  display: grid; gap: 18px; justify-items: center; text-align: center;
+  background: var(--surface); border: 1px solid var(--edge); border-radius: 26px;
+  box-shadow: var(--shadow); padding: 18px 14px 24px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.choice:active { transform: scale(.98); }
+.choice img { width: 100%; max-width: 100%; box-shadow: 0 6px 18px rgba(30, 43, 35, .12); aspect-ratio: 1; border-radius: 50%; object-fit: cover; display: block; }
+.choice b { font-family: var(--f-display); font-size: 18px; line-height: 1.25; }
+
+/* ---------- Чтение ---------- */
+#reader { padding-block: 10px 0; padding-inline: 0; gap: 10px; overflow: hidden; }
+#reader .topbar { margin-inline: 12px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.back { border: 0; background: none; padding: 4px 0; color: var(--accent-ink); font-size: 15px; }
+.pos { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.top-right { display: flex; align-items: center; gap: 6px; }
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: 0; background: none;
+  display: grid; place-items: center; color: var(--muted);
+  transition: background .2s ease, transform .15s ease;
+}
+.icon-btn svg { width: 19px; height: 19px; }
+.icon-btn:active { background: #f1f5f2; transform: scale(.92); }
+
+.viewport { flex: 1; min-height: 0; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.track { display: flex; height: 100%; transition: transform .38s var(--ease); will-change: transform; }
+.track.dragging { transition: none; }
+/* Каждая карточка — свой экран с прокруткой. Сначала виден арабский текст и счётчик,
+   перевод и транскрипция ниже — до них листают пальцем.
+   Полосу прокрутки прячем так: прокручиваемый блок (.scroll) на 24px шире карточки,
+   а карточка обрезает всё, что за её краем. Полоса оказывается в обрезанной части */
+.slide { flex: 0 0 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+.slide > .scroll {
+  height: 100%; width: calc(100% + 24px); overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; padding-left: 12px; padding-right: 36px;
+}
+.content { display: flex; flex-direction: column; gap: 14px; padding-block: 14px 8px; }
+.ar { font-family: var(--f-arabic); font-size: 28px; line-height: 1.95; direction: rtl; text-align: center; margin: 0; }
+.ru { margin: 0; font-size: 15.5px; }
+.tr { margin: 0; color: var(--muted); font-size: 14.5px; }
+.src { margin: 0; font-size: 12.5px; color: var(--muted); }
+.nowrap { white-space: nowrap; }
+.ar-comma { font-family: "Amiri", "Traditional Arabic", serif; }
+.divider { height: 1px; background: var(--line); margin-block: 4px; }
+
+/* Нижняя панель со счётчиком: прилипает к низу экрана,
+   а текст, который уходит под неё, слегка размывается.
+   Размытие лежит отдельным слоем (::before) и плавно исчезает
+   и сверху, и по бокам — поэтому не выглядит рамкой */
+.dock {
+  position: sticky; bottom: 0; z-index: 1; margin-top: auto;
+  margin-left: -12px; margin-right: -36px; padding: 24px 36px calc(10px + env(safe-area-inset-bottom, 0px)) 12px;
+  display: grid; gap: 6px;
+}
+.dock::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.6) 40%);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  mask-composite: intersect;
+}
+
+/* Счётчик: длинная кнопка, которая заполняется по мере нажатий */
+.counter {
+  position: relative; overflow: hidden; width: 100%; border: 0; border-radius: 14px;
+  background: var(--counter-bg); padding: 14px 18px; min-height: 54px;
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  font-size: 14px; user-select: none; -webkit-tap-highlight-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(30, 43, 35, .08), 0 2px 4px rgba(30, 43, 35, .06), 0 8px 20px rgba(30, 43, 35, .10);
+}
+.counter .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--counter-fill); transition: width .3s var(--ease), background .35s ease; }
+.counter.full .fill { background: var(--accent); }   /* дочитал — кнопка становится зелёной */
+.counter span { position: relative; }
+.counter .num { font-size: 17px; font-variant-numeric: tabular-nums; }
+.counter { transition: transform .15s ease, color .35s ease; }
+.counter.full { color: var(--bg); }
+.counter:active { transform: scale(.99); }
+.hint { text-align: center; font-size: 11px; color: var(--muted); margin: 0; }
+
+.final { flex: 1; display: grid; place-content: center; text-align: center; gap: 14px; }
+.final h2 { font-family: var(--f-display); font-size: 25px; margin: 0; }
+.btn { border: 1px solid var(--edge); background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 18px; font-weight: 600; color: var(--accent-ink); }
+
+/* ---------- Список (все азкары на одной странице) ---------- */
+.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-left: 12px; padding-right: 36px; margin-right: -24px; padding-bottom: 24px; }   /* тот же приём: полоса уходит за край экрана */
+.item { display: flex; flex-direction: column; gap: 14px; padding-block: 18px 22px; border-bottom: 1px solid var(--line); }
+.item .content { padding-block: 0; }
+.list-view .final { padding-block: 40px 24px; }
+
+/* ---------- Настройки (в духе настроек iPhone) ---------- */
+#settings { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 14px; }
+#settings h1 { font-size: 24px; }
+.group { display: grid; gap: 6px; }
+.group-title { font-size: 11.5px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; padding-inline: 14px; }
+.rows {
+  background: var(--surface); border: 1px solid var(--edge); border-radius: 14px; box-shadow: var(--shadow);
+  overflow: hidden;
+}
+/* Значки в строках настроек — цветные квадратики, как в настройках iPhone */
+.lbl { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tile {
+  flex: none; width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 16px; line-height: 1;
+}
+.tile svg { width: 18px; height: 18px; }
+.tile.ar-glyph { font-family: var(--f-arabic); font-size: 22px; font-weight: 400; padding-bottom: 8px; }
+.tile-green { background: #34c759; }
+.tile-blue { background: #007aff; }
+.tile-orange { background: #ff9500; }
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; min-height: 48px; padding: 8px 14px; background: none; border: 0; text-align: left;
+}
+.row + .row { border-top: 1px solid var(--line); }
+.row .value { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.row .value::after { content: "›"; font-size: 20px; line-height: 1; color: #b5beb8; }
+
+/* Переключатель: дорожка и кружок */
+.switch {
+  flex: none; position: relative; width: 46px; height: 28px; border-radius: 999px;
+  border: 0; background: #e3e9e5; transition: background .25s var(--ease);
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .3s var(--ease);
+}
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+
+/* Окно выбора, которое выезжает снизу */
+.sheet-back { position: fixed; inset: 0; background: rgba(30, 43, 35, .3); z-index: 20; display: flex; align-items: flex-end; justify-content: center; animation: fade .25s ease; }
+.sheet-back.closing { animation: fade-out .22s ease forwards; }
+.sheet-back.closing .sheet { animation: down .22s var(--ease) forwards; }
+.sheet {
+  width: min(560px, 100%); background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 10px 14px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px;
+  font-size: 14px; animation: up .32s var(--ease);
+}
+.sheet::before { content: ""; justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--line); }
+.sheet h2 { font-size: 15px; text-align: center; margin: 4px 0; }
+.sheet p { margin: 0 0 6px; text-align: center; color: var(--muted); font-size: 13.5px; }
+.sheet-btn {
+  width: 100%; border: 0; border-radius: 14px; padding: 14px; font-size: 15px;
+  background: #f2f3f2; transition: transform .15s ease, background .2s ease;
+}
+.sheet-btn:active { transform: scale(.98); }
+.sheet-btn.danger { color: #ff3b30; }          /* красный из iPhone: так в iOS выглядят необратимые действия */
+.final .actions { display: grid; gap: 10px; justify-items: center; }
+.choice-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border: 0; background: none; text-align: left; width: 100%; border-radius: 12px; }
+.choice-row + .choice-row { border-top: 1px solid var(--line); border-radius: 0; }
+.choice-row .txt { flex: 1; display: grid; gap: 1px; }
+.choice-row small { color: var(--muted); font-size: 12.5px; }
+.choice-row .check { flex: none; width: 20px; color: var(--accent-ink); font-size: 18px; visibility: hidden; }
+.choice-row[aria-checked="true"] .check { visibility: visible; }
+@keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes down { to { transform: translateY(100%); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+
+/* Что показывать в азкарах: классы на <body> прячут нужные части */
+body.no-ar .ar, body.no-ru .ru, body.no-tr .tr { display: none; }
+body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
+
+/* ---------- Нижняя панель ---------- */
+.tabbar {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: min(260px, calc(100% - 32px));
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(30, 43, 35, .06), 0 10px 28px rgba(30, 43, 35, .12);
+  padding: 4px; z-index: 10;
+  transition: transform .35s var(--ease), opacity .25s ease;
+}
+.tabbar.away { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
+.tabbar::before {
+  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 6px);
+  border-radius: 999px; background: #f1f5f2; transition: transform .38s var(--ease);
+}
+.tabbar[data-active="settings"]::before { transform: translateX(calc(100% + 4px)); }
+.tab-item {
+  display: grid; justify-items: center; gap: 2px; border: 0; background: none;
+  border-radius: 999px; padding: 6px 6px 5px; color: #b5beb8; font-size: 12px; position: relative;
+  transition: color .25s ease, transform .15s ease;
+}
+.tab-item svg { width: 21px; height: 21px; }
+.tab-item[aria-selected="true"] { color: var(--accent-ink); }
+
+/* ---------- Анимации ---------- */
+/* Экран появляется: лёгкое проявление со сдвигом снизу */
+.screen.enter { animation: screen-in .35s var(--ease); }
+/* Экран чтения — только плавное проявление, без сдвига: после сдвига iPhone
+   иногда оставляет текст «замыленным» */
+#reader.enter { animation: fade .3s ease; }
+@keyframes screen-in { from { opacity: 0; transform: translateY(10px); } }
+
+/* На главной элементы появляются по очереди */
+#home.enter .home-title, #home.enter .choice { animation: rise .5s var(--ease) backwards; }
+#home.enter .choice:nth-child(1) { animation-delay: .06s; }
+#home.enter .choice:nth-child(2) { animation-delay: .12s; }
+/* Хадисы и строки настроек — тоже по очереди, задержку задаёт --i */
+#settings.enter .group { animation: rise .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+
+/* Нажатие: кнопка чуть «проседает» */
+.choice, .btn, .row, .choice-row, .counter { transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+.btn:active, button.row:active { transform: scale(.98); }
+.choice-row:active { background: #f1f5f2; }
+.tab-item:active { transform: scale(.94); }
+.counter:active { transform: scale(.985); }
+
+/* Счётчик: цифра «подпрыгивает» при нажатии, надпись «Прочитано» мягко появляется */
+.counter .num.bump { animation: bump .28s var(--ease); }
+@keyframes bump { 40% { transform: scale(1.22); } }
+.counter.full .label { animation: fade .35s ease; }
+
+/* Финальная карточка */
+.final { animation: rise .5s var(--ease) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<!-- ===== ГЛАВНАЯ ===== -->
+<main class="screen" id="home">
+  <div class="home-title">
+    <span class="ar-title" lang="ar">أَذْكَار</span>
+    <h1>Азкары</h1>
+  </div>
+  <div class="choices">
+    <button class="choice" id="go-morning">
+      <img src="data:image/jpeg;base64,__IMG_MORNING__" alt="">
+      <b>Утренние азкары</b>
+    </button>
+    <button class="choice" id="go-evening">
+      <img src="data:image/jpeg;base64,__IMG_EVENING__" alt="">
+      <b>Вечерние азкары</b>
+    </button>
+  </div>
+</main>
+
+<!-- ===== ЧТЕНИЕ ===== -->
+<main class="screen" id="reader" hidden>
+  <div class="topbar">
+    <button class="back" id="back">Назад</button>
+    <div class="top-right">
+      <span class="pos" id="pos"></span>
+      <button class="icon-btn" id="reset-btn" aria-label="Сбросить счётчики">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 4v5h5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="viewport" id="viewport"><div class="track" id="track"></div></div>
+  <div class="list-view" id="list-view" hidden></div>
+</main>
+
+<!-- ===== НАСТРОЙКИ ===== -->
+<main class="screen" id="settings" hidden>
+  <h1>Настройки</h1>
+  <div class="group" style="--i:0">
+    <span class="group-title">Что показывать</span>
+    <div class="rows">
+      <div class="row"><span class="lbl"><span class="tile tile-green ar-glyph" aria-hidden="true">ع</span><span id="lbl-ar">Арабский текст</span></span>
+        <button class="switch" role="switch" id="sw-ar" data-key="ar" aria-labelledby="lbl-ar"></button></div>
+      <div class="row"><span class="lbl"><span class="tile tile-blue" aria-hidden="true">Я</span><span id="lbl-ru">Русский перевод</span></span>
+        <button class="switch" role="switch" id="sw-ru" data-key="ru" aria-labelledby="lbl-ru"></button></div>
+      <div class="row"><span class="lbl"><span class="tile tile-orange" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg></span><span id="lbl-tr">Русская транскрипция</span></span>
+        <button class="switch" role="switch" id="sw-tr" data-key="tr" aria-labelledby="lbl-tr"></button></div>
+    </div>
+  </div>
+  <div class="group" style="--i:1">
+    <span class="group-title">Чтение</span>
+    <div class="rows">
+      <button class="row" id="open-mode"><span>Вид чтения азкаров</span><span class="value" id="mode-value"></span></button>
+    </div>
+  </div>
+</main>
+
+<!-- Окно подтверждения сброса -->
+<div class="sheet-back" id="reset-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="reset-title">
+    <h2 id="reset-title"></h2>
+    <p>Счётчики всех азкаров начнутся с нуля</p>
+    <button class="sheet-btn danger" id="reset-yes">Сбросить</button>
+    <button class="sheet-btn" id="reset-no">Отмена</button>
+  </div>
+</div>
+
+<!-- Окно выбора вида чтения -->
+<div class="sheet-back" id="mode-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="sheet-title">
+    <h2 id="sheet-title">Вид чтения азкаров</h2>
+    <button class="choice-row" role="radio" id="mode-cards" data-mode="cards">
+      <span class="txt">По одному<small>Карточки, листать влево и вправо</small></span><span class="check">✓</span>
+    </button>
+    <button class="choice-row" role="radio" id="mode-list" data-mode="list">
+      <span class="txt">Списком<small>Все азкары на одной странице, листать вниз</small></span><span class="check">✓</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== НИЖНЯЯ ПАНЕЛЬ ===== -->
+<nav class="tabbar" id="tabbar" role="tablist">
+  <button class="tab-item" role="tab" id="tab-home" data-screen="home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 2.6a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a3 3 0 0 1-3 3h-3v-5.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V22H6a3 3 0 0 1-3-3V9.8c0-.5.2-1 .6-1.3z"/></svg>
+    Главная
+  </button>
+  <button class="tab-item" role="tab" id="tab-settings" data-screen="settings">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.3 2h3.4l.6 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8c.1.6.1 1.2 0 1.8l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.6 2.6h-3.4l-.6-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.8a6 6 0 0 1 0-1.8l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" transform="translate(0 1)"/></svg>
+    Настройки
+  </button>
+</nav>
+
+<script>
+/* ================================================================
+   1. ДАННЫЕ. Сюда будем добавлять азкары по одному.
+   when — когда читать, times — сколько раз.
+   ================================================================ */
+const AZKAR = [
+  // ===== УТРЕННИЕ =====
+  { id: "m-sayyid", when: ["morning"], times: 1, name: "Господин молитв о прощении",
+    ar: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَ أَنَا عَبْدُكَ وَ أَنَا عَلَى عَهْدِكَ وَ وَعْدِكَ مَا اسْتَطَعْتُ أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ وَ أَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+    ru: "О Аллах, Ты − Господь мой, и нет Божества достойного поклонения, кроме Тебя. Ты создал меня, и я − Твой раб, и я придерживаюсь завета данного Тебе и придерживаюсь обещания Твоего как могу. Я прибегаю к Твоей защите от зла того, что я сделал. Я признаю милость Твою, которой Ты меня наделил, и признаю грех свой, так прости же меня, ибо, поистине, никто не прощает грехов, кроме Тебя!",
+    tr: "Аллах1умма, Анта Робби, ля илях1а илля Анта, холякътани, ва ана 1абдука, ва ана 1аля 1ах1дика ва ва1дика мастат1а1ту. А1уз'у бика мин шарри ма сона1ту, абу'у ляка бини1матика 1аляййя, ва абу'у биз'анби, фаг1фир ли, фаиннах1у ля йаг1фиру з'унуба илля Анта",
+    src: "аль-Бухари 6306" },
+  { id: "m-tahlil10", when: ["morning"], times: 10, name: "Ля иляха илля-Ллах… 10 раз",
+    ar: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ ، لَهُ الْمُلْكُ وَ لَهُ الْحَمْدُ وَ هُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    ru: "Нет достойного поклонения, кроме одного лишь Аллаха, у которого нет сотоварища, Ему принадлежит владычество, Ему хвала, Он всё может.",
+    tr: "Ля иляха илля-Ллаху вахда-ху ля шарикя ля-ху, ля-ху-ль-мульку ва ля-ху-ль-хамду ва хуа 'аля кулли шайин кадир.",
+    src: "Муслим 2693, 2691" },
+  { id: "m-subhan100", when: ["morning"], times: 100, name: "Субхана-Ллахи ва би-хамдихи",
+    ar: "سُبْحَانَ اللَّهِ وَ بِحَمْدِهِ",
+    ru: "Пречист Аллах и хвала Ему.",
+    tr: "Субхана-Ллахи ва би-хамди-хи.",
+    src: "Муслим 2692" },
+  { id: "m-asbahna", when: ["morning"], times: 1, name: "Асбахна ва асбаха-ль-мульку ли-Ллях",
+    ar: "أَصْبَحْنَا وَ أَصْبَحَ الْمُلْكُ لِلَّهِ ، وَ الْحَمْدُ لِلَّهِ ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ ، لَهُ الْمُلْكُ وَ لَهُ الْحَمْدُ وَ هُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَ خَيْرَ مَا بَعْدَهُ وَ أَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَ شَرِّ مَا بَعْدَهُ رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَ سُوءِ الْكِبَرِ ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَ عَذَابٍ فِي الْقَبْرِ",
+    ru: "Мы дожили до утра, и этим утром владычество принадлежит Аллаху и хвала Аллаху, нет достойного поклонения, кроме одного лишь Аллаха, у которого нет сотоварища. Ему принадлежит владычество, Ему хвала, Он всё может. Господь мой, прошу Тебя о благе того, что будет в этот день, и благе того, что за ним последует, и прибегаю к Тебе от зла того, что будет в этот день, и зла того, что за ним последует. Господь мой, прибегаю к Тебе от нерадения и старческой дряхлости, Господь мой, прибегаю к Тебе от мучений в огне и мучений в могиле!",
+    tr: "Асбахна ва асбаха-ль-мульку ли-Лляхи ва-ль-хамду ли-Лляхи, ля иляха илля Ллаху вахда-ху ля шарикя ля-ху, ля-ху-ль-мульку ва ля-ху-ль-хамду ва хуа ааля кулли шайин кадирун. Рабби, ас'алю-кя хайра ма фи хаза-ль-йауми ва хайра ма ба'да-ху ва а'узу би-кя мин шарри ма фи хаза-ль-йауми ва шарри ма ба'да-ху! Рабби, а'узу би-кя мин аль-кясали ва суи-ль-кибари, Рабби, а'узу би-кя мин 'азабин фи-н-нари ва 'азабин фи-ль-кабри!",
+    src: "Муслим 2723" },
+  { id: "m-bika", when: ["morning"], times: 1, name: "Аллахумма бика асбахна",
+    ar: "اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ",
+    ru: "О Аллах, благодаря Тебе мы дожили до утра и благодаря Тебе мы дожили до вечера, Ты даёшь нам жизнь, и Ты лишаешь нас ее и Ты воскресишь нас для отчета.",
+    tr: "Аллахумма, би-кя асбахна, ва би-кя амсайна, ва би-кя нахйа, ва би-кя намуту ва иляй-кя-н-нушуру",
+    src: "ат-Тирмизи 3391" },
+  { id: "m-bismillah", when: ["morning"], times: 3, name: "Бисмилляхи-ллязи ля йадурру…",
+    ar: "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَ لَا فِي السَّمَاءِ وَ هُوَ السَّمِيعُ الْعَلِيمُ",
+    ru: "С именем Аллаха, с именем которого ничто не причинит вред ни на земле, ни на небе, ведь Он - Слышащий, Знающий!",
+    tr: "Би-сми-Лляхи аллязи ля йадурру ма'а исми-хи шайун фи-ль-арди ва ля фи-с-самаи ва хуа-с-Сами'у-ль-'Алиму",
+    src: "ат-Тирмизи 3388" },
+  { id: "m-afiya", when: ["morning"], times: 1, name: "Аллахумма инни ас'алюка-ль-'афийа…",
+    ar: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَافِيَةَ فِي الدُّنْيَا وَ الْآخِرَةِ ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَ الْعَافِيَةَ فِي دِينِي وَ دُنْيَايَ وَ أَهْلِي وَ مَالِي ، اللَّهُمَّ اسْتُرْ عَوْرَاتِي، وَآمِنْ رَوْعَاتِي ، اللَّهُمَّ احْفَظْنِي مِنْ بَيْنِ يَدَيَّ وَ مِنْ خَلْفِي وَ عَنْ يَمِينِي وَ عَنْ شِمَالِي وَ مِنْ فَوْقِي وَ أَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي",
+    ru: "О Аллах, поистине, я прошу Тебя о благополучии в мире этом и в мире ином, о Аллах, поистине, я прошу Тебя о прощении и благополучии в моей религии, и моих мирских делах, в моей семье и в моём имуществе. О Аллах, прикрой мою наготу и огради меня от страха, о Аллах, защити меня спереди, и сзади, и справа, и слева, и сверху, и я прибегаю к величию Твоему от того, чтобы быть предательски убитым снизу.",
+    tr: "Аллахумма, инни ас'алю-кя-ль-'афийата фи-д-дунья ва-ль-ахирати, Аллахумма, инни ас'алю-кя-ль-'афуа ва-ль-'афийата фи дини, ва ду-ньяйа, ва ахли, ва мали. Аллахумма-стур 'аурати ва амин рау'ати, Аллахумма-хфаз-ни мин байни йадаййа, ва мин хальфи, ва 'ан ямини, ва 'ан шимали ва мин фауки, ва а'узу би-'азамати-кя ан угталя мин тахти!",
+    src: "Абу Дауд 5074" },
+  { id: "m-alim", when: ["morning"], times: 1, name: "Аллахумма 'Алима-ль-гайби…",
+    ar: "اللَّهُمَّ عَالِمَ الْغَيْبِ وَ الشَّهَادَةِ ، فَاطِرَ السَّمَاوَاتِ وَ الْأَرْضِ ، رَبَّ كُلِّ شَيْءٍ وَ مَلِيكَهُ ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي وَ مِنْ شَرِّ الشَّيْطَانِ وَ شِرْكِهِ وَ أَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءًا أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ",
+    ru: "О Аллах, Знающий сокрытое и явное, Творец небес и земли, Господь и Владыка всего, свидетельствую, что нет достойного поклонения, кроме Тебя, прибегаю к Тебе от зла души своей, от зла и многобожия шайтана и от того, чтобы причинить зло самому себе или навлечь его на какого-нибудь мусульманина.",
+    tr: "Аллахумма, 'Алима-ль-гайби ва-ш-шахадати, Фатира-с-самавати ва-ль-арди, Рабба кулли шайин ва Малика-ху, ашхаду алля иляха илля Анта, а'узу би-кя мин шарри нафси, ва мин шарри-ш-шайтани ва ширки-хи ва ан актарифа 'аля нафси су'ан ау аджурра-ху иля мусли-мин",
+    src: "ат-Тирмизи 3529 (48/160)" },
+  { id: "m-fitra", when: ["morning"], times: 1, name: "Асбахна 'аля фитрати-ль-ислям…",
+    ar: "أَصْبَحْنَا عَلَى فِطْرَةِ الْإِسْلَامِ وَ عَلَى كَلِمَةِ الْإِخْلَاصِ ، وَ عَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَ سَلَّمَ وَ عَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ حَنِيفاً مُسْلِماً وَ مَا كَانَ مِنَ الْمُشْرِكِينَ",
+    ru: "Мы дожили до утра в лоне ислама согласно слову искренности, исповедуя религию нашего пророка Мухаммада, салляллаху 'алейхи уа саллям, и религию нашего отца Ибрахима, который был ханифом и мусульманином и не относился к многобожникам.",
+    tr: "Асбахна 'аля фитрати-ль-ислами ва 'аля кялимати-ль-ихляси ва 'аля дини набийй-на Мухаммадин, салля Ллаху 'аляй-хи ва салляма, ва 'аля мил-ляти аби-на Ибрахима ханифан муслиман ва ма кяна мин аль-мушрикина.",
+    src: "Ахмад 3/406, Ибн ас-Сунни 4/209" },
+  { id: "m-radiitu", when: ["morning"], times: 3, name: "Радийту би-Лляхи Раббан…",
+    ar: "رَضِيتُ بِاللَّهِ رَبًّا ، وَ بِالْإسْلَامِ دِيناً وَ بِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا",
+    ru: "Доволен я Аллахом как Господом, исламом - как религией и Мухаммадом, - как пророком!",
+    tr: "Радийту би-Лляхи Раббан, ва би-ль-ислами динан ва би-Мухаммадин, сал-ля-Ллаху 'аляй-хи ва салляма, набийан",
+    src: "Абу Дауд 1529" },
+  { id: "m-hayyu", when: ["morning"], times: 1, name: "Йа Хаййу, йа Кайюму…",
+    ar: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ أَصْلِحْ لِي شَأْنِي كُلَّهُ وَ لَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
+    ru: "О Живой, о Вечносущий, обращаюсь за защитой к милосердию Твоему, приведи в порядок все мои дела и не доверяй меня душе моей ни на мгновение!",
+    tr: "Йа Хаййу, йа Кайюму, би-рахмати-кя астагису, аслих ли ша'ни кулля-ху ва ля такиль-ни иля нафси тарфата 'айнин!",
+    src: "аз-Захаби 1/545" },
+  { id: "m-adada", when: ["morning"], times: 3, name: "Субхана-Ллахи ва би-хамдихи 'адада…",
+    ar: "سُبْحَانَ اللَّهِ وَ بِحَمْدِهِ عَدَدَ خَلْقِهِ وَ رِضَا نَفْسِهِ وَ زِنَةَ عَرْشِهِ وَ مِدَادَ كَلِمَاتِهِ",
+    ru: "Пречист Аллах и хвала Ему столько раз, сколько существует Его творений, и столько раз, сколько будет Ему угодно, пусть вес этих славословий и похвал будет равен весу Его трона и пусть для записи их потребуется столько же чернил, сколько нужно их для записи слов Его!",
+    tr: "Субхана-Ллахи ва би-хамди-хи 'адада хальки-хи, ва рида нафси-хи, ва зината 'арши-хи ва мидада кялимати-хи!",
+    src: "Муслим 2726" },
+  { id: "m-hasbi", when: ["morning"], times: 7, name: "Хасбия-Ллаху…",
+    ar: "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَ هُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+    ru: "Достаточно мне Аллаха, нет достойного поклонения, кроме Него, на Него я уповаю и Он - Господь великого трона.",
+    tr: "Хасбия-Ллаху, ля иляха илля хуа, 'аляй-хи таваккяльту ва хуа Раббу-ль-'арши-ль-'азыми",
+    src: "Абу Дауд 5081" },
+  { id: "m-ikhlas", when: ["morning"], times: 3, name: "Сура аль-Ихлас",
+    ar: "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\nقُلْ هُوَ ٱللَّهُ أَحَدٌ [١] ٱللَّهُ ٱلصَّمَدُ [٢] لَمْ يَلِدْ وَلَمْ يُولَدْ [٣] وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ [٤]",
+    ru: "[1] Скажи: «Он - Аллах Единый, [2] Аллах Самодостаточный. [3] Он не родил и не был рожден, [4] и нет никого равного Ему».",
+    tr: "Куль хува-Ллаху ахад. Аллаху-ссамад. Лям ялид ва лям юляд. Ва лям якулляху куфуван ахад.",
+    src: "Абу Дауд 5082, ан-Насаи 8/250" },
+  { id: "m-falaq", when: ["morning"], times: 3, name: "Сура аль-Фаляк",
+    ar: "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ [١] مِن شَرِّ مَا خَلَقَ [٢] وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ [٣] وَمِن شَرِّ ٱلنَّفَّـٰثَـٰتِ فِى ٱلْعُقَدِ [٤] وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ [٥]",
+    ru: "[1] Скажи: «Прибегаю к защите Господа рассвета [2] от зла того, что Он сотворил, [3] от зла мрака, когда он наступает, [4] от зла колдуний, поплевывающих на узлы, [5] от зла завистника, когда он завидует».",
+    tr: "Куль а'узу би раббиль фаляк. Мин шарри ма холяк. Ва мин шарри гасикин иза вакаб. Ва мин шарри-ннаффасати филь укад. Ва мин шарри хасидин иза хасад.",
+    src: "Абу Дауд 5082, ан-Насаи 8/250" },
+  { id: "m-nas", when: ["morning"], times: 3, name: "Сура ан-Нас",
+    ar: "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ [١] مَلِكِ ٱلنَّاسِ [٢] إِلَـٰهِ ٱلنَّاسِ [٣] مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ [٤] ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ ٱلنَّاسِ [٥] مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ [٦]",
+    ru: "[1] Скажи: «Прибегаю к защите Господа людей, [2] Царя людей, [3] Бога людей, [4] от зла искусителя отступающего (или сжимающегося) при поминании Аллаха, [5] который наущает в груди людей [6] и бывает из джиннов и людей».",
+    tr: "Куль а'узу би рабби-ннас. Малики-ннас. Иляхи-ннас. Мин шарриль васвасиль хоннас. Аллязи ювасвысу фи судури-ннас. Миналь джиннати ва-ннас.",
+    src: "Абу Дауд 5082, ан-Насаи 8/250" },
+
+  // ===== ВЕЧЕРНИЕ =====
+  { id: "e-kalimat", when: ["evening"], times: 3, name: "А‘узу би-кялимати-Ллях…",
+    ar: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+    ru: "Прибегаю к совершенным словам Аллаха от зла того, что Он сотворил.",
+    tr: "А'узу би-кялимати Лляхи-т-таммати мин шарри ма халяка.",
+    src: "Муслим 2709" },
+  { id: "e-sayyid", when: ["evening"], times: 1, name: "Господин молитв о прощении",
+    ar: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَ أَنَا عَبْدُكَ وَ أَنَا عَلَى عَهْدِكَ وَ وَعْدِكَ مَا اسْتَطَعْتُ أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ وَ أَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+    ru: "О Аллах, Ты - Господь мой, и нет достойного поклонения, кроме Тебя, Ты создал меня, а я -Твой раб, и я буду хранить верность Тебе, пока у меня хватит сил. Прибегаю к Тебе от зла того, что я сделал, признаю милость, оказанную Тобой мне, и признаю грех свой. Прости же меня, ибо, поистине, никто не прощает грехов, кроме Тебя!",
+    tr: "Аллахумма, Анта Рабби, ля иляха илля Анта, халякта-ни ва ана 'абду-кя, ва ана 'аля 'ахди-кя ва ва'ди-кя ма-стата'ту. А'узу би-кя мин шарри ма сана'ту, абу'у ля-кя би-ни'мати-кя 'аляййя, ва абу'у би-занби, фа-гфир ли, фа-инна-ху ля йагфи-ру-з-зунуба илля Анта!",
+    src: "аль-Бухари 6306" },
+  { id: "e-tahlil10", when: ["evening"], times: 10, name: "Ля иляха илля-Ллах… 10 раз",
+    ar: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ ، لَهُ الْمُلْكُ وَ لَهُ الْحَمْدُ وَ هُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    ru: "Нет достойного поклонения, кроме одного лишь Аллаха, у которого нет сотоварища, Ему принадлежит владычество, Ему хвала, Он всё может.",
+    tr: "Ля иляха илля-Ллаху вахда-ху ля шарикя ля-ху, ля-ху-ль-мульку ва ля-ху-ль-хамду ва хуа 'аля кулли шайин кадир.",
+    src: "Муслим 2693, 2691" },
+  { id: "e-subhan100", when: ["evening"], times: 100, name: "Субхана-Ллахи ва би-хамдихи",
+    ar: "سُبْحَانَ اللَّهِ وَ بِحَمْدِهِ",
+    ru: "Пречист Аллах и хвала Ему.",
+    tr: "Субхана-Ллахи ва би-хамди-хи.",
+    src: "Муслим 2692" },
+  { id: "e-amsayna", when: ["evening"], times: 1, name: "Амсайна ва амса-ль-мульку ли-Ллях…",
+    ar: "أَمْسَيْنَا وَ أَمْسَى الْمُلْكُ لِلَّهِ ، وَ الْحَمْدُ لِلَّهِ ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ ، لَهُ الْمُلْكُ وَ لَهُ الْحَمْدُ وَ هُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَ خَيْرَ مَا بَعْدَهَا وَ أَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذِهِ اللَّيْلَةِ وَ شَرِّ مَا بَعْدَهَا رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَ سُوءِ الْكِبَرِ ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَ عَذَابٍ فِي الْقَبْرِ",
+    ru: "Мы дожили до вечера, и этим вечером владычество принадлежит Аллаху, и хвала Аллаху, нет достойного поклонения, кроме одного лишь Аллаха, у которого нет сотоварища. Ему принадлежит владычество, Ему хвала, Он всё может. Господь мой, прошу Тебя о благе того, что будет в эту ночь, и благе того, что за ней последует, и прибегаю к Тебе от зла того, что будет в эту ночь, и зла того, что за ней последует. Господь мой, прибегаю к Тебе от нерадения и старческой дряхлости, Господь мой, прибегаю к Тебе от мучений в огне и мучений в могиле!",
+    tr: "Амсайна ва амса-ль-мульку ли-Лляхи ва-ль-хамду ли-Лляхи, ля иляха илля Ллаху вахда-ху ля шарикя ля-ху, ля-ху-ль-мульку ва ля-ху-ль-хамду ва хуа ааля кулли шайин кадирун. Рабби ас'алюкя хайра ма фи хазихи-ль-лейляти ва хайра ма ба'адаха ва а'узу бикя мин шарри ма фи хазихи-ль-лейляти ва шарри ма ба'адаха Рабби, а'узу би-кя мин аль-кясали ва суи-ль-кибари, Рабби, а'узу би-кя мин 'азабин фи-н-нари ва 'азабин фи-ль-кабри!",
+    src: "Муслим 2723" },
+  { id: "e-bika", when: ["evening"], times: 1, name: "Аллахумма бика амсайна…",
+    ar: "اللَّهُمَّ بِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَ إِلَيْكَ الْمَصِيرُ",
+    ru: "О Аллах, благодаря Тебе мы дожили до вечера. Ты даёшь нам жизнь, и Ты лишаешь нас её и Ты воскресишь нас для отчета.",
+    tr: "Аллахума, би-ка амсайна, ва би-ка нахйа, ва би-ка намуту ва иляй-ка-ль-масыру.",
+    src: "ат-Тирмизи 3391" },
+  { id: "e-afiya", when: ["evening"], times: 1, name: "Аллахумма инни ас'алюка-ль-'афийа…",
+    ar: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَافِيَةَ فِي الدُّنْيَا وَ الْآخِرَةِ ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَ الْعَافِيَةَ فِي دِينِي وَ دُنْيَايَ وَ أَهْلِي وَ مَالِي ، اللَّهُمَّ اسْتُرْ عَوْرَاتِي، وَآمِنْ رَوْعَاتِي ، اللَّهُمَّ احْفَظْنِي مِنْ بَيْنِ يَدَيَّ وَ مِنْ خَلْفِي وَ عَنْ يَمِينِي وَ عَنْ شِمَالِي وَ مِنْ فَوْقِي وَ أَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي",
+    ru: "О Аллах, поистине, я прошу Тебя о благополучии в мире этом и в мире ином, о Аллах, поистине, я прошу Тебя о прощении и благополучии в моей религии, и моих мирских делах, в моей семье и в моём имуществе. О Аллах, прикрой мою наготу и огради меня от страха, о Аллах, защити меня спереди, и сзади, и справа, и слева, и сверху, и я прибегаю к величию Твоему от того, чтобы быть предательски убитым снизу.",
+    tr: "Аллахумма, инни ас'алю-кя-ль-'афийата фи-д-дунья ва-ль-ахирати, Аллахумма, инни ас'алю-кя-ль-'афуа ва-ль-'афийата фи дини, ва ду-ньяйа, ва ахли, ва мали. Аллахумма-стур 'аурати ва амин рау'ати, Аллахумма-хфаз-ни мин байни йадаййа, ва мин хальфи, ва 'ан ямини, ва 'ан шимали ва мин фауки, ва а'узу би-'азамати-кя ан угталя мин тахти!",
+    src: "Абу Дауд 5074" },
+  { id: "e-alim", when: ["evening"], times: 1, name: "Аллахумма 'Алима-ль-гайби…",
+    ar: "اللَّهُمَّ عَالِمَ الْغَيْبِ وَ الشَّهَادَةِ ، فَاطِرَ السَّمَاوَاتِ وَ الْأَرْضِ ، رَبَّ كُلِّ شَيْءٍ وَ مَلِيكَهُ ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي وَ مِنْ شَرِّ الشَّيْطَانِ وَ شِرْكِهِ وَ أَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءًا أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ",
+    ru: "О Аллах, Знающий сокрытое и явное, Творец небес и земли, Господь и Владыка всего, свидетельствую, что нет достойного поклонения, кроме Тебя, прибегаю к Тебе от зла души своей, от зла и многобожия шайтана и от того, чтобы причинить зло самому себе или навлечь его на какого-нибудь мусульманина.",
+    tr: "Аллахумма, 'Алима-ль-гайби ва-ш-шахадати, Фатира-с-самавати ва-ль-арди, Рабба кулли шайин ва Малика-ху, ашхаду алля иляха илля Анта, а'узу би-кя мин шарри нафси, ва мин шарри-ш-шайтани ва ширки-хи ва ан актарифа 'аля нафси су'ан ау аджурра-ху иля мусли-мин.",
+    src: "ат-Тирмизи 3529 (48/160)" },
+  { id: "e-radiitu", when: ["evening"], times: 3, name: "Радийту би-Лляхи Раббан…",
+    ar: "رَضِيتُ بِاللَّهِ رَبًّا ، وَ بِالْإسْلَامِ دِيناً وَ بِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا",
+    ru: "Доволен я Аллахом как Господом, исламом - как религией и Мухаммадом, - как пророком!",
+    tr: "Радийту би-Лляхи Раббан, ва би-ль-ислами динан ва би-Мухаммадин, сал-ля-Ллаху 'аляй-хи ва салляма, набийан",
+    src: "Абу Дауд 1529" },
+  { id: "e-hayyu", when: ["evening"], times: 1, name: "Йа Хаййу, йа Кайюму…",
+    ar: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ أَصْلِحْ لِي شَأْنِي كُلَّهُ وَ لَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
+    ru: "О Живой, о Вечносущий, обращаюсь за защитой к милосердию Твоему, приведи в порядок все мои дела и не доверяй меня душе моей ни на мгновение!",
+    tr: "Йа Хаййу, йа Кайюму, би-рахмати-кя астагису, аслих ли ша'ни кулля-ху ва ля такиль-ни иля нафси тарфата 'айнин!",
+    src: "аз-Захаби 1/545" },
+  { id: "e-hasbi", when: ["evening"], times: 7, name: "Хасбия-Ллаху…",
+    ar: "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَ هُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+    ru: "Достаточно мне Аллаха, нет достойного поклонения, кроме Него, на Него я уповаю и Он - Господь великого трона.",
+    tr: "Хасбия-Ллаху, ля иляха илля хуа, 'аляй-хи таваккяльту ва хуа Раббу-ль-'арши-ль-'азыми.",
+    src: "Абу Дауд 5081" },
+  { id: "e-bismillah", when: ["evening"], times: 3, name: "Бисмилляхи-ллязи ля йадурру…",
+    ar: "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَ لَا فِي السَّمَاءِ وَ هُوَ السَّمِيعُ الْعَلِيمُ",
+    ru: "С именем Аллаха, с именем Которого ничто не причинит вред ни на земле, ни на небе, ведь Он - Слышащий, Знающий!",
+    tr: "Би-сми-Лляхи аллязи ля йадурру ма'а исми-хи шайун фи-ль-арди ва ля фи-с-самаи ва хуа-с-Сами'у-ль-'Алиму",
+    src: "ат-Тирмизи 3388" },
+  { id: "e-ikhlas", when: ["evening"], times: 3, name: "Сура аль-Ихлас",
+    ar: "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\nقُلْ هُوَ ٱللَّهُ أَحَدٌ [١] ٱللَّهُ ٱلصَّمَدُ [٢] لَمْ يَلِدْ وَلَمْ يُولَدْ [٣] وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ [٤]",
+    ru: "[1] Скажи: «Он - Аллах Единый, [2] Аллах Самодостаточный. [3] Он не родил и не был рожден, [4] и нет никого равного Ему».",
+    tr: "Куль хува-Ллаху ахад. Аллаху-ссамад. Лям ялид ва лям юляд. Ва лям якулляху куфуван ахад.",
+    src: "Абу Дауд 5082, ан-Насаи 8/250" },
+  { id: "e-falaq", when: ["evening"], times: 3, name: "Сура аль-Фаляк",
+    ar: "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ [١] مِن شَرِّ مَا خَلَقَ [٢] وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ [٣] وَمِن شَرِّ ٱلنَّفَّـٰثَـٰتِ فِى ٱلْعُقَدِ [٤] وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ [٥]",
+    ru: "[1] Скажи: «Прибегаю к защите Господа рассвета [2] от зла того, что Он сотворил, [3] от зла мрака, когда он наступает, [4] от зла колдуний, поплевывающих на узлы, [5] от зла завистника, когда он завидует».",
+    tr: "Куль а'узу би раббиль фаляк. Мин шарри ма холяк. Ва мин шарри гасикин иза вакаб. Ва мин шарри-ннаффасати филь укад. Ва мин шарри хасидин иза хасад.",
+    src: "Абу Дауд 5082, ан-Насаи 8/250" },
+  { id: "e-nas", when: ["evening"], times: 3, name: "Сура ан-Нас",
+    ar: "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ [١] مَلِكِ ٱلنَّاسِ [٢] إِلَـٰهِ ٱلنَّاسِ [٣] مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ [٤] ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ ٱلنَّاسِ [٥] مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ [٦]",
+    ru: "[1] Скажи: «Прибегаю к защите Господа людей, [2] Царя людей, [3] Бога людей, [4] от зла искусителя отступающего (или сжимающегося) при поминании Аллаха, [5] который наущает в груди людей [6] и бывает из джиннов и людей».",
+    tr: "Куль а'узу би рабби-ннас. Малики-ннас. Иляхи-ннас. Мин шарриль васвасиль хоннас. Аллязи ювасвысу фи судури-ннас. Миналь джиннати ва-ннас.",
+    src: "Абу Дауд 5082, ан-Насаи 8/250" }
+];
+
+/* ================================================================
+   2. СОСТОЯНИЕ
+   ================================================================ */
+function load(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (e) { return fallback; } }
+function store(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
+
+// Ключ хранения — сегодняшняя дата по МЕСТНОМУ времени телефона, например "azkar-2026-10-06".
+// Новый день → новый ключ → счётчики сами начинаются с нуля.
+// (toISOString() тут не годится: он берёт дату по Гринвичу, и в Москве день менялся бы в 3 часа ночи)
+function todayKey() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `azkar-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+let KEY = todayKey();
+let counts = load(KEY, {});
+
+// Если наступил новый день, пока приложение было открыто, — переключаемся на новый ключ
+function checkNewDay() {
+  if (todayKey() === KEY) return false;
+  KEY = todayKey();
+  counts = load(KEY, {});
+  cleanOldDays();
+  return true;
+}
+
+// Удаляем счётчики прошлых дней, чтобы память браузера не копила их годами
+function cleanOldDays() {
+  try {
+    for (let k = localStorage.length - 1; k >= 0; k--) {
+      const name = localStorage.key(k);
+      if (/^azkar-\d{4}-\d{2}-\d{2}$/.test(name) && name !== KEY) localStorage.removeItem(name);
+    }
+  } catch (e) {}
+}
+cleanOldDays();
+let time = "morning";              // какие азкары открыты сейчас
+let index = 0;                     // номер текущей карточки
+let items = [];                    // азкары выбранного времени
+const ckey = z => time + ":" + z.id;
+let mode = load("azkar-mode", "cards");   // вид чтения: "cards" — по одному, "list" — списком
+// что показывать в азкарах; по умолчанию всё включено
+let show = Object.assign({ ar: true, ru: true, tr: true }, load("azkar-show", {}));
+
+
+/* Переключение экранов: показываем один, остальные прячем */
+function showScreen(id) {
+  for (const el of document.querySelectorAll(".screen")) el.hidden = el.id !== id;
+  const screen = document.getElementById(id);
+  screen.scrollTop = 0;
+  // перезапускаем анимацию появления: убрали класс → браузер «забыл» → добавили снова
+  screen.classList.remove("enter");
+  void screen.offsetWidth;
+  screen.classList.add("enter");
+  // Когда анимация закончилась, снимаем её полностью — так iPhone рисует текст заново, чётко
+  clearTimeout(screen._enterTimer);
+  screen._enterTimer = setTimeout(() => screen.classList.remove("enter"), 900);
+  // Нижняя панель видна везде, кроме чтения азкаров: там внизу счётчик
+  const tabbar = document.getElementById("tabbar");
+  tabbar.classList.toggle("away", id === "reader");
+  const tab = id === "settings" ? "settings" : "home";
+  tabbar.dataset.active = tab;   // по этому атрибуту подложка переезжает на нужную вкладку
+  document.querySelectorAll(".tab-item").forEach(t =>
+    t.setAttribute("aria-selected", t.dataset.screen === tab ? "true" : "false"));
+}
+document.querySelectorAll(".tab-item").forEach(t =>
+  t.addEventListener("click", () => showScreen(t.dataset.screen)));
+
+/* Настройки */
+const MODE_NAMES = { cards: "По одному", list: "Списком" };
+
+function renderSettings() {
+  // переключатели
+  for (const key of ["ar", "ru", "tr"]) {
+    document.getElementById("sw-" + key).setAttribute("aria-checked", show[key] ? "true" : "false");
+    document.body.classList.toggle("no-" + key, !show[key]);   // CSS по этому классу прячет часть текста
+  }
+  // вид чтения
+  document.getElementById("mode-value").textContent = MODE_NAMES[mode];
+  document.querySelectorAll(".choice-row[data-mode]").forEach(o =>
+    o.setAttribute("aria-checked", o.dataset.mode === mode ? "true" : "false"));
+}
+
+document.querySelectorAll(".switch").forEach(sw => sw.addEventListener("click", () => {
+  show[sw.dataset.key] = !show[sw.dataset.key];
+  store("azkar-show", show);
+  renderSettings();
+}));
+
+// Закрыть выезжающее окно: сначала анимация ухода, потом прячем
+function closeSheet(el = sheet) {
+  el.classList.add("closing");
+  setTimeout(() => { el.hidden = true; el.classList.remove("closing"); }, 220);
+}
+const sheet = document.getElementById("mode-sheet");
+document.getElementById("open-mode").addEventListener("click", () => { sheet.hidden = false; });
+sheet.addEventListener("click", e => { if (e.target === sheet) closeSheet(); });   // нажали мимо окна — закрыть
+document.querySelectorAll(".choice-row[data-mode]").forEach(o => o.addEventListener("click", () => {
+  mode = o.dataset.mode;
+  store("azkar-mode", mode);
+  renderSettings();
+  setTimeout(closeSheet, 180);   // короткая пауза, чтобы увидеть галочку
+}));
+
+/* ================================================================
+   3. ВЫБОР: утренние или вечерние
+   ================================================================ */
+function openTime(t) {
+  checkNewDay();
+  time = t;
+  items = AZKAR.filter(z => z.when.includes(time));
+  // начинаем с первого непрочитанного зикра
+  index = items.findIndex(z => (counts[ckey(z)] || 0) < z.times);
+  if (index === -1) index = items.length;          // всё прочитано → сразу финальная карточка
+  const cards = mode === "cards";
+  document.getElementById("viewport").hidden = !cards;
+  document.getElementById("list-view").hidden = cards;
+  showScreen("reader");
+  // Очищаем неиспользуемый вид. Иначе на странице остаются невидимые карточки
+  // со счётчиками с теми же id, и программа обновляет их вместо видимых
+  document.getElementById(cards ? "list-view" : "track").innerHTML = "";
+  if (cards) { buildSlides(); goTo(index, false); }
+  else { buildList(); updatePos(); }
+}
+document.getElementById("go-morning").addEventListener("click", () => openTime("morning"));
+document.getElementById("go-evening").addEventListener("click", () => openTime("evening"));
+document.getElementById("back").addEventListener("click", () => showScreen("home"));
+
+// Вернулись в приложение (например, утром, а открыто оно было с вечера):
+// если день сменился и азкары открыты — показываем их уже с обнулёнными счётчиками
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && checkNewDay() && !document.getElementById("reader").hidden) {
+    openTime(time);
+  }
+});
+
+/* Сброс счётчиков открытых азкаров (утренних или вечерних).
+   Сначала спрашиваем подтверждение — сброс нельзя отменить */
+const resetSheet = document.getElementById("reset-sheet");
+function askReset() {
+  document.getElementById("reset-title").textContent =
+    time === "morning" ? "Сбросить утренние азкары?" : "Сбросить вечерние азкары?";
+  resetSheet.hidden = false;
+}
+document.getElementById("reset-btn").addEventListener("click", askReset);
+document.getElementById("reset-no").addEventListener("click", () => closeSheet(resetSheet));
+resetSheet.addEventListener("click", e => { if (e.target === resetSheet) closeSheet(resetSheet); });
+document.getElementById("reset-yes").addEventListener("click", () => {
+  items.forEach(z => delete counts[ckey(z)]);   // стираем счётчики только этих азкаров
+  store(KEY, counts);
+  closeSheet(resetSheet);
+  openTime(time);                               // открываем заново с первого азкара
+});
+
+/* ================================================================
+   4. КАРТОЧКИ
+   ================================================================ */
+// В шрифте Hafs арабская запятая «،» нарисована как кружок,
+// поэтому показываем её обычным шрифтом
+// Подготовка арабского текста к показу. Сами данные не меняем — только то, как они выглядят
+function arabic(text) {
+  return text
+    // 1. Номер аята «[١]» → «١»: шрифт Hafs сам рисует номер в узорном кружке, скобки не нужны
+    .replace(/\[([\u0660-\u0669]+)\]/g, '$1')
+    // 2. Икляб: танвин + маленький мим. В мусхафе Медины (под него сделан шрифт) здесь пишут
+    //    одну огласовку + мим, иначе мим наезжает на танвин: «ٌۢ» → «ُۢ», «ًۢ» → «َۢ», «ٍۭ» → «ِۭ»
+    .replace(/\u064C\u06E2/g, '\u064F\u06E2')
+    .replace(/\u064B\u06E2/g, '\u064E\u06E2')
+    .replace(/\u064D\u06ED/g, '\u0650\u06ED')
+    // 3. Номер аята не должен отрываться от последнего слова и уезжать на новую строку
+    .replace(/(\S+) ([\u0660-\u0669]+)/g, '<span class="nowrap">$1 $2</span>')
+    // 4. Запятая «،»: неразрывный пробел перед ней, чтобы она не уезжала в начало строки,
+    //    и обычный шрифт, потому что в шрифте Hafs она нарисована кружком
+    .replace(/ ،/g, '\u00A0،')
+    .replace(/،/g, '<span class="ar-comma">،</span>')
+    // 5. Перенос строки (после басмалы)
+    .replace(/\n/g, '<br>');
+}
+
+// Кнопка-счётчик одинаковая в обоих видах
+function counterHTML(i) {
+  return `<button class="counter" id="counter-${i}">
+      <i class="fill"></i><span class="label"></span><span class="num"></span>
+    </button>`;
+}
+function contentHTML(z) {
+  return `<div class="content">
+      <p class="ar" lang="ar">${arabic(z.ar)}</p>
+      <div class="divider"></div>
+      <p class="ru">${z.ru}</p>
+      ${z.tr ? `<p class="tr">${z.tr}</p>` : ""}
+      <p class="src">Источник: ${z.src}</p>
+    </div>`;
+}
+function finalHTML() {
+  return `<div class="final">
+      <h2>${time === "morning" ? "Утренние" : "Вечерние"} азкары прочитаны</h2>
+      <div class="actions">
+        <button class="btn to-home">На главную</button>
+      </div>
+    </div>`;
+}
+
+/* Вид «Списком»: все азкары друг под другом, у каждого свой счётчик */
+function buildList() {
+  const box = document.getElementById("list-view");
+  box.innerHTML = items.map((z, i) => `
+    <section class="item" id="item-${i}">
+      ${contentHTML(z)}
+      ${counterHTML(i)}
+    </section>`).join("") + finalHTML();
+  items.forEach((z, i) => {
+    document.getElementById("counter-" + i).addEventListener("click", () => tap(i));
+    updateCounter(i);
+  });
+  box.querySelector(".to-home").addEventListener("click", () => showScreen("home"));
+  // открываем на первом непрочитанном (если всё прочитано — в самом конце)
+  box.scrollTop = 0;
+  if (index >= items.length) box.scrollTop = box.scrollHeight;
+  else if (index > 0) box.scrollTop = document.getElementById("item-" + index).offsetTop - box.offsetTop;
+}
+
+/* Вид «По одному»: карточки в ряд, листаются свайпом */
+function buildSlides() {
+  const track = document.getElementById("track");
+  track.innerHTML = "";
+  items.forEach((z, i) => {
+    const slide = document.createElement("section");
+    slide.className = "slide";
+    slide.innerHTML = `<div class="scroll">
+      ${contentHTML(z)}
+      <div class="dock">
+        ${counterHTML(i)}
+        <p class="hint">Проведите влево или вправо, чтобы перейти</p>
+      </div>
+    </div>`;
+    slide.querySelector(".counter").addEventListener("click", () => tap(i));
+    track.appendChild(slide);
+    updateCounter(i);
+  });
+
+  // последняя карточка — «готово»
+  const final = document.createElement("section");
+  final.className = "slide";
+  final.innerHTML = finalHTML();
+  final.querySelector(".to-home").addEventListener("click", () => showScreen("home"));
+  track.appendChild(final);
+}
+
+function updateCounter(i) {
+  const z = items[i];
+  const n = counts[ckey(z)] || 0;
+  const btn = document.getElementById("counter-" + i);
+  const full = n >= z.times;
+  btn.classList.toggle("full", full);
+  btn.querySelector(".fill").style.width = (n / z.times * 100) + "%";
+  btn.querySelector(".label").textContent = full ? "Прочитано ✓" : "";   // пока читаешь — только цифры
+  btn.querySelector(".num").textContent = `${n} / ${z.times}`;
+}
+
+function tap(i) {
+  if (justSwiped) return;                         // палец ехал по экрану — это свайп, а не нажатие
+  const z = items[i];
+  const n = counts[ckey(z)] || 0;
+  if (n >= z.times) { if (mode === "cards") goTo(i + 1); return; }   // уже прочитан
+  counts[ckey(z)] = n + 1;
+  store(KEY, counts);
+  updateCounter(i);
+  const num = document.querySelector("#counter-" + i + " .num");
+  num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump");
+  if (mode === "list") updatePos();
+  if (n + 1 === z.times) {
+    if (navigator.vibrate) navigator.vibrate(30);
+    // небольшая пауза, чтобы увидеть «Прочитано», потом к следующему
+    if (mode === "cards") setTimeout(() => { if (index === i) goTo(i + 1); }, 600);
+    else setTimeout(() => {
+      const next = document.getElementById("item-" + (i + 1)) || document.querySelector("#list-view .final");
+      next.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 600);
+  }
+}
+
+function updatePos() {
+  const done = items.filter(z => (counts[ckey(z)] || 0) >= z.times).length;
+  document.getElementById("pos").textContent = `Прочитано ${done} из ${items.length}`;
+}
+
+function goTo(i, animate = true) {
+  index = Math.max(0, Math.min(items.length, i));
+  const track = document.getElementById("track");
+  track.classList.toggle("dragging", !animate);
+  track.style.transform = `translateX(${-index * 100}%)`;
+  document.getElementById("pos").textContent =
+    index < items.length ? `${index + 1} из ${items.length}` : "Готово";
+}
+
+/* ================================================================
+   5. СВАЙП. Запоминаем, где палец коснулся экрана, и смотрим,
+   куда он уехал. Влево больше чем на 60px — следующий зикр,
+   вправо — предыдущий. Вертикальное движение оставляем браузеру
+   для прокрутки длинного текста.
+   ================================================================ */
+const viewport = document.getElementById("viewport");
+let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, justSwiped = false;
+
+viewport.addEventListener("pointerdown", e => {
+  startX = e.clientX; startY = e.clientY; dx = 0;
+  dragging = true; decided = false; justSwiped = false;
+});
+viewport.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  const mx = e.clientX - startX, my = e.clientY - startY;
+  if (!decided && Math.abs(mx) + Math.abs(my) > 10) {
+    decided = true;
+    if (Math.abs(my) > Math.abs(mx)) { dragging = false; return; }   // это прокрутка вниз/вверх
+    justSwiped = true;
+    document.getElementById("track").classList.add("dragging");
+  }
+  if (decided) {
+    dx = mx;
+    document.getElementById("track").style.transform =
+      `translateX(calc(${-index * 100}% + ${dx}px))`;
+  }
+});
+function endDrag() {
+  if (!dragging) return;
+  dragging = false;
+  if (!decided) return;
+  if (dx < -60) goTo(index + 1);
+  else if (dx > 60) goTo(index - 1);
+  else goTo(index);
+  setTimeout(() => { justSwiped = false; }, 50);
+}
+viewport.addEventListener("pointerup", endDrag);
+viewport.addEventListener("pointercancel", endDrag);
+viewport.addEventListener("pointerleave", endDrag);
+
+// На компьютере можно листать стрелками на клавиатуре
+document.addEventListener("keydown", e => {
+  if (document.getElementById("reader").hidden || mode !== "cards") return;
+  if (e.key === "ArrowLeft") goTo(index - 1);
+  if (e.key === "ArrowRight") goTo(index + 1);
+});
+
+/* ================================================================
+   СТАРТ
+   ================================================================ */
+renderSettings();
+showScreen("home");
+</script>

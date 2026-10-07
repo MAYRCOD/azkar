@@ -1,0 +1,11 @@
+{
+  "name": "azkar-tests",
+  "private": true,
+  "description": "Проверки приложения «Азкары» в браузере",
+  "scripts": {
+    "test": "bash run.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
