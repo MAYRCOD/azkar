@@ -71,6 +71,9 @@ body {
   overflow: hidden;
 }
 [hidden] { display: none !important; }
+/* Полосы прокрутки не показываем нигде */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .counter .label:empty { display: none; }
 /* Жирным — заголовки и надписи на кнопках, обычным — тексты для чтения */
 h1, h2, b, .back, .tab-item, .counter .label, .counter .num, .btn, .sheet-btn, .choice-row .txt { font-weight: 700; }
@@ -97,7 +100,7 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .choice b { font-family: var(--f-display); font-size: 18px; line-height: 1.25; }
 
 /* ---------- Чтение ---------- */
-#reader { padding-block: 10px 0; padding-inline: 0; gap: 10px; }
+#reader { padding-block: 10px 0; padding-inline: 0; gap: 10px; overflow: hidden; }
 #reader .topbar { margin-inline: 12px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .back { border: 0; background: none; padding: 4px 0; color: var(--accent-ink); font-size: 15px; }
@@ -115,10 +118,13 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .track { display: flex; height: 100%; transition: transform .38s var(--ease); will-change: transform; }
 .track.dragging { transition: none; }
 /* Каждая карточка — свой экран с прокруткой. Сначала виден арабский текст и счётчик,
-   перевод и транскрипция ниже — до них листают пальцем */
-.slide {
-  flex: 0 0 100%; height: 100%; overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; padding-inline: 12px;
+   перевод и транскрипция ниже — до них листают пальцем.
+   Полосу прокрутки прячем так: прокручиваемый блок (.scroll) на 24px шире карточки,
+   а карточка обрезает всё, что за её краем. Полоса оказывается в обрезанной части */
+.slide { flex: 0 0 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+.slide > .scroll {
+  height: 100%; width: calc(100% + 24px); overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; padding-left: 12px; padding-right: 36px;
 }
 .content { display: flex; flex-direction: column; gap: 14px; padding-block: 14px 8px; }
 .ar { font-family: var(--f-arabic); font-size: 28px; line-height: 1.95; direction: rtl; text-align: center; margin: 0; }
@@ -135,7 +141,7 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
    и сверху, и по бокам — поэтому не выглядит рамкой */
 .dock {
   position: sticky; bottom: 0; z-index: 1; margin-top: auto;
-  margin-inline: -12px; padding: 24px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  margin-left: -12px; margin-right: -36px; padding: 24px 36px calc(10px + env(safe-area-inset-bottom, 0px)) 12px;
   display: grid; gap: 6px;
 }
 .dock::before {
@@ -170,7 +176,7 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .btn { border: 1px solid var(--edge); background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 18px; font-weight: 600; color: var(--accent-ink); }
 
 /* ---------- Список (все азкары на одной странице) ---------- */
-.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-inline: 4px; padding-bottom: 24px; }
+.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-left: 12px; padding-right: 36px; margin-right: -24px; padding-bottom: 24px; }   /* тот же приём: полоса уходит за край экрана */
 .item { display: flex; flex-direction: column; gap: 14px; padding-block: 18px 22px; border-bottom: 1px solid var(--line); }
 .item .content { padding-block: 0; }
 .list-view .final { padding-block: 40px 24px; }
@@ -277,6 +283,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* ---------- Анимации ---------- */
 /* Экран появляется: лёгкое проявление со сдвигом снизу */
 .screen.enter { animation: screen-in .35s var(--ease); }
+/* Экран чтения — только плавное проявление, без сдвига: после сдвига iPhone
+   иногда оставляет текст «замыленным» */
+#reader.enter { animation: fade .3s ease; }
 @keyframes screen-in { from { opacity: 0; transform: translateY(10px); } }
 
 /* На главной элементы появляются по очереди */
@@ -620,6 +629,9 @@ function showScreen(id) {
   screen.classList.remove("enter");
   void screen.offsetWidth;
   screen.classList.add("enter");
+  // Когда анимация закончилась, снимаем её полностью — так iPhone рисует текст заново, чётко
+  clearTimeout(screen._enterTimer);
+  screen._enterTimer = setTimeout(() => screen.classList.remove("enter"), 900);
   // Нижняя панель видна везде, кроме чтения азкаров: там внизу счётчик
   const tabbar = document.getElementById("tabbar");
   tabbar.classList.toggle("away", id === "reader");
@@ -792,12 +804,13 @@ function buildSlides() {
   items.forEach((z, i) => {
     const slide = document.createElement("section");
     slide.className = "slide";
-    slide.innerHTML = `
+    slide.innerHTML = `<div class="scroll">
       ${contentHTML(z)}
       <div class="dock">
         ${counterHTML(i)}
         <p class="hint">Проведите влево или вправо, чтобы перейти</p>
-      </div>`;
+      </div>
+    </div>`;
     slide.querySelector(".counter").addEventListener("click", () => tap(i));
     track.appendChild(slide);
     updateCounter(i);
