@@ -148,6 +148,12 @@ const section = name => console.log("•", name);
     await q.goto(URL); await W(q, 1500);
     const name = await q.evaluate(async () => { const r = await fetch(document.querySelector("link[rel=manifest]").href); return r.ok ? (await r.json()).name : null; });
     check(name === "Азкары", "manifest не загрузился");
+    const icons = await q.evaluate(async () => {
+      const load = src => new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = src; });
+      return { apple: await load(document.querySelector("link[rel=apple-touch-icon]").href),
+               i192: await load("icon-192.png"), i512: await load("icon-512.png") };
+    });
+    check(icons.apple === 180 && icons.i192 === 192 && icons.i512 === 512, "иконки не загрузились или неверного размера: " + JSON.stringify(icons));
     check(await q.evaluate(async () => !!(await navigator.serviceWorker.ready).active), "офлайн-скрипт не включился");
     await q.reload(); await W(q, 800);
     await ctx.setOffline(true); await q.reload(); await W(q, 800);

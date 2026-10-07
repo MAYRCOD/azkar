@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Логотип «Азкары»: полумесяц со звездой над мечетью. Квадрат без скруглений —
+       iPhone и Android скругляют углы сами -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f8a56"/><stop offset="1" stop-color="#17543a"/>
+    </linearGradient>
+    <mask id="moon">
+      <rect width="1024" height="1024" fill="white"/>
+      <circle cx="590" cy="360" r="200" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+  <!-- полумесяц: большой круг, из которого вырезан круг поменьше -->
+  <circle cx="500" cy="420" r="230" fill="#f4d58a" mask="url(#moon)"/>
+  <polygon points="640.0,340.0 657.0,383.0 700.0,400.0 657.0,417.0 640.0,460.0 623.0,417.0 580.0,400.0 623.0,383.0" fill="#f4d58a"/>
+  <!-- силуэт мечети -->
+  <g fill="#0f3a25">
+    <rect x="0" y="830" width="1024" height="194"/>
+    <path d="M352 830 V 720 Q 352 640 432 600 Q 512 540 512 500 Q 512 540 592 600 Q 672 640 672 720 V 830 Z"/>
+    <rect x="505" y="455" width="14" height="50"/>
+    <rect x="226" y="610" width="40" height="220"/><path d="M216 612 L246 520 L276 612 Z"/>
+    <rect x="758" y="610" width="40" height="220"/><path d="M748 612 L778 520 L808 612 Z"/>
+    <path d="M286 830 V 760 Q 286 720 322 705 Q 352 690 352 760 V 830 Z"/>
+    <path d="M672 830 V 760 Q 672 690 702 705 Q 738 720 738 760 V 830 Z"/>
+  </g>
+</svg>
