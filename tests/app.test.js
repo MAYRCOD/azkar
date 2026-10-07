@@ -97,6 +97,31 @@ const section = name => console.log("•", name);
   await p.context().close();
 
   // ---------------------------------------------------------------
+  section("Свайп: смах, перетаскивание, «резинка», размытие только на текущей карточке");
+  {
+    const q = await freshPage({ viewport: { width: 390, height: 844 } });
+    const pos = () => q.locator("#pos").innerText();
+    const blur = () => q.evaluate(() => [...document.querySelectorAll(".dock")].filter(d => getComputedStyle(d, "::before").backdropFilter !== "none").length);
+    const drag = async (x0, step, n, pause = 0) => {
+      await q.mouse.move(x0, 300); await q.mouse.down();
+      for (let i = 1; i <= n; i++) { await q.mouse.move(x0 + i * step, 300); if (pause) await W(q, pause); }
+      if (pause) await W(q, 150);
+      await q.mouse.up(); await W(q, 500);
+    };
+    await q.click("#go-morning"); await W(q, 600);
+    check(await blur() === 1, "размытие должно быть ровно у одной карточки сразу после открытия");
+    await drag(100, 10, 20);       check(await pos() === "1 из 16", "на первой карточке свайп вправо должен оставлять на месте");
+    await drag(300, -5, 10, 40);   check(await pos() === "1 из 16", "медленное короткое движение не должно листать");
+    await drag(300, -10, 5);       check(await pos() === "2 из 16", "быстрый смах должен листать вперёд");
+    await drag(330, -10, 13, 30);  check(await pos() === "3 из 16", "перетаскивание на треть экрана должно листать");
+    await drag(60, 12, 5);         check(await pos() === "2 из 16", "быстрый смах вправо должен листать назад");
+    check(await blur() === 1, "после свайпа размытие должно быть ровно у одной карточки");
+    await q.click("#counter-1"); await W(q, 300);
+    check((await q.locator("#counter-1 .num").innerText()) === "1 / 10", "после свайпа нажатие на счётчик не считается");
+    await q.context().close();
+  }
+
+  // ---------------------------------------------------------------
   section("Вёрстка на разных экранах: отступы, полоса прокрутки, номера аятов");
   for (const w of [320, 390, 430]) {
     p = await freshPage({ viewport: { width: w, height: 700 } });

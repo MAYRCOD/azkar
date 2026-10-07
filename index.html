@@ -123,7 +123,7 @@ html.standalone #reader { padding-top: 34px; }
 .icon-btn:active { background: #f1f5f2; transform: scale(.92); }
 
 .viewport { flex: 1; min-height: 0; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
-.track { display: flex; height: 100%; transition: transform .38s var(--ease); will-change: transform; }
+.track { display: flex; height: 100%; transition: transform .38s var(--ease); will-change: transform; transform: translate3d(0,0,0); }
 .track.dragging { transition: none; }
 /* Каждая карточка — свой экран с прокруткой. Сначала виден арабский текст и счётчик,
    перевод и транскрипция ниже — до них листают пальцем.
@@ -156,11 +156,15 @@ html.standalone #reader { padding-top: 34px; }
   content: ""; position: absolute; inset: 0; z-index: -1;
   /* к низу экрана текст плавно растворяется в белый — без резкой границы */
   background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.6) 40%, rgba(255,255,255,.97) 100%);
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
   mask-composite: intersect;
+}
+/* Размытие — тяжёлая операция для телефона. Включаем его только у карточки,
+   которую сейчас читают, и только когда лента не двигается */
+.track:not(.dragging):not(.moving) .slide.active .dock::before {
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
 
 /* Счётчик: длинная кнопка, которая заполняется по мере нажатий */
@@ -171,7 +175,7 @@ html.standalone #reader { padding-top: 34px; }
   font-size: 14px; user-select: none; -webkit-tap-highlight-color: transparent;
   box-shadow: inset 0 0 0 1px rgba(30, 43, 35, .08), 0 2px 4px rgba(30, 43, 35, .06), 0 8px 20px rgba(30, 43, 35, .10);
 }
-.counter .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--counter-fill); transition: width .3s var(--ease), background .35s ease; }
+.counter .fill { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(0); background: var(--counter-fill); transition: transform .3s var(--ease), background .35s ease; }
 .counter.full .fill { background: var(--accent); }   /* дочитал — кнопка становится зелёной */
 .counter span { position: relative; }
 .counter .num { font-size: 17px; font-variant-numeric: tabular-nums; }
@@ -841,7 +845,7 @@ function updateCounter(i) {
   const btn = document.getElementById("counter-" + i);
   const full = n >= z.times;
   btn.classList.toggle("full", full);
-  btn.querySelector(".fill").style.width = (n / z.times * 100) + "%";
+  btn.querySelector(".fill").style.transform = `scaleX(${n / z.times})`;
   btn.querySelector(".label").textContent = full ? "Прочитано ✓" : "";   // пока читаешь — только цифры
   btn.querySelector(".num").textContent = `${n} / ${z.times}`;
 }
@@ -876,8 +880,18 @@ function updatePos() {
 function goTo(i, animate = true) {
   index = Math.max(0, Math.min(items.length, i));
   const track = document.getElementById("track");
-  track.classList.toggle("dragging", !animate);
-  track.style.transform = `translateX(${-index * 100}%)`;
+  track.classList.toggle("moving", animate);          // пока лента едет, размытие выключено
+  if (animate) {
+    track.classList.remove("dragging");
+    track.style.transform = `translate3d(${-index * 100}%, 0, 0)`;
+  } else {
+    // мгновенно, без анимации: на миг выключаем плавность, ставим ленту и включаем обратно
+    track.classList.add("dragging");
+    track.style.transform = `translate3d(${-index * 100}%, 0, 0)`;
+    void track.offsetWidth;
+    track.classList.remove("dragging");
+  }
+  [...track.children].forEach((sl, k) => sl.classList.toggle("active", k === index));
   document.getElementById("pos").textContent =
     index < items.length ? `${index + 1} из ${items.length}` : "Готово";
 }
@@ -889,39 +903,57 @@ function goTo(i, animate = true) {
    для прокрутки длинного текста.
    ================================================================ */
 const viewport = document.getElementById("viewport");
+const track = document.getElementById("track");
+// Лента доехала — убираем отметку движения, размытие включится снова
+track.addEventListener("transitionend", e => { if (e.target === track) track.classList.remove("moving"); });
+
 let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, justSwiped = false;
+let lastX = 0, lastT = 0, speed = 0, frame = 0, width = 0;
 
 viewport.addEventListener("pointerdown", e => {
-  startX = e.clientX; startY = e.clientY; dx = 0;
-  dragging = true; decided = false; justSwiped = false;
+  startX = lastX = e.clientX; startY = e.clientY; lastT = e.timeStamp;
+  dx = 0; speed = 0; dragging = true; decided = false; justSwiped = false;
+  width = viewport.clientWidth;
 });
 viewport.addEventListener("pointermove", e => {
   if (!dragging) return;
   const mx = e.clientX - startX, my = e.clientY - startY;
-  if (!decided && Math.abs(mx) + Math.abs(my) > 10) {
+  if (!decided) {
+    if (Math.abs(mx) + Math.abs(my) < 10) return;
     decided = true;
     if (Math.abs(my) > Math.abs(mx)) { dragging = false; return; }   // это прокрутка вниз/вверх
     justSwiped = true;
-    document.getElementById("track").classList.add("dragging");
+    startX = e.clientX;                     // отсчёт с этого места — карточка трогается плавно, без скачка
+    track.classList.add("dragging");
   }
-  if (decided) {
-    dx = mx;
-    document.getElementById("track").style.transform =
-      `translateX(calc(${-index * 100}% + ${dx}px))`;
-  }
+  dx = e.clientX - startX;
+  // у первой и последней карточки — «резинка»: тянется втрое туже
+  if ((index === 0 && dx > 0) || (index === items.length && dx < 0)) dx /= 3;
+  // скорость пальца (пикселей в миллисекунду) — для быстрого смаха
+  const dt = e.timeStamp - lastT;
+  if (dt > 0) speed = 0.8 * ((e.clientX - lastX) / dt) + 0.2 * speed;
+  lastX = e.clientX; lastT = e.timeStamp;
+  // двигаем ленту не чаще, чем экран рисует кадры
+  if (!frame) frame = requestAnimationFrame(() => {
+    frame = 0;
+    track.style.transform = `translate3d(${-index * width + dx}px, 0, 0)`;
+  });
 });
 function endDrag() {
   if (!dragging) return;
   dragging = false;
   if (!decided) return;
-  if (dx < -60) goTo(index + 1);
-  else if (dx > 60) goTo(index - 1);
+  cancelAnimationFrame(frame); frame = 0;
+  // перелистываем, если протащили на пятую часть экрана или быстро смахнули
+  if (dx < -width * 0.2 || (speed < -0.4 && dx < 0)) goTo(index + 1);
+  else if (dx > width * 0.2 || (speed > 0.4 && dx > 0)) goTo(index - 1);
   else goTo(index);
   setTimeout(() => { justSwiped = false; }, 50);
 }
 viewport.addEventListener("pointerup", endDrag);
 viewport.addEventListener("pointercancel", endDrag);
-viewport.addEventListener("pointerleave", endDrag);
+// При повороте экрана ширина меняется — ставим ленту ровно
+window.addEventListener("resize", () => { if (!document.getElementById("reader").hidden && mode === "cards") goTo(index, false); });
 
 // На компьютере можно листать стрелками на клавиатуре
 document.addEventListener("keydown", e => {
