@@ -89,8 +89,8 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 #reader { padding-block: 10px 0; padding-inline: 0; gap: 10px; overflow: hidden; }
 /* Приложение на экране «Домой» (без адресной строки Safari): iOS слегка размывает
    полосу под часами и батареей. Отодвигаем заголовок чтения ниже этой полосы */
-@media (display-mode: standalone) { #reader { padding-top: 34px; } }
-html.standalone #reader { padding-top: 34px; }
+@media (display-mode: standalone) { #reader { padding-top: 22px; } }
+html.standalone #reader { padding-top: 22px; }
 #reader .topbar { margin-inline: 12px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .back { border: 0; background: none; padding: 4px 0; color: var(--accent-ink); font-size: 15px; }
@@ -166,7 +166,7 @@ html.standalone #reader { padding-top: 34px; }
 .counter:active { transform: scale(.99); }
 .hint { text-align: center; font-size: 11px; color: var(--muted); margin: 0; }
 
-.final { flex: 1; display: grid; place-content: center; text-align: center; gap: 14px; padding-bottom: 28vh; }   /* поднимаем к визуальному центру */
+.final { flex: 1; display: grid; place-content: center; text-align: center; gap: 14px; padding-bottom: 16vh; }   /* компенсируем полосу сверху — надпись ровно посередине экрана */
 .final h2 { font-family: var(--f-display); font-size: 25px; margin: 0; }
 .btn { border: 1px solid var(--edge); background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 18px; font-weight: 600; color: var(--accent-ink); }
 
