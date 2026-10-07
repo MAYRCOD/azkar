@@ -12,8 +12,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-  /* Отступы под «чёлку» и полоску внизу iPhone */
-  html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; height: 100%; }
+  /* Отступ под «чёлку» сверху. Снизу общего отступа нет: экраны доходят до края,
+     а под полоску «домой» отступают сами (панель со счётчиком, нижнее меню) */
+  html { padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; height: 100%; }
   body { margin: 0; -webkit-text-size-adjust: 100%; }
   img { max-width: 100%; }
 </style>
@@ -153,7 +154,8 @@ html.standalone #reader { padding-top: 34px; }
 }
 .dock::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.6) 40%);
+  /* к низу экрана текст плавно растворяется в белый — без резкой границы */
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.6) 40%, rgba(255,255,255,.97) 100%);
   -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
   -webkit-mask-composite: source-in;
@@ -183,7 +185,7 @@ html.standalone #reader { padding-top: 34px; }
 .btn { border: 1px solid var(--edge); background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 18px; font-weight: 600; color: var(--accent-ink); }
 
 /* ---------- Список (все азкары на одной странице) ---------- */
-.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-left: 12px; padding-right: 36px; margin-right: -24px; padding-bottom: 24px; }   /* тот же приём: полоса уходит за край экрана */
+.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-left: 12px; padding-right: 36px; margin-right: -24px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* тот же приём: полоса уходит за край экрана */
 .item { display: flex; flex-direction: column; gap: 14px; padding-block: 18px 22px; border-bottom: 1px solid var(--line); }
 .item .content { padding-block: 0; }
 .list-view .final { padding-block: 40px 24px; }

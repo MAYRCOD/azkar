@@ -12,8 +12,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-  /* Отступы под «чёлку» и полоску внизу iPhone */
-  html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; height: 100%; }
+  /* Отступ под «чёлку» сверху. Снизу общего отступа нет: экраны доходят до края,
+     а под полоску «домой» отступают сами (панель со счётчиком, нижнее меню) */
+  html { padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; height: 100%; }
   body { margin: 0; -webkit-text-size-adjust: 100%; }
   img { max-width: 100%; }
 </style>
