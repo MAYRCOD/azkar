@@ -68,7 +68,7 @@ html, body { height: 100%; }
 body {
   background: var(--bg); color: var(--fg);
   font-family: var(--f-body); font-size: 15.5px; line-height: 1.5;
-  padding-inline: 8px; padding-block: 0;
+  padding: 0;   /* без отступов: экран чтения идёт от края до края, отступы — внутри экранов */
   overflow: hidden;
 }
 [hidden] { display: none !important; }
@@ -84,7 +84,7 @@ h1, h2, b, .back, .tab-item, .counter .label, .counter .num, .btn, .sheet-btn, .
 .choice-row small { font-weight: 400; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.screen { height: 100%; max-width: 576px; margin: 0 auto; padding-inline: 8px; display: flex; flex-direction: column; }
+.screen { height: 100%; max-width: 576px; margin: 0 auto; padding-inline: 16px; display: flex; flex-direction: column; }
 
 /* ---------- Главная ---------- */
 /* Снизу отступ больше, чем сверху: так блок стоит в «визуальном центре» — чуть выше
@@ -106,12 +106,14 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .choice b { font-family: var(--f-display); font-size: 18px; line-height: 1.25; }
 
 /* ---------- Чтение ---------- */
-#reader { padding-block: 10px 0; padding-inline: 0; gap: 10px; overflow: hidden; }
+/* Чтение — на всю ширину экрана: карточки при свайпе уезжают прямо за край телефона,
+   а не обрезаются по невидимой линии. Отступ для текста — внутри карточки */
+#reader { padding-block: 10px 0; padding-inline: 0; max-width: none; gap: 10px; overflow: hidden; }
 /* Приложение на экране «Домой» (без адресной строки Safari): iOS слегка размывает
    полосу под часами и батареей. Отодвигаем заголовок чтения ниже этой полосы */
 @media (display-mode: standalone) { #reader { padding-top: 22px; } }
 html.standalone #reader { padding-top: 22px; }
-#reader .topbar { margin-inline: 12px; }
+#reader .topbar { margin-inline: 20px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .back { border: 0; background: none; padding: 4px 0; color: var(--accent-ink); font-size: 15px; }
 .pos { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -134,9 +136,9 @@ html.standalone #reader { padding-top: 22px; }
 .slide { flex: 0 0 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
 .slide > .scroll {
   height: 100%; width: calc(100% + 24px); overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; padding-left: 12px; padding-right: 36px;
+  display: flex; flex-direction: column; padding-left: 20px; padding-right: 44px;
 }
-.content { display: flex; flex-direction: column; gap: 14px; padding-block: 14px 8px; }
+.content { display: flex; flex-direction: column; gap: 14px; padding-block: 14px 8px; width: 100%; max-width: 560px; margin-inline: auto; }   /* на широком экране текст не растягивается */
 .ar { font-family: var(--f-arabic); font-size: calc(28px * var(--ar-k, 1)); line-height: 1.95; direction: rtl; text-align: center; margin: 0; }
 .ru { margin: 0; font-size: calc(15.5px * var(--tx-k, 1)); }
 .tr { margin: 0; color: var(--muted); font-size: calc(14.5px * var(--tx-k, 1)); }
@@ -147,21 +149,19 @@ html.standalone #reader { padding-top: 22px; }
 
 /* Нижняя панель со счётчиком: прилипает к низу экрана,
    а текст, который уходит под неё, слегка размывается.
-   Размытие лежит отдельным слоем (::before) и плавно исчезает
-   и сверху, и по бокам — поэтому не выглядит рамкой */
+   Размытие лежит отдельным слоем (::before) и плавно появляется сверху,
+   а по бокам доходит до самого края экрана — без видимых границ */
 .dock {
   position: sticky; bottom: 0; z-index: 1; margin-top: auto;
-  margin-left: -12px; margin-right: -36px; padding: 24px 36px calc(10px + env(safe-area-inset-bottom, 0px)) 12px;
+  margin-left: -20px; margin-right: -44px; padding: 24px 44px calc(10px + env(safe-area-inset-bottom, 0px)) 20px;
   display: grid; gap: 6px;
 }
 .dock::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
   /* к низу экрана текст плавно растворяется в белый — без резкой границы */
   background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.6) 40%, rgba(255,255,255,.97) 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to bottom, transparent, #000 24px), linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px);
+  mask-image: linear-gradient(to bottom, transparent, #000 24px);
 }
 /* Размытие — тяжёлая операция для телефона. Включаем его только у карточки,
    которую сейчас читают, и только когда лента не двигается */
@@ -170,6 +170,7 @@ html.standalone #reader { padding-top: 22px; }
 }
 
 /* Счётчик: длинная кнопка, которая заполняется по мере нажатий */
+.dock > *, .item > .counter { width: 100%; max-width: 560px; margin-inline: auto; }
 .counter {
   position: relative; overflow: hidden; width: 100%; border: 0; border-radius: 14px;
   background: var(--counter-bg); padding: 14px 18px; min-height: 54px;
@@ -191,7 +192,7 @@ html.standalone #reader { padding-top: 22px; }
 .btn { border: 1px solid var(--edge); background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 18px; font-weight: 600; color: var(--accent-ink); }
 
 /* ---------- Список (все азкары на одной странице) ---------- */
-.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-left: 12px; padding-right: 36px; margin-right: -24px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* тот же приём: полоса уходит за край экрана */
+.list-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-left: 20px; padding-right: 44px; margin-right: -24px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* тот же приём: полоса уходит за край экрана */
 .item { display: flex; flex-direction: column; gap: 14px; padding-block: 18px 22px; border-bottom: 1px solid var(--line); }
 .item .content { padding-block: 0; }
 .list-view .final { padding-block: 40px 24px; }

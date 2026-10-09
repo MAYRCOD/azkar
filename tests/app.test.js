@@ -236,13 +236,15 @@ const section = name => console.log("•", name);
         let broken = 0;
         document.querySelectorAll(".ar .nowrap").forEach(sp => { if (new Set([...sp.getClientRects()].map(x => Math.round(x.top / 10))).size > 1) broken++; });
         return { left: L - vis.left, right: vis.right - R, barHidden: sc.getBoundingClientRect().right > vis.right,
-                 enter: document.getElementById("reader").classList.contains("enter"), pageW: document.documentElement.scrollWidth, broken };
+                 enter: document.getElementById("reader").classList.contains("enter"), pageW: document.documentElement.scrollWidth, broken,
+                 edge: (() => { const v = document.getElementById(mode === "cards" ? "viewport" : "list-view").getBoundingClientRect(); return v.left <= 0 && v.right >= innerWidth; })() };
       }, mode);
       check(r.left >= 8 && r.right >= 8, `${w}px ${mode}: текст слишком близко к краю`);
       check(r.barHidden, `${w}px ${mode}: полоса прокрутки не спрятана`);
       check(!r.enter, `${w}px ${mode}: анимация появления не снялась`);
       check(r.pageW <= w, `${w}px ${mode}: страница шире экрана`);
       check(r.broken === 0, `${w}px ${mode}: номер аята оторвался от слова`);
+      check(r.edge, `${w}px ${mode}: экран чтения не от края до края — при свайпе будет видна граница`);
       await p.click("#back"); await W(p, 200);
     }
     await p.context().close();
