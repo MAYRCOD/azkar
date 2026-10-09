@@ -198,8 +198,7 @@ html.standalone #reader { padding-top: 22px; }
 
 /* ---------- Счётчик (тасбих) ---------- */
 /* Просто число. Нажимаешь в любом месте средней части экрана — прибавляется.
-   Вокруг числа кольцо из 33 бусин: каждое нажатие поворачивает его на одну бусину,
-   как будто перебираешь чётки. Три независимых счётчика переключаются «таблетками» сверху */
+   Три независимых счётчика переключаются «таблетками» сверху, в каждой — её число */
 #tasbih { padding-block: 32px calc(96px + env(safe-area-inset-bottom, 0px)); gap: 16px; overflow: hidden; touch-action: manipulation; }
 
 .tb-slots { display: flex; justify-content: center; gap: 8px; }
@@ -208,10 +207,8 @@ html.standalone #reader { padding-top: 22px; }
   border-radius: 999px; padding: 6px 12px; display: flex; align-items: baseline; justify-content: center; gap: 6px;
   transition: transform .15s ease, background .25s ease, color .25s ease, box-shadow .25s ease;
 }
-.tb-slot small { font-size: 11.5px; color: var(--muted); transition: color .25s ease; }
 .tb-slot b { font-size: 15px; font-variant-numeric: tabular-nums; line-height: 1.3; }
 .tb-slot[aria-selected="true"] { background: var(--accent); color: #fff; box-shadow: 0 6px 18px rgba(52, 199, 89, .28); border-color: transparent; }
-.tb-slot[aria-selected="true"] small { color: rgba(255, 255, 255, .85); }
 .tb-slot:active { transform: scale(.96); }
 
 /* Вся средняя часть экрана — одна большая кнопка */
@@ -222,14 +219,9 @@ html.standalone #reader { padding-top: 22px; }
   user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
 /* Круг занимает почти всю высоту свободного места, но не шире экрана */
-.tb-dial { position: relative; width: min(100cqh - 40px, 100cqw - 24px, 300px); aspect-ratio: 1; display: grid; place-items: center; pointer-events: none; }
-.tb-dial > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.tb-beads { transition: transform .35s var(--ease); transform-origin: 50px 50px; }
-.tb-beads.instant { transition: none; }
-.tb-beads circle { fill: var(--counter-fill); }
-.tb-mark { fill: var(--accent); }
+.tb-dial { position: relative; width: min(100cqh - 40px, 100cqw - 48px, 270px); aspect-ratio: 1; display: grid; place-items: center; pointer-events: none; }
 .tb-face {
-  width: 76%; aspect-ratio: 1; border-radius: 50%; background: var(--surface);
+  width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--surface);
   box-shadow: 0 2px 6px rgba(30, 43, 35, .06), 0 18px 44px rgba(30, 43, 35, .14);
   display: grid; place-content: center; text-align: center; transition: transform .12s ease;
 }
@@ -427,13 +419,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </button>
   </div>
   <div class="tb-slots" id="tb-slots" role="tablist" aria-label="Счётчики">
-    <button class="tb-slot" role="tab" data-slot="0"><small>1</small><b>0</b></button>
-    <button class="tb-slot" role="tab" data-slot="1"><small>2</small><b>0</b></button>
-    <button class="tb-slot" role="tab" data-slot="2"><small>3</small><b>0</b></button>
+    <button class="tb-slot" role="tab" data-slot="0" aria-label="Счётчик 1"><b>0</b></button>
+    <button class="tb-slot" role="tab" data-slot="1" aria-label="Счётчик 2"><b>0</b></button>
+    <button class="tb-slot" role="tab" data-slot="2" aria-label="Счётчик 3"><b>0</b></button>
   </div>
   <button class="tb-stage" id="tb-tap" aria-label="Прибавить один">
     <div class="tb-dial">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><g class="tb-beads" id="tb-beads"></g><circle class="tb-mark" cx="50" cy="3" r="3"/></svg>
       <div class="tb-face"><span class="tb-num" id="tb-num">0</span></div>
     </div>
     <span class="tb-hint" id="tb-hint">Нажимайте в любом месте</span>
@@ -1055,7 +1046,6 @@ document.addEventListener("keydown", e => {
    Числа сохраняются в памяти телефона и не обнуляются в полночь —
    только кнопкой сброса.
    ================================================================ */
-const BEADS = 33;   // бусин в кольце, как в обычных чётках
 let tb = Object.assign({ active: 0, values: [0, 0, 0] }, load("azkar-counter", {}));
 
 // Лёгкий «щелчок» под пальцем. На Android есть navigator.vibrate.
@@ -1074,21 +1064,10 @@ function haptic(ms) {
   else hapticLabel.click();
 }
 
-// Рисуем бусины по кругу один раз: координаты по синусу и косинусу угла
-document.getElementById("tb-beads").innerHTML = Array.from({ length: BEADS }, (_, k) => {
-  const a = k / BEADS * 2 * Math.PI;
-  return `<circle cx="${(50 + 47 * Math.sin(a)).toFixed(2)}" cy="${(50 - 47 * Math.cos(a)).toFixed(2)}" r="1.7"/>`;
-}).join("");
-
-// instant — без анимации поворота (при переключении счётчика, чтобы кольцо не крутилось долго)
-function renderTasbih(instant = false) {
+function renderTasbih() {
   const n = tb.values[tb.active];
   document.getElementById("tb-num").textContent = n;
   document.getElementById("tb-hint").classList.toggle("gone", n > 0);
-  const beads = document.getElementById("tb-beads");
-  beads.classList.toggle("instant", instant);
-  beads.style.transform = `rotate(${-n * 360 / BEADS}deg)`;   // каждое нажатие — на одну бусину
-  if (instant) { void beads.offsetWidth; beads.classList.remove("instant"); }
   document.querySelectorAll(".tb-slot").forEach(sl => {
     const k = +sl.dataset.slot;
     sl.setAttribute("aria-selected", k === tb.active ? "true" : "false");
@@ -1109,7 +1088,7 @@ stage.addEventListener("click", () => {
 document.querySelectorAll(".tb-slot").forEach(sl => sl.addEventListener("click", () => {
   tb.active = +sl.dataset.slot;
   store("azkar-counter", tb);
-  renderTasbih(true);
+  renderTasbih();
 }));
 
 document.getElementById("tb-reset").addEventListener("click", () => askReset(
@@ -1122,7 +1101,7 @@ document.getElementById("tb-reset").addEventListener("click", () => askReset(
 // Запомнили, открыто ли приложение с экрана «Домой» (старые iPhone сообщают это только так)
 if (navigator.standalone) document.documentElement.classList.add("standalone");
 renderSettings();
-renderTasbih(true);
+renderTasbih();
 showScreen("home");
 </script>
 
