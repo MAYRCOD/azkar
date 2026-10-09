@@ -139,6 +139,46 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .choice img { width: 100%; max-width: 100%; box-shadow: 0 6px 18px rgba(var(--sh), .12); aspect-ratio: 1; border-radius: 50%; object-fit: cover; display: block; }
 .choice b { font-family: var(--f-display); font-size: 18px; line-height: 1.25; }
 
+/* ---------- Главная в стиле «Изумруд и золото» ----------
+   Тёмно-зелёный фон с узором из восьмиконечных звёзд, золотые надписи,
+   утренние и вечерние азкары — арки, как окна мечети. Фон ставится на весь
+   экран (html.home-e), только пока открыта главная */
+:root { --emerald: #0c2a20; --emerald-2: #1f5a43; --gold-e: #e2bf6a; --cream: #f4ecd8; }
+html.home-e, html.home-e body { background-color: var(--emerald); }
+html.home-e body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 4l4.7 6.6 7.9-1.3-1.3 7.9L38 20l-6.7 2.8 1.3 7.9-7.9-1.3L20 36l-4.7-6.6-7.9 1.3 1.3-7.9L2 20l6.7-2.8-1.3-7.9 7.9 1.3z' fill='none' stroke='%23d6b25e' stroke-opacity='.16' stroke-width='1'/%3E%3C/svg%3E"), radial-gradient(120% 70% at 50% 0%, var(--emerald-2), var(--emerald) 70%);
+  background-size: 40px 40px, 100% 100%;
+}
+#home { color: var(--cream); gap: clamp(16px, 3vh, 28px); padding-block: 20px calc(100px + env(safe-area-inset-bottom, 0px)); }
+#home .home-title { justify-items: center; gap: 4px; }
+#home .ar-title { color: var(--gold-e); font-size: clamp(50px, 8vh, 68px); text-shadow: 0 0 30px rgba(226, 191, 106, .35); }
+.e-line { width: 120px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-e), transparent); }
+#home .choice {
+  display: block; padding: 0; gap: 0; position: relative; overflow: hidden;
+  aspect-ratio: .7; max-height: 36vh; width: 100%;
+  border: 2px solid var(--gold-e); border-radius: 999px 999px 22px 22px;
+  background: var(--emerald); box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+/* картинки нарисованы кругом на светлом фоне — увеличиваем на 30%, чтобы углы ушли за край арки */
+#home .choice img { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; border-radius: 0; object-fit: cover; box-shadow: none; transform: scale(1.3); }
+#home .choice b {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 44px 6px 14px; text-align: center;
+  font-size: 17px; color: #fff; background: linear-gradient(transparent, rgba(0, 0, 0, .7));
+}
+#home .done-badge { top: 24%; right: 12px; box-shadow: 0 0 0 2px var(--emerald), 0 3px 8px rgba(0, 0, 0, .3); }
+.e-sects { display: grid; gap: 10px; }
+.e-card {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 13px 16px; border-radius: 18px; color: var(--cream);
+  background: rgba(244, 236, 216, .07); border: 1px solid rgba(226, 191, 106, .35);
+  transition: transform .15s ease, background .2s ease;
+}
+.e-card:active { transform: scale(.98); background: rgba(244, 236, 216, .12); }
+.e-card i { flex: none; width: 38px; height: 38px; border-radius: 12px; background: var(--gold-e); color: var(--emerald); display: grid; place-items: center; }
+.e-card i svg { width: 21px; height: 21px; }
+.e-card span { display: grid; } .e-card b { font-size: 16px; } .e-card small { font-size: 12.5px; opacity: .7; }
+.e-card em { position: absolute; right: 16px; font-style: normal; font-family: var(--f-arabic); font-size: 32px; color: var(--gold-e); opacity: .35; }
+
 /* ---------- Чтение ---------- */
 /* Чтение — на всю ширину экрана: карточки при свайпе уезжают прямо за край телефона,
    а не обрезаются по невидимой линии. Отступ для текста — внутри карточки */
@@ -313,17 +353,12 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .sheet-btn.plain { background: none; color: var(--accent-ink); padding: 10px; }
 .sheet-btn.plain:disabled { color: var(--inactive); }
 
-/* Шестерёнка настроек в правом верхнем углу главной */
-#home { position: relative; }
-.gear-btn { position: absolute; top: 14px; right: 12px; width: 40px; height: 40px; }
-.gear-btn svg { width: 23px; height: 23px; }
-/* Настройки открываются из шестерёнки — сверху кнопка «Назад» */
-.settings-top { display: flex; align-items: center; gap: 6px; margin-left: -4px; }
 
 /* ---------- Дуа и Коран (пока заготовки разделов) ---------- */
-#dua, #quran { overflow-y: auto; padding-block: 32px calc(110px + env(safe-area-inset-bottom, 0px)); gap: 16px; }
+#dua, #quran { overflow-y: auto; padding-block: 18px calc(110px + env(safe-area-inset-bottom, 0px)); gap: 16px; }
 #dua h1, #quran h1 { font-size: 26px; }
 .page-head { display: grid; gap: 2px; }
+#dua > .back, #quran > .back { align-self: flex-start; }
 .page-head small { color: var(--muted); font-size: 13.5px; }
 .soon {
   display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px;
@@ -350,8 +385,8 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .surah .nm { flex: 1; display: grid; } .surah .nm b { font-size: 15px; } .surah .nm small { color: var(--muted); font-size: 12px; }
 .surah .ar { font-size: 22px; line-height: 1.6; color: var(--fg); }
 #dua.enter > *, #quran.enter > * { animation: rise .5s var(--ease) backwards; }
-#dua.enter > :nth-child(2), #quran.enter > :nth-child(2) { animation-delay: .05s; }
-#dua.enter > :nth-child(3), #quran.enter > :nth-child(3) { animation-delay: .1s; }
+#dua.enter > :nth-child(3), #quran.enter > :nth-child(3) { animation-delay: .05s; }
+#dua.enter > :nth-child(4), #quran.enter > :nth-child(4) { animation-delay: .1s; }
 
 /* ---------- Настройки (в духе настроек iPhone) ---------- */
 #settings { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 14px; }
@@ -434,8 +469,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .tabbar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  width: min(372px, calc(100% - 24px));
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+  width: min(330px, calc(100% - 32px));
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;
   background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
   box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 10px 28px rgba(var(--sh), .12);
   padding: 4px; z-index: 10;
@@ -443,21 +478,24 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 .tabbar.away { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
 .tabbar::before {
-  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 20px) / 4);
-  border-radius: 999px; background: var(--press); transition: transform .38s var(--ease), opacity .2s ease;
+  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3);
+  border-radius: 999px; background: var(--press); transition: transform .38s var(--ease);
 }
-/* Подложка переезжает под выбранную вкладку: на нужное число своих ширин + промежутки */
-.tabbar[data-active="dua"]::before { transform: translateX(calc(100% + 4px)); }
-.tabbar[data-active="quran"]::before { transform: translateX(calc(200% + 8px)); }
-.tabbar[data-active="tasbih"]::before { transform: translateX(calc(300% + 12px)); }
-.tabbar[data-active="settings"]::before { opacity: 0; }   /* настройки — не вкладка, ничего не подсвечиваем */
+/* Подложка переезжает под выбранную вкладку: на одну или две своих ширины + промежуток */
+.tabbar[data-active="tasbih"]::before { transform: translateX(calc(100% + 4px)); }
+.tabbar[data-active="settings"]::before { transform: translateX(calc(200% + 8px)); }
 .tab-item {
   display: grid; justify-items: center; gap: 2px; border: 0; background: none;
-  border-radius: 999px; padding: 6px 2px 5px; color: var(--inactive); font-size: 11.5px; position: relative; white-space: nowrap;
+  border-radius: 999px; padding: 6px 6px 5px; color: var(--inactive); font-size: 12px; position: relative;
   transition: color .25s ease, transform .15s ease;
 }
 .tab-item svg { width: 21px; height: 21px; }
 .tab-item[aria-selected="true"] { color: var(--accent-ink); }
+/* Нижняя панель в стиле главной: изумрудная, выбранная вкладка — золотая */
+.tabbar { background: #12382b; border-color: rgba(226, 191, 106, .3); box-shadow: 0 2px 6px rgba(0, 0, 0, .12), 0 10px 28px rgba(0, 0, 0, .25); }
+.tabbar::before { background: rgba(226, 191, 106, .16); }
+.tab-item { color: rgba(244, 236, 216, .5); }
+.tab-item[aria-selected="true"] { color: var(--gold-e); }
 
 /* ---------- Анимации ---------- */
 /* Экран появляется: лёгкое проявление со сдвигом снизу */
@@ -468,7 +506,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 @keyframes screen-in { from { opacity: 0; transform: translateY(10px); } }
 
 /* На главной элементы появляются по очереди */
-#home.enter .home-title, #home.enter .choice { animation: rise .5s var(--ease) backwards; }
+#home.enter .home-title, #home.enter .choice, #home.enter .e-card { animation: rise .5s var(--ease) backwards; }
+#home.enter .e-card:nth-child(1) { animation-delay: .16s; }
+#home.enter .e-card:nth-child(2) { animation-delay: .2s; }
 #home.enter .choice:nth-child(1) { animation-delay: .06s; }
 #home.enter .choice:nth-child(2) { animation-delay: .12s; }
 /* Хадисы и строки настроек — тоже по очереди, задержку задаёт --i */
@@ -497,22 +537,25 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== ГЛАВНАЯ ===== -->
 <main class="screen" id="home">
-  <button class="icon-btn gear-btn" id="open-settings" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.3 2h3.4l.6 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8c.1.6.1 1.2 0 1.8l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.6 2.6h-3.4l-.6-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.8a6 6 0 0 1 0-1.8l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" transform="translate(0 1)"/></svg></button>
   <div class="home-title">
     <span class="ar-title" lang="ar">أَذْكَار</span>
-    <h1>Азкары</h1>
+    <span class="e-line" aria-hidden="true"></span>
   </div>
   <div class="choices">
     <button class="choice" id="go-morning">
       <img src="data:image/jpeg;base64,__IMG_MORNING__" alt="">
-      <b>Утренние азкары</b>
+      <b>Утренние</b>
       <span class="done-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
     </button>
     <button class="choice" id="go-evening">
       <img src="data:image/jpeg;base64,__IMG_EVENING__" alt="">
-      <b>Вечерние азкары</b>
+      <b>Вечерние</b>
       <span class="done-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
     </button>
+  </div>
+  <div class="e-sects">
+    <button class="e-card" id="go-dua"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.6 21H7.8a3 3 0 0 1-2.6-1.5L2.6 15a1.4 1.4 0 0 1 2.3-1.5L6.6 16V5.3a1.3 1.3 0 0 1 2.6 0V11h.3V3.6a1.3 1.3 0 0 1 2.6 0V21zM13.4 21h2.8a3 3 0 0 0 2.6-1.5l2.6-4.5a1.4 1.4 0 0 0-2.3-1.5L17.4 16V5.3a1.3 1.3 0 0 0-2.6 0V11h-.3V3.6a1.3 1.3 0 0 0-1.1-1.3z"/></svg></i><span><b>Дуа</b><small>на случаи жизни</small></span><em lang="ar" aria-hidden="true">دُعَاء</em></button>
+    <button class="e-card" id="go-quran"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.5C10 4 7.3 3.4 4 3.6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1c3.1-.1 5.6.5 7.4 1.9.4.3.9.3 1.2 0 1.8-1.4 4.3-2 7.4-1.9a1 1 0 0 0 1-1v-13a1 1 0 0 0-1-1c-3.3-.2-6 .4-8 1.9z"/></svg></i><span><b>Коран</b><small>114 сур</small></span><em lang="ar" aria-hidden="true">قُرْآن</em></button>
   </div>
 </main>
 
@@ -533,6 +576,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== ДУА (заготовка раздела: категории есть, текстов пока нет) ===== -->
 <main class="screen" id="dua" hidden>
+  <button class="back" data-back>‹ Назад</button>
   <div class="page-head"><h1>Дуа</h1><small>на случаи жизни</small></div>
   <div class="soon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5" stroke-linecap="round"/></svg><span><b>Раздел готовится.</b> Здесь будут дуа по категориям — так он будет выглядеть.</span></div>
   <div class="cat-grid">
@@ -549,6 +593,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== КОРАН (заготовка раздела) ===== -->
 <main class="screen" id="quran" hidden>
+  <button class="back" data-back>‹ Назад</button>
   <div class="page-head"><h1>Коран</h1><small>114 сур</small></div>
   <div class="soon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5" stroke-linecap="round"/></svg><span><b>Раздел готовится.</b> Текст Корана добавим из проверенного источника.</span></div>
   <div class="surahs">
@@ -584,7 +629,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== НАСТРОЙКИ ===== -->
 <main class="screen" id="settings" hidden>
-  <div class="settings-top"><button class="back" id="settings-back">‹ Назад</button></div>
   <h1>Настройки</h1>
   <div class="group" style="--i:0">
     <span class="group-title">Что показывать</span>
@@ -675,21 +719,17 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 <!-- ===== НИЖНЯЯ ПАНЕЛЬ ===== -->
 <nav class="tabbar" id="tabbar" role="tablist">
   <button class="tab-item" role="tab" id="tab-home" data-screen="home">
-    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4.6"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.2v2.3M12 19.5v2.3M2.2 12h2.3M19.5 12h2.3M5 5l1.6 1.6M17.4 17.4 19 19M5 19l1.6-1.6M17.4 6.6 19 5"/></g></svg>
-    Азкары
-  </button>
-  <button class="tab-item" role="tab" id="tab-dua" data-screen="dua">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.6 21H7.8a3 3 0 0 1-2.6-1.5L2.6 15a1.4 1.4 0 0 1 2.3-1.5L6.6 16V5.3a1.3 1.3 0 0 1 2.6 0V11h.3V3.6a1.3 1.3 0 0 1 2.6 0V21zM13.4 21h2.8a3 3 0 0 0 2.6-1.5l2.6-4.5a1.4 1.4 0 0 0-2.3-1.5L17.4 16V5.3a1.3 1.3 0 0 0-2.6 0V11h-.3V3.6a1.3 1.3 0 0 0-1.1-1.3z"/></svg>
-    Дуа
-  </button>
-  <button class="tab-item" role="tab" id="tab-quran" data-screen="quran">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.5C10 4 7.3 3.4 4 3.6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1c3.1-.1 5.6.5 7.4 1.9.4.3.9.3 1.2 0 1.8-1.4 4.3-2 7.4-1.9a1 1 0 0 0 1-1v-13a1 1 0 0 0-1-1c-3.3-.2-6 .4-8 1.9z"/></svg>
-    Коран
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 2.6a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a3 3 0 0 1-3 3h-3v-5.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V22H6a3 3 0 0 1-3-3V9.8c0-.5.2-1 .6-1.3z"/></svg>
+    Главная
   </button>
   <button class="tab-item" role="tab" id="tab-tasbih" data-screen="tasbih">
     <!-- палец, который нажимает; дуга над ним — касание -->
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 4.6a1.9 1.9 0 0 1 3.8 0v6.1l3.9.9a2.6 2.6 0 0 1 2 2.9l-.6 4.4A3.4 3.4 0 0 1 16.2 22h-4.4a3.4 3.4 0 0 1-2.7-1.3l-3.7-4.8a1.7 1.7 0 0 1 2.5-2.3l2.6 2.1z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".55" d="M8.3 6.2a4.4 4.4 0 0 1 8.2 0"/></svg>
     Счётчик
+  </button>
+  <button class="tab-item" role="tab" id="tab-settings" data-screen="settings">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.3 2h3.4l.6 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8c.1.6.1 1.2 0 1.8l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.6 2.6h-3.4l-.6-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.8a6 6 0 0 1 0-1.8l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" transform="translate(0 1)"/></svg>
+    Настройки
   </button>
 </nav>
 
@@ -932,16 +972,21 @@ function showScreen(id) {
   const tabbar = document.getElementById("tabbar");
   tabbar.classList.toggle("away", id === "reader");
   if (id === "home") updateHome();
-  const tab = id === "reader" ? "home" : id;   // чтение азкаров относится к «Главной»
+  // чтение азкаров, дуа и Коран открываются с главной — подсвечиваем «Главную»
+  const tab = ["reader", "dua", "quran"].includes(id) ? "home" : id;
+  // главная в стиле «изумруд и золото»: тёмно-зелёный фон на весь экран, включая полосу с часами
+  document.documentElement.classList.toggle("home-e", id === "home");
+  barColor();
   tabbar.dataset.active = tab;   // по этому атрибуту подложка переезжает на нужную вкладку
   document.querySelectorAll(".tab-item").forEach(t =>
     t.setAttribute("aria-selected", t.dataset.screen === tab ? "true" : "false"));
 }
 document.querySelectorAll(".tab-item").forEach(t =>
   t.addEventListener("click", () => showScreen(t.dataset.screen)));
-// Настройки — из шестерёнки на главной, назад — на главную
-document.getElementById("open-settings").addEventListener("click", () => showScreen("settings"));
-document.getElementById("settings-back").addEventListener("click", () => showScreen("home"));
+// Дуа и Коран открываются со строк на главной, «Назад» возвращает на главную
+document.getElementById("go-dua").addEventListener("click", () => showScreen("dua"));
+document.getElementById("go-quran").addEventListener("click", () => showScreen("quran"));
+document.querySelectorAll("[data-back]").forEach(b => b.addEventListener("click", () => showScreen("home")));
 
 /* Настройки */
 const MODE_NAMES = { cards: "По одному", list: "Списком" };
@@ -952,8 +997,13 @@ const systemDark = matchMedia("(prefers-color-scheme: dark)");
 function applyTheme() {
   const dark = theme === "dark" || (theme === "system" && systemDark.matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
-  // цвет полосы браузера и строки состояния — под цвет фона
-  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = dark ? "#0e1310" : "#ffffff");
+  barColor();
+}
+// цвет полосы браузера и строки состояния — под цвет фона (на главной — изумрудный)
+function barColor() {
+  const c = document.documentElement.classList.contains("home-e") ? "#0c2a20"
+    : document.documentElement.dataset.theme === "dark" ? "#0e1310" : "#ffffff";
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = c);
 }
 // телефон сам переключил тему (например, вечером по расписанию) — переключаемся и мы
 systemDark.addEventListener("change", () => { if (theme === "system") applyTheme(); });
