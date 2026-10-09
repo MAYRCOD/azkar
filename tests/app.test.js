@@ -25,7 +25,7 @@ const section = name => console.log("•", name);
   }
   const W = (p, ms) => p.waitForTimeout(ms);
   const setMode = async (p, m) => {
-    await p.click("#tab-settings"); await p.click("#open-mode"); await W(p, 350);
+    await p.click("#open-settings"); await p.click("#open-mode"); await W(p, 350);
     await p.click("#mode-" + m); await W(p, 400); await p.click("#tab-home"); await W(p, 200);
   };
   const dupIds = p => p.evaluate(() => { const ids = [...document.querySelectorAll("[id]")].map(e => e.id); return ids.length - new Set(ids).size; });
@@ -44,12 +44,31 @@ const section = name => console.log("•", name);
   section("Главная и настройки");
   let p = await freshPage();
   check(await p.locator("#go-morning").isVisible() && await p.locator("#go-evening").isVisible(), "нет кнопок утро/вечер");
-  await p.click("#tab-settings"); await W(p, 200);
+  await p.click("#open-settings"); await W(p, 200);
   check(await p.locator("#settings").isVisible(), "настройки не открылись");
   await p.click("#tab-home"); await W(p, 200);
   const counts = await p.evaluate(() => ({ m: AZKAR.filter(z => z.when.includes("morning")).length, e: AZKAR.filter(z => z.when.includes("evening")).length }));
   check(counts.m === 16, `утренних не 16, а ${counts.m}`);
   check(counts.e === 15, `вечерних не 15, а ${counts.e}`);
+
+  section("Вкладки Азкары / Дуа / Коран / Счётчик, настройки из шестерёнки");
+  for (const [tab, scr] of [["#tab-dua", "#dua"], ["#tab-quran", "#quran"], ["#tab-tasbih", "#tasbih"], ["#tab-home", "#home"]]) {
+    await p.click(tab); await W(p, 300);
+    check(await p.locator(scr).isVisible(), `вкладка ${tab} не открыла ${scr}`);
+    check(await p.evaluate(() => document.querySelectorAll(".tab-item[aria-selected=true]").length) === 1, `${tab}: выделено не одна вкладка`);
+  }
+  await p.click("#open-settings"); await W(p, 300);
+  check(await p.locator("#settings").isVisible(), "шестерёнка не открыла настройки");
+  check(await p.evaluate(() => document.querySelectorAll(".tab-item[aria-selected=true]").length) === 0, "в настройках подсвечена вкладка");
+  await p.click("#settings-back"); await W(p, 300);
+  check(await p.locator("#home").isVisible(), "«Назад» из настроек не вернула на главную");
+  for (const w of [320, 390]) {
+    await p.setViewportSize({ width: w, height: 700 }); await W(p, 200);
+    const fit = await p.evaluate(() => [...document.querySelectorAll(".tab-item")].every(t => t.scrollWidth <= t.clientWidth + 1)
+      && document.getElementById("tabbar").getBoundingClientRect().right <= innerWidth);
+    check(fit, `${w}px: подписи вкладок не влезают`);
+  }
+  await p.setViewportSize({ width: 390, height: 780 });
 
   section("Оба вида чтения, переключение туда и обратно");
   for (const mode of ["cards", "list", "cards", "list"]) {
@@ -99,7 +118,7 @@ const section = name => console.log("•", name);
   await p.click("#go-morning"); await W(p, 400);
   await p.click("#counter-1"); await W(p, 200);
   check((await p.locator("#counter-1 .num").innerText()).startsWith("1 /"), "список: нажатие не считается");
-  await p.click("#back"); await p.click("#tab-settings"); await p.click("#sw-tr"); await p.click("#tab-home");
+  await p.click("#back"); await p.click("#open-settings"); await p.click("#sw-tr"); await p.click("#tab-home");
   await p.click("#go-morning"); await W(p, 300);
   check(await p.locator(".tr").first().isHidden(), "транскрипция не скрылась");
   await p.context().close();
@@ -116,7 +135,7 @@ const section = name => console.log("•", name);
     check(await th() === "dark", "по умолчанию тема не следует за тёмной системой");
     check(dark(await bg("body")) && dark(await bg("#go-morning")) && dark(await bg("#tabbar")), "в тёмной теме остались светлые фоны");
     // все экраны в тёмной теме — без светлых пятен
-    for (const go of [["#tab-settings", ".rows"], ["#tab-tasbih", ".tb-face"]]) {
+    for (const go of [["#open-settings", ".rows"], ["#tab-tasbih", ".tb-face"]]) {
       await q.click(go[0]); await W(q, 300);
       check(dark(await bg(go[1])), `тёмная тема: светлый фон у ${go[1]}`);
     }
@@ -124,7 +143,7 @@ const section = name => console.log("•", name);
     check(dark(await bg("#counter-0")), "тёмная тема: светлый счётчик");
     await q.click("#back"); await W(q, 200);
     // выбрать светлую при тёмной системе
-    await q.click("#tab-settings"); await q.click("#open-theme"); await W(q, 400);
+    await q.click("#open-settings"); await q.click("#open-theme"); await W(q, 400);
     check(await q.locator("#theme-system").getAttribute("aria-checked") === "true", "галочка не на «Как в системе»");
     await q.click("#theme-light"); await W(q, 500);
     check(await th() === "light" && !dark(await bg("body")), "светлая тема не включилась");
@@ -134,7 +153,7 @@ const section = name => console.log("•", name);
     check(await th() === "light", "светлая тема не сохранилась");
     // тёмная при светлой системе
     await q.emulateMedia({ colorScheme: "light" });
-    await q.click("#tab-settings"); await q.click("#open-theme"); await W(q, 400); await q.click("#theme-dark"); await W(q, 500);
+    await q.click("#open-settings"); await q.click("#open-theme"); await W(q, 400); await q.click("#theme-dark"); await W(q, 500);
     check(await th() === "dark", "тёмная тема не включилась при светлой системе");
     // «как в системе» следует за переключением телефона на ходу
     await q.click("#open-theme"); await W(q, 400); await q.click("#theme-system"); await W(q, 500);
@@ -151,7 +170,7 @@ const section = name => console.log("•", name);
     const q = await freshPage();
     const fs = sel => q.evaluate(s => parseFloat(getComputedStyle(document.querySelector(s)).fontSize), sel);
     const slide = (id, v) => q.evaluate(([id, v]) => { const r = document.getElementById(id); r.value = v; r.dispatchEvent(new Event("input", { bubbles: true })); }, [id, v]);
-    await q.click("#tab-settings"); await W(q, 300);
+    await q.click("#open-settings"); await W(q, 300);
     check(await q.locator("#size-value").innerText() === "Обычный", "по умолчанию размер не «Обычный»");
     await q.click("#open-size"); await W(q, 400);
     check(await q.locator("#size-sheet").isVisible(), "окно размера не открылось");
@@ -179,7 +198,7 @@ const section = name => console.log("•", name);
       await q.click("#back"); await W(q, 200);
     }
     // «Как было»
-    await q.click("#tab-settings"); await q.click("#open-size"); await W(q, 400);
+    await q.click("#open-settings"); await q.click("#open-size"); await W(q, 400);
     await q.click("#size-reset"); await W(q, 100);
     check(await q.locator("#size-ar-out").innerText() === "100%" && await q.locator("#size-tx-out").innerText() === "100%", "«Как было» не вернула 100%");
     await q.mouse.click(5, 5); await W(q, 400);

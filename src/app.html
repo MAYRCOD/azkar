@@ -313,6 +313,46 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .sheet-btn.plain { background: none; color: var(--accent-ink); padding: 10px; }
 .sheet-btn.plain:disabled { color: var(--inactive); }
 
+/* Шестерёнка настроек в правом верхнем углу главной */
+#home { position: relative; }
+.gear-btn { position: absolute; top: 14px; right: 12px; width: 40px; height: 40px; }
+.gear-btn svg { width: 23px; height: 23px; }
+/* Настройки открываются из шестерёнки — сверху кнопка «Назад» */
+.settings-top { display: flex; align-items: center; gap: 6px; margin-left: -4px; }
+
+/* ---------- Дуа и Коран (пока заготовки разделов) ---------- */
+#dua, #quran { overflow-y: auto; padding-block: 32px calc(110px + env(safe-area-inset-bottom, 0px)); gap: 16px; }
+#dua h1, #quran h1 { font-size: 26px; }
+.page-head { display: grid; gap: 2px; }
+.page-head small { color: var(--muted); font-size: 13.5px; }
+.soon {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px;
+  background: var(--press); color: var(--muted); font-size: 13px; line-height: 1.35;
+}
+.soon b { color: var(--accent-ink); }
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cat {
+  display: grid; gap: 10px; padding: 14px; border-radius: 18px; text-align: left;
+  background: var(--surface); border: 1px solid var(--edge); box-shadow: var(--shadow);
+}
+.cat b { font-size: 15px; } .cat small { color: var(--muted); font-size: 12px; font-weight: 400; margin-top: -8px; }
+.cat .tile { width: 34px; height: 34px; border-radius: 10px; }
+.cat .tile svg { width: 19px; height: 19px; }
+.tile-teal { background: #30b0c7; } .tile-indigo { background: #5856d6; } .tile-red { background: #ff3b30; } .tile-brown { background: #a2845e; }
+.surahs { background: var(--surface); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.surah { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.surah + .surah { border-top: 1px solid var(--line); }
+.surah .no {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center; font-weight: 700; font-size: 13px;
+  color: var(--accent-ink); border: 1.5px solid var(--accent); border-radius: 10px; transform: rotate(45deg);
+}
+.surah .no span { transform: rotate(-45deg); }
+.surah .nm { flex: 1; display: grid; } .surah .nm b { font-size: 15px; } .surah .nm small { color: var(--muted); font-size: 12px; }
+.surah .ar { font-size: 22px; line-height: 1.6; color: var(--fg); }
+#dua.enter > *, #quran.enter > * { animation: rise .5s var(--ease) backwards; }
+#dua.enter > :nth-child(2), #quran.enter > :nth-child(2) { animation-delay: .05s; }
+#dua.enter > :nth-child(3), #quran.enter > :nth-child(3) { animation-delay: .1s; }
+
 /* ---------- Настройки (в духе настроек iPhone) ---------- */
 #settings { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 14px; }
 #settings h1 { font-size: 24px; }
@@ -394,8 +434,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .tabbar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  width: min(330px, calc(100% - 32px));
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;
+  width: min(372px, calc(100% - 24px));
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
   background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
   box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 10px 28px rgba(var(--sh), .12);
   padding: 4px; z-index: 10;
@@ -403,15 +443,17 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 .tabbar.away { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
 .tabbar::before {
-  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3);
-  border-radius: 999px; background: var(--press); transition: transform .38s var(--ease);
+  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 20px) / 4);
+  border-radius: 999px; background: var(--press); transition: transform .38s var(--ease), opacity .2s ease;
 }
-/* Подложка переезжает под выбранную вкладку: на одну или две своих ширины + промежуток */
-.tabbar[data-active="tasbih"]::before { transform: translateX(calc(100% + 4px)); }
-.tabbar[data-active="settings"]::before { transform: translateX(calc(200% + 8px)); }
+/* Подложка переезжает под выбранную вкладку: на нужное число своих ширин + промежутки */
+.tabbar[data-active="dua"]::before { transform: translateX(calc(100% + 4px)); }
+.tabbar[data-active="quran"]::before { transform: translateX(calc(200% + 8px)); }
+.tabbar[data-active="tasbih"]::before { transform: translateX(calc(300% + 12px)); }
+.tabbar[data-active="settings"]::before { opacity: 0; }   /* настройки — не вкладка, ничего не подсвечиваем */
 .tab-item {
   display: grid; justify-items: center; gap: 2px; border: 0; background: none;
-  border-radius: 999px; padding: 6px 6px 5px; color: var(--inactive); font-size: 12px; position: relative;
+  border-radius: 999px; padding: 6px 2px 5px; color: var(--inactive); font-size: 11.5px; position: relative; white-space: nowrap;
   transition: color .25s ease, transform .15s ease;
 }
 .tab-item svg { width: 21px; height: 21px; }
@@ -455,6 +497,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== ГЛАВНАЯ ===== -->
 <main class="screen" id="home">
+  <button class="icon-btn gear-btn" id="open-settings" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.3 2h3.4l.6 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8c.1.6.1 1.2 0 1.8l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.6 2.6h-3.4l-.6-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.8a6 6 0 0 1 0-1.8l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" transform="translate(0 1)"/></svg></button>
   <div class="home-title">
     <span class="ar-title" lang="ar">أَذْكَار</span>
     <h1>Азкары</h1>
@@ -488,6 +531,36 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   <div class="list-view" id="list-view" hidden></div>
 </main>
 
+<!-- ===== ДУА (заготовка раздела: категории есть, текстов пока нет) ===== -->
+<main class="screen" id="dua" hidden>
+  <div class="page-head"><h1>Дуа</h1><small>на случаи жизни</small></div>
+  <div class="soon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5" stroke-linecap="round"/></svg><span><b>Раздел готовится.</b> Здесь будут дуа по категориям — так он будет выглядеть.</span></div>
+  <div class="cat-grid">
+    <div class="cat"><span class="tile tile-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 2.6a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a3 3 0 0 1-3 3h-3v-5.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V22H6a3 3 0 0 1-3-3V9.8c0-.5.2-1 .6-1.3z"/></svg></span><b>Дом</b><small>вход, выход</small></div>
+    <div class="cat"><span class="tile tile-blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span><b>Дорога</b><small>поездка, транспорт</small></div>
+    <div class="cat"><span class="tile tile-orange" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9h13v4a6.5 6.5 0 0 1-13 0z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3.5v2M12 3.5v2"/></svg></span><b>Еда</b><small>до и после</small></div>
+    <div class="cat"><span class="tile tile-indigo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg></span><b>Сон</b><small>перед сном, пробуждение</small></div>
+    <div class="cat"><span class="tile tile-red" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><b>Болезнь</b><small>посещение больного</small></div>
+    <div class="cat"><span class="tile tile-teal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l.9 1.6h-1.8zM5 21v-7.5a7 7 0 0 1 14 0V21h-4.5v-3.5a2.5 2.5 0 0 0-5 0V21z"/></svg></span><b>Мечеть</b><small>вход и выход</small></div>
+    <div class="cat"><span class="tile tile-purple" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 3 3 6l2 4.2 2.5-1V21h9V9.2l2.5 1L21 6l-5.5-3a3.5 3.5 0 0 1-7 0z"/></svg></span><b>Одежда</b><small>новая одежда</small></div>
+    <div class="cat"><span class="tile tile-brown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 19h10a4.5 4.5 0 0 0 .4-9A6.5 6.5 0 0 0 5 11.3 3.9 3.9 0 0 0 7 19z"/></svg></span><b>Погода</b><small>дождь, ветер</small></div>
+  </div>
+</main>
+
+<!-- ===== КОРАН (заготовка раздела) ===== -->
+<main class="screen" id="quran" hidden>
+  <div class="page-head"><h1>Коран</h1><small>114 сур</small></div>
+  <div class="soon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5" stroke-linecap="round"/></svg><span><b>Раздел готовится.</b> Текст Корана добавим из проверенного источника.</span></div>
+  <div class="surahs">
+    <div class="surah"><span class="no"><span>1</span></span><span class="nm"><b>Аль-Фатиха</b><small>7 аятов</small></span><span class="ar" lang="ar">الفاتحة</span></div>
+    <div class="surah"><span class="no"><span>2</span></span><span class="nm"><b>Аль-Бакара</b><small>286 аятов</small></span><span class="ar" lang="ar">البقرة</span></div>
+    <div class="surah"><span class="no"><span>3</span></span><span class="nm"><b>Али Имран</b><small>200 аятов</small></span><span class="ar" lang="ar">آل عمران</span></div>
+    <div class="surah"><span class="no"><span>4</span></span><span class="nm"><b>Ан-Ниса</b><small>176 аятов</small></span><span class="ar" lang="ar">النساء</span></div>
+    <div class="surah"><span class="no"><span>5</span></span><span class="nm"><b>Аль-Маида</b><small>120 аятов</small></span><span class="ar" lang="ar">المائدة</span></div>
+    <div class="surah"><span class="no"><span>6</span></span><span class="nm"><b>Аль-Анам</b><small>165 аятов</small></span><span class="ar" lang="ar">الأنعام</span></div>
+  </div>
+</main>
+
 <!-- ===== СЧЁТЧИК (ТАСБИХ) ===== -->
 <main class="screen" id="tasbih" hidden>
   <div class="topbar">
@@ -511,6 +584,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== НАСТРОЙКИ ===== -->
 <main class="screen" id="settings" hidden>
+  <div class="settings-top"><button class="back" id="settings-back">‹ Назад</button></div>
   <h1>Настройки</h1>
   <div class="group" style="--i:0">
     <span class="group-title">Что показывать</span>
@@ -601,17 +675,21 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 <!-- ===== НИЖНЯЯ ПАНЕЛЬ ===== -->
 <nav class="tabbar" id="tabbar" role="tablist">
   <button class="tab-item" role="tab" id="tab-home" data-screen="home">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 2.6a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a3 3 0 0 1-3 3h-3v-5.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V22H6a3 3 0 0 1-3-3V9.8c0-.5.2-1 .6-1.3z"/></svg>
-    Главная
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4.6"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.2v2.3M12 19.5v2.3M2.2 12h2.3M19.5 12h2.3M5 5l1.6 1.6M17.4 17.4 19 19M5 19l1.6-1.6M17.4 6.6 19 5"/></g></svg>
+    Азкары
+  </button>
+  <button class="tab-item" role="tab" id="tab-dua" data-screen="dua">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.6 21H7.8a3 3 0 0 1-2.6-1.5L2.6 15a1.4 1.4 0 0 1 2.3-1.5L6.6 16V5.3a1.3 1.3 0 0 1 2.6 0V11h.3V3.6a1.3 1.3 0 0 1 2.6 0V21zM13.4 21h2.8a3 3 0 0 0 2.6-1.5l2.6-4.5a1.4 1.4 0 0 0-2.3-1.5L17.4 16V5.3a1.3 1.3 0 0 0-2.6 0V11h-.3V3.6a1.3 1.3 0 0 0-1.1-1.3z"/></svg>
+    Дуа
+  </button>
+  <button class="tab-item" role="tab" id="tab-quran" data-screen="quran">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.5C10 4 7.3 3.4 4 3.6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1c3.1-.1 5.6.5 7.4 1.9.4.3.9.3 1.2 0 1.8-1.4 4.3-2 7.4-1.9a1 1 0 0 0 1-1v-13a1 1 0 0 0-1-1c-3.3-.2-6 .4-8 1.9z"/></svg>
+    Коран
   </button>
   <button class="tab-item" role="tab" id="tab-tasbih" data-screen="tasbih">
     <!-- палец, который нажимает; дуга над ним — касание -->
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 4.6a1.9 1.9 0 0 1 3.8 0v6.1l3.9.9a2.6 2.6 0 0 1 2 2.9l-.6 4.4A3.4 3.4 0 0 1 16.2 22h-4.4a3.4 3.4 0 0 1-2.7-1.3l-3.7-4.8a1.7 1.7 0 0 1 2.5-2.3l2.6 2.1z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".55" d="M8.3 6.2a4.4 4.4 0 0 1 8.2 0"/></svg>
     Счётчик
-  </button>
-  <button class="tab-item" role="tab" id="tab-settings" data-screen="settings">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.3 2h3.4l.6 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8c.1.6.1 1.2 0 1.8l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.6 2.6h-3.4l-.6-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.8a6 6 0 0 1 0-1.8l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" transform="translate(0 1)"/></svg>
-    Настройки
   </button>
 </nav>
 
@@ -861,6 +939,9 @@ function showScreen(id) {
 }
 document.querySelectorAll(".tab-item").forEach(t =>
   t.addEventListener("click", () => showScreen(t.dataset.screen)));
+// Настройки — из шестерёнки на главной, назад — на главную
+document.getElementById("open-settings").addEventListener("click", () => showScreen("settings"));
+document.getElementById("settings-back").addEventListener("click", () => showScreen("home"));
 
 /* Настройки */
 const MODE_NAMES = { cards: "По одному", list: "Списком" };
