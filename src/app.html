@@ -177,70 +177,58 @@ html.standalone #reader { padding-top: 22px; }
 .list-view .final { padding-block: 40px 24px; }
 
 /* ---------- Счётчик (тасбих) ---------- */
-/* Сверху — какой зикр считаем, в центре — большая круглая кнопка с кольцом,
-   которое заполняется по мере счёта, снизу — цель: 33, 99, 100 или без цели */
-#tasbih { padding-block: 32px calc(96px + env(safe-area-inset-bottom, 0px)); gap: 14px; overflow-y: auto; align-items: center; }
-#tasbih .topbar { align-self: stretch; }
-#tasbih h1 { font-size: 24px; }
-.tb-phrase {
-  align-self: stretch; display: grid; justify-items: center; gap: 2px; text-align: center;
+/* Просто число. Нажимаешь в любом месте средней части экрана — прибавляется.
+   Вокруг числа кольцо из 33 бусин: каждое нажатие поворачивает его на одну бусину,
+   как будто перебираешь чётки. Три независимых счётчика переключаются «таблетками» сверху */
+#tasbih { padding-block: 32px calc(96px + env(safe-area-inset-bottom, 0px)); gap: 16px; overflow: hidden; touch-action: manipulation; }
+
+.tb-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tb-slot {
   border: 1px solid var(--edge); background: var(--surface); box-shadow: var(--shadow);
-  border-radius: 20px; padding: 10px 16px 14px;
+  border-radius: 16px; padding: 8px 6px; display: grid; justify-items: center; gap: 0;
+  transition: transform .15s ease, background .25s ease, color .25s ease, box-shadow .25s ease;
 }
-.tb-phrase .ar { font-size: 30px; line-height: 1.8; }
-.tb-phrase .name { font-weight: 700; font-size: 15px; }
-.tb-phrase small { color: var(--muted); font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
-.tb-phrase small::after { content: "›"; font-size: 18px; line-height: 1; color: #b5beb8; }
-.tb-phrase:active { transform: scale(.98); }
+.tb-slot small { font-size: 11.5px; color: var(--muted); transition: color .25s ease; }
+.tb-slot b { font-size: 19px; font-variant-numeric: tabular-nums; line-height: 1.3; }
+.tb-slot[aria-selected="true"] { background: var(--accent); color: #fff; box-shadow: 0 6px 18px rgba(52, 199, 89, .28); border-color: transparent; }
+.tb-slot[aria-selected="true"] small { color: rgba(255, 255, 255, .85); }
+.tb-slot:active { transform: scale(.96); }
 
-.tb-stage { flex: 1; min-height: 120px; display: grid; place-items: center; align-self: stretch; container-type: size; }
-/* Размер круга: занимает всю свободную высоту между карточкой зикра и выбором цели
-   (100cqh — высота этого промежутка), но не шире двух третей экрана.
-   Так круг сам уменьшается на маленьких iPhone и ни на что не наезжает */
-.tb-circle {
-  position: relative; width: min(100cqh - 16px, 66vw, 290px); aspect-ratio: 1; border-radius: 50%;
-  border: 0; padding: 0; background: var(--surface);
-  box-shadow: 0 2px 6px rgba(30, 43, 35, .06), 0 16px 40px rgba(30, 43, 35, .14);
-  display: grid; place-content: center; text-align: center;
-  touch-action: manipulation;          /* частые нажатия не приближают экран */
-  user-select: none; -webkit-user-select: none;
-  transition: transform .12s ease;
+/* Вся средняя часть экрана — одна большая кнопка */
+.tb-stage {
+  flex: 1; min-height: 140px; position: relative; overflow: hidden; border-radius: 28px;
+  display: grid; place-items: center; container-type: size;
+  border: 0; padding: 0; background: none; width: 100%;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
-.tb-circle:active { transform: scale(.97); }
-.tb-circle svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
-.tb-circle .track-ring { fill: none; stroke: var(--counter-bg); stroke-width: 7; }
-/* Кольцо прогресса: длина окружности 2πr ≈ 289 при r = 46. Сдвигом штриха показываем, сколько уже пройдено */
-.tb-circle .ring { fill: none; stroke: var(--counter-fill); stroke-width: 7; stroke-linecap: round;
-  stroke-dasharray: 289; stroke-dashoffset: 289; transition: stroke-dashoffset .3s var(--ease), stroke .35s ease; }
-.tb-circle.full .ring { stroke: var(--accent); }
-.tb-num { position: relative; font-weight: 700; font-size: clamp(40px, 9vh, 72px); line-height: 1; font-variant-numeric: tabular-nums; }
+/* Круг занимает почти всю высоту свободного места, но не шире экрана */
+.tb-dial { position: relative; width: min(100cqh - 40px, 100cqw - 24px, 300px); aspect-ratio: 1; display: grid; place-items: center; pointer-events: none; }
+.tb-dial > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tb-beads { transition: transform .35s var(--ease); transform-origin: 50px 50px; }
+.tb-beads.instant { transition: none; }
+.tb-beads circle { fill: var(--counter-fill); }
+.tb-mark { fill: var(--accent); }
+.tb-face {
+  width: 76%; aspect-ratio: 1; border-radius: 50%; background: var(--surface);
+  box-shadow: 0 2px 6px rgba(30, 43, 35, .06), 0 18px 44px rgba(30, 43, 35, .14);
+  display: grid; place-content: center; text-align: center; transition: transform .12s ease;
+}
+.tb-stage:active .tb-face { transform: scale(.97); }
+.tb-num { font-weight: 700; font-size: clamp(44px, 17cqh, 84px); line-height: 1; font-variant-numeric: tabular-nums; }
 .tb-num.bump { animation: bump .28s var(--ease); }
-.tb-of { position: relative; color: var(--muted); font-size: 14px; margin-top: 6px; min-height: 1.5em; }
-.tb-circle.full .tb-of { color: var(--accent-ink); font-weight: 700; }
-.tb-meta { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; min-height: 1.5em; text-align: center; }
-
-/* Выбор цели — сегменты, как в iPhone */
-.segmented {
-  align-self: stretch; position: relative; display: grid; grid-template-columns: repeat(4, 1fr);
-  background: var(--counter-bg); border-radius: 12px; padding: 3px;
+.tb-hint { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 13px; color: var(--muted); transition: opacity .4s ease; }
+.tb-hint.gone { opacity: 0; }
+/* Волна от пальца */
+.tb-wave {
+  position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(52, 199, 89, .22), rgba(52, 199, 89, 0) 70%);
+  pointer-events: none; animation: wave .55s ease-out forwards;
 }
-.segmented::before {
-  content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 4);
-  border-radius: 9px; background: var(--surface); box-shadow: 0 1px 3px rgba(30, 43, 35, .12);
-  transform: translateX(calc(var(--seg, 0) * 100%)); transition: transform .3s var(--ease);
-}
-.segmented button { position: relative; border: 0; background: none; padding: 8px 0; font-weight: 700; font-size: 14px; color: var(--muted); transition: color .2s ease; }
-.segmented button[aria-checked="true"] { color: var(--fg); }
-
-/* Список зикров в выезжающем окне — с прокруткой, если не влезает */
-#phrase-sheet .sheet { max-height: 80vh; overflow-y: auto; }
-.choice-row .ar-small { flex: none; font-family: var(--f-arabic); font-size: 21px; line-height: 1.6; direction: rtl; font-weight: 400; }
+@keyframes wave { from { transform: scale(.2); opacity: 1; } to { transform: scale(2.4); opacity: 0; } }
 
 #tasbih.enter > * { animation: rise .5s var(--ease) backwards; }
-#tasbih.enter > :nth-child(2) { animation-delay: .05s; }
-#tasbih.enter > :nth-child(3) { animation-delay: .1s; }
-#tasbih.enter > :nth-child(4) { animation-delay: .15s; }
-#tasbih.enter > :nth-child(5) { animation-delay: .2s; }
+#tasbih.enter > :nth-child(2) { animation-delay: .06s; }
+#tasbih.enter > :nth-child(3) { animation-delay: .12s; }
 
 /* ---------- Настройки (в духе настроек iPhone) ---------- */
 #settings { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 14px; }
@@ -422,34 +410,19 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 4v5h5"/></svg>
     </button>
   </div>
-  <button class="tb-phrase" id="tb-phrase">
-    <span class="ar" lang="ar" id="tb-ar"></span>
-    <span class="name" id="tb-name"></span>
-    <small id="tb-ru"></small>
+  <div class="tb-slots" id="tb-slots" role="tablist" aria-label="Счётчики">
+    <button class="tb-slot" role="tab" data-slot="0"><small>Счётчик 1</small><b>0</b></button>
+    <button class="tb-slot" role="tab" data-slot="1"><small>Счётчик 2</small><b>0</b></button>
+    <button class="tb-slot" role="tab" data-slot="2"><small>Счётчик 3</small><b>0</b></button>
+  </div>
+  <button class="tb-stage" id="tb-tap" aria-label="Прибавить один">
+    <div class="tb-dial">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><g class="tb-beads" id="tb-beads"></g><circle class="tb-mark" cx="50" cy="3" r="3"/></svg>
+      <div class="tb-face"><span class="tb-num" id="tb-num">0</span></div>
+    </div>
+    <span class="tb-hint" id="tb-hint">Нажимайте в любом месте</span>
   </button>
-  <div class="tb-stage">
-    <button class="tb-circle" id="tb-tap" aria-label="Считать">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track-ring" cx="50" cy="50" r="46"/><circle class="ring" id="tb-ring" cx="50" cy="50" r="46"/></svg>
-      <span class="tb-num" id="tb-num">0</span>
-      <span class="tb-of" id="tb-of"></span>
-    </button>
-  </div>
-  <div class="tb-meta" id="tb-meta"></div>
-  <div class="segmented" id="tb-target" role="radiogroup" aria-label="Цель">
-    <button role="radio" data-target="33">33</button>
-    <button role="radio" data-target="99">99</button>
-    <button role="radio" data-target="100">100</button>
-    <button role="radio" data-target="0" aria-label="Без цели">∞</button>
-  </div>
 </main>
-
-<!-- Окно выбора зикра для счётчика (строки заполняет программа) -->
-<div class="sheet-back" id="phrase-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="phrase-title">
-    <h2 id="phrase-title">Что считаем</h2>
-    <div id="phrase-list"></div>
-  </div>
-</div>
 
 <!-- ===== НАСТРОЙКИ ===== -->
 <main class="screen" id="settings" hidden>
@@ -1061,25 +1034,13 @@ document.addEventListener("keydown", e => {
 });
 
 /* ================================================================
-   6. СЧЁТЧИК (ТАСБИХ). Свободные чётки: выбираешь зикр и цель,
-   нажимаешь на круг. Дошёл до цели — круг зеленеет, засчитывается
-   «круг», следующее нажатие начинает новый круг с единицы.
-   В отличие от азкаров, счёт не обнуляется в полночь — только кнопкой сброса.
+   6. СЧЁТЧИК (ТАСБИХ). Три независимых счётчика, у каждого своё число.
+   Нажатие в любом месте средней части экрана прибавляет один.
+   Числа сохраняются в памяти телефона и не обнуляются в полночь —
+   только кнопкой сброса.
    ================================================================ */
-const PHRASES = [
-  { ar: "سُبْحَانَ اللَّهِ", name: "Субхана-Ллах", ru: "Пречист Аллах" },
-  { ar: "الْحَمْدُ لِلَّهِ", name: "Аль-хамду ли-Ллях", ru: "Хвала Аллаху" },
-  { ar: "اللَّهُ أَكْبَرُ", name: "Аллаху акбар", ru: "Аллах велик" },
-  { ar: "لَا إِلَهَ إِلَّا اللَّهُ", name: "Ля иляха илля-Ллах", ru: "Нет божества, достойного поклонения, кроме Аллаха" },
-  { ar: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", name: "Субхана-Ллахи ва би-хамдихи", ru: "Пречист Аллах и хвала Ему" },
-  { ar: "أَسْتَغْفِرُ اللَّهَ", name: "Астагфиру-Ллах", ru: "Прошу прощения у Аллаха" },
-  { ar: "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ", name: "Аллахумма салли ‘аля Мухаммад", ru: "О Аллах, благослови Мухаммада" },
-  { ar: "", name: "Просто счёт", ru: "Без текста — для любого зикра" }
-];
-// p — номер зикра в списке, target — цель (0 = без цели), count — счёт в текущем круге,
-// laps — сколько кругов пройдено, total — всего нажатий
-let tb = Object.assign({ p: 0, target: 33, count: 0, laps: 0, total: 0 }, load("azkar-tasbih", {}));
-const RING = 289;   // длина окружности кольца (2 × π × 46)
+const BEADS = 33;   // бусин в кольце, как в обычных чётках
+let tb = Object.assign({ active: 0, values: [0, 0, 0] }, load("azkar-counter", {}));
 
 // Лёгкий «щелчок» под пальцем. На Android есть navigator.vibrate.
 // Safari на iPhone его не умеет, но с iOS 18 даёт щелчок при нажатии на переключатель
@@ -1097,83 +1058,55 @@ function haptic(ms) {
   else hapticLabel.click();
 }
 
-function renderTasbih() {
-  const ph = PHRASES[tb.p] || PHRASES[0];
-  document.getElementById("tb-ar").textContent = ph.ar;
-  document.getElementById("tb-ar").hidden = !ph.ar;
-  document.getElementById("tb-name").textContent = ph.name;
-  document.getElementById("tb-ru").textContent = ph.ru;
+// Рисуем бусины по кругу один раз: координаты по синусу и косинусу угла
+document.getElementById("tb-beads").innerHTML = Array.from({ length: BEADS }, (_, k) => {
+  const a = k / BEADS * 2 * Math.PI;
+  return `<circle cx="${(50 + 47 * Math.sin(a)).toFixed(2)}" cy="${(50 - 47 * Math.cos(a)).toFixed(2)}" r="1.7"/>`;
+}).join("");
 
-  const full = tb.target > 0 && tb.count >= tb.target;
-  const circle = document.getElementById("tb-tap");
-  circle.classList.toggle("full", full);
-  document.getElementById("tb-num").textContent = tb.count;
-  document.getElementById("tb-of").textContent =
-    !tb.target ? "" : full ? "Готово ✓" : `из ${tb.target}`;
-  // без цели кольцо пустое; с целью — заполнено на долю count / target
-  const part = tb.target ? Math.min(tb.count / tb.target, 1) : 0;
-  document.getElementById("tb-ring").style.strokeDashoffset = RING * (1 - part);
-
-  const meta = [];
-  if (tb.target && tb.laps) meta.push(`Кругов: ${tb.laps}`);
-  if (tb.total) meta.push(`Всего: ${tb.total}`);
-  document.getElementById("tb-meta").textContent = meta.join("  ·  ");
-
-  const seg = document.getElementById("tb-target");
-  [...seg.children].forEach((b, k) => {
-    const on = +b.dataset.target === tb.target;
-    b.setAttribute("aria-checked", on ? "true" : "false");
-    if (on) seg.style.setProperty("--seg", k);   // подложка переезжает под выбранную цель
+// instant — без анимации поворота (при переключении счётчика, чтобы кольцо не крутилось долго)
+function renderTasbih(instant = false) {
+  const n = tb.values[tb.active];
+  document.getElementById("tb-num").textContent = n;
+  document.getElementById("tb-hint").classList.toggle("gone", n > 0);
+  const beads = document.getElementById("tb-beads");
+  beads.classList.toggle("instant", instant);
+  beads.style.transform = `rotate(${-n * 360 / BEADS}deg)`;   // каждое нажатие — на одну бусину
+  if (instant) { void beads.offsetWidth; beads.classList.remove("instant"); }
+  document.querySelectorAll(".tb-slot").forEach(sl => {
+    const k = +sl.dataset.slot;
+    sl.setAttribute("aria-selected", k === tb.active ? "true" : "false");
+    sl.querySelector("b").textContent = tb.values[k];
   });
 }
 
-document.getElementById("tb-tap").addEventListener("click", () => {
-  // круг уже закрыт — это нажатие начинает новый
-  if (tb.target && tb.count >= tb.target) tb.count = 0;
-  tb.count++; tb.total++;
-  const done = tb.target && tb.count === tb.target;
-  if (done) tb.laps++;
-  store("azkar-tasbih", tb);
-  haptic(done ? 60 : 8);
+const stage = document.getElementById("tb-tap");
+stage.addEventListener("click", e => {
+  tb.values[tb.active]++;
+  store("azkar-counter", tb);
+  haptic(8);
   renderTasbih();
   const num = document.getElementById("tb-num");
   num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump");
+  // волна из точки, куда нажали (если нажали не пальцем, а клавишей — из центра)
+  const r = stage.getBoundingClientRect();
+  const wave = document.createElement("i");
+  wave.className = "tb-wave";
+  wave.style.left = (e.clientX ? e.clientX - r.left : r.width / 2) + "px";
+  wave.style.top = (e.clientY ? e.clientY - r.top : r.height / 2) + "px";
+  stage.appendChild(wave);
+  setTimeout(() => wave.remove(), 600);
 });
 
-// Смена цели: начинаем круг заново, общий счёт сохраняется
-document.querySelectorAll("#tb-target button").forEach(b => b.addEventListener("click", () => {
-  if (+b.dataset.target === tb.target) return;
-  tb.target = +b.dataset.target; tb.count = 0; tb.laps = 0;
-  store("azkar-tasbih", tb);
-  renderTasbih();
+document.querySelectorAll(".tb-slot").forEach(sl => sl.addEventListener("click", () => {
+  tb.active = +sl.dataset.slot;
+  store("azkar-counter", tb);
+  renderTasbih(true);
 }));
 
 document.getElementById("tb-reset").addEventListener("click", () => askReset(
-  "Сбросить счётчик?", "Счёт, круги и общее число начнутся с нуля",
-  () => { Object.assign(tb, { count: 0, laps: 0, total: 0 }); store("azkar-tasbih", tb); renderTasbih(); }));
-
-// Выбор зикра: строки строим из списка PHRASES
-const phraseSheet = document.getElementById("phrase-sheet");
-document.getElementById("phrase-list").innerHTML = PHRASES.map((ph, k) => `
-  <button class="choice-row" role="radio" data-p="${k}">
-    <span class="txt">${ph.name}<small>${ph.ru}</small></span>
-    ${ph.ar ? `<span class="ar-small" lang="ar">${ph.ar}</span>` : ""}
-    <span class="check">✓</span>
-  </button>`).join("");
-document.getElementById("tb-phrase").addEventListener("click", () => {
-  document.querySelectorAll("#phrase-list .choice-row").forEach(o =>
-    o.setAttribute("aria-checked", +o.dataset.p === tb.p ? "true" : "false"));
-  phraseSheet.hidden = false;
-});
-phraseSheet.addEventListener("click", e => { if (e.target === phraseSheet) closeSheet(phraseSheet); });
-document.querySelectorAll("#phrase-list .choice-row").forEach(o => o.addEventListener("click", () => {
-  const p = +o.dataset.p;
-  document.querySelectorAll("#phrase-list .choice-row").forEach(x =>
-    x.setAttribute("aria-checked", x === o ? "true" : "false"));
-  // другой зикр — новый счёт с нуля
-  if (p !== tb.p) { Object.assign(tb, { p, count: 0, laps: 0, total: 0 }); store("azkar-tasbih", tb); renderTasbih(); }
-  setTimeout(() => closeSheet(phraseSheet), 180);
-}));
+  `Сбросить счётчик ${tb.active + 1}?`, "Число начнётся с нуля, другие счётчики не изменятся",
+  () => { tb.values[tb.active] = 0; store("azkar-counter", tb); renderTasbih(); }));
 
 /* ================================================================
    СТАРТ
@@ -1181,6 +1114,6 @@ document.querySelectorAll("#phrase-list .choice-row").forEach(o => o.addEventLis
 // Запомнили, открыто ли приложение с экрана «Домой» (старые iPhone сообщают это только так)
 if (navigator.standalone) document.documentElement.classList.add("standalone");
 renderSettings();
-renderTasbih();
+renderTasbih(true);
 showScreen("home");
 </script>

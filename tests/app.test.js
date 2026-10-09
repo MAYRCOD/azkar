@@ -97,55 +97,49 @@ const section = name => console.log("•", name);
   await p.context().close();
 
   // ---------------------------------------------------------------
-  section("Счётчик (тасбих): счёт, круги, цель, выбор зикра, сброс, сохранение");
+  section("Счётчик: нажатия, три счётчика, сброс, сохранение, вёрстка");
   {
     const q = await freshPage();
     const num = () => q.locator("#tb-num").innerText();
     await q.click("#tab-tasbih"); await W(q, 400);
     check(await q.locator("#tasbih").isVisible(), "счётчик не открылся");
     check(await q.evaluate(() => document.getElementById("tabbar").dataset.active) === "tasbih", "вкладка счётчика не выделилась");
-    check(await q.locator("#tb-of").innerText() === "из 33", "цель по умолчанию не 33");
-    for (let k = 0; k < 33; k++) await q.click("#tb-tap");
-    await W(q, 400);
-    check(await num() === "33" && /Готово/.test(await q.locator("#tb-of").innerText()), "на 33 не показалось «Готово»");
-    check(await q.evaluate(() => document.getElementById("tb-tap").classList.contains("full")), "кольцо не стало зелёным");
-    check(/Кругов: 1/.test(await q.locator("#tb-meta").innerText()), "круг не засчитался");
-    await q.click("#tb-tap"); await W(q, 200);
-    check(await num() === "1" && /Всего: 34/.test(await q.locator("#tb-meta").innerText()), "новый круг не начался с 1");
-    // счёт сохраняется после перезапуска
-    await q.reload(); await W(q, 300); await q.click("#tab-tasbih"); await W(q, 300);
-    check(await num() === "1", "счёт не сохранился после перезапуска");
-    // без цели
-    await q.click("#tb-target [data-target='0']"); await W(q, 200);
+    check(await num() === "0" && await q.locator("#tb-hint").evaluate(e => !e.classList.contains("gone")), "в начале не 0 или нет подсказки");
+    // нажатия в разных местах средней части экрана
+    const box = await q.locator("#tb-tap").boundingBox();
+    for (let k = 0; k < 40; k++) await q.mouse.click(box.x + 20 + (k * 37) % (box.width - 40), box.y + 20 + (k * 53) % (box.height - 40));
+    await W(q, 300);
+    check(await num() === "40", "нажатия считаются неверно: " + await num());
+    check(await q.locator("#tb-hint").evaluate(e => e.classList.contains("gone")), "подсказка не исчезла после нажатий");
+    check(await q.locator("[data-slot='0'] b").innerText() === "40", "в «таблетке» не то число");
+    // второй счётчик — свой
+    await q.click("[data-slot='1']"); await W(q, 200);
+    check(await num() === "0", "второй счётчик не с нуля");
     for (let k = 0; k < 5; k++) await q.click("#tb-tap");
-    check(await num() === "5" && await q.locator("#tb-of").innerText() === "", "без цели считает неверно");
-    // выбор другого зикра
-    await q.click("#tb-phrase"); await W(q, 350);
-    await q.click("#phrase-list [data-p='2']"); await W(q, 500);
-    check(await q.locator("#phrase-sheet").isHidden(), "окно выбора зикра не закрылось");
-    check(await q.locator("#tb-name").innerText() === "Аллаху акбар" && await num() === "0", "зикр не сменился или счёт не обнулился");
-    // сброс с подтверждением
-    await q.click("#tb-tap"); await q.click("#tb-tap");
+    await q.click("[data-slot='0']"); await W(q, 200);
+    check(await num() === "40", "первый счётчик потерял число");
+    // сохранение после перезапуска
+    await q.reload(); await W(q, 300); await q.click("#tab-tasbih"); await W(q, 300);
+    check(await num() === "40" && await q.locator("[data-slot='1'] b").innerText() === "5", "числа не сохранились после перезапуска");
+    // сброс только текущего
     await q.click("#tb-reset"); await W(q, 350);
-    check(await q.locator("#reset-title").innerText() === "Сбросить счётчик?", "неверный заголовок окна сброса");
+    check(await q.locator("#reset-title").innerText() === "Сбросить счётчик 1?", "неверный заголовок окна сброса");
     await q.click("#reset-no"); await W(q, 350);
-    check(await num() === "2", "«Отмена» сбросила счётчик");
+    check(await num() === "40", "«Отмена» сбросила счётчик");
     await q.click("#tb-reset"); await W(q, 350); await q.click("#reset-yes"); await W(q, 350);
-    check(await num() === "0", "сброс счётчика не сработал");
-    // влезает на маленький экран, ничего не прячется под нижнюю панель
+    check(await num() === "0" && await q.locator("[data-slot='1'] b").innerText() === "5", "сброс сработал неверно");
+    // влезает на любой экран, круг не наезжает на соседей
     for (const [w, h] of [[320, 568], [390, 700], [430, 932]]) {
       await q.setViewportSize({ width: w, height: h }); await W(q, 200);
       const r = await q.evaluate(() => {
-        const seg = document.getElementById("tb-target").getBoundingClientRect();
+        const st = document.getElementById("tb-tap").getBoundingClientRect();
+        const d = document.querySelector(".tb-dial").getBoundingClientRect();
+        const sl = document.getElementById("tb-slots").getBoundingClientRect();
         const bar = document.getElementById("tabbar").getBoundingClientRect();
-        const s = document.getElementById("tasbih");
-        const c = document.getElementById("tb-tap").getBoundingClientRect();
-        const ph = document.getElementById("tb-phrase").getBoundingClientRect();
-        const meta = document.getElementById("tb-meta").getBoundingClientRect();
-        return { gap: bar.top - seg.bottom, over: s.scrollHeight - s.clientHeight, pageW: document.documentElement.scrollWidth,
-                 top: c.top - ph.bottom, bottom: meta.top - c.bottom, size: c.width };
+        return { stageGap: bar.top - st.bottom, top: d.top - sl.bottom, inside: d.bottom <= st.bottom && d.left >= st.left && d.right <= st.right,
+                 size: d.width, pageW: document.documentElement.scrollWidth };
       });
-      check(r.gap >= 8 && r.over <= 0 && r.pageW <= w && r.top >= 0 && r.bottom >= 0 && r.size >= 120, `${w}×${h}: счётчик не влезает в экран ${JSON.stringify(r)}`);
+      check(r.stageGap >= 0 && r.top >= 0 && r.inside && r.size >= 120 && r.pageW <= w, `${w}×${h}: счётчик не влезает ${JSON.stringify(r)}`);
     }
     // азкары после всего этого работают как прежде
     await q.click("#tab-home"); await q.click("#go-morning"); await W(q, 400);
