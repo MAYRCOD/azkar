@@ -106,13 +106,13 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
    Спрятана (масштаб 0), а когда у кнопки появляется класс done — «выпрыгивает» */
 .choice { position: relative; }
 .done-badge {
-  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
+  position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; border-radius: 50%;
   background: var(--accent); color: #fff; display: grid; place-items: center;
-  box-shadow: 0 0 0 3px var(--surface), 0 4px 12px rgba(52, 199, 89, .35);
+  box-shadow: 0 0 0 2px var(--surface), 0 3px 8px rgba(52, 199, 89, .3);
   transform: scale(0); opacity: 0;
   transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), opacity .2s ease;   /* лёгкий перелёт — как пружинка */
 }
-.done-badge svg { width: 16px; height: 16px; }
+.done-badge svg { width: 12px; height: 12px; }
 .choice.done .done-badge { transform: scale(1); opacity: 1; }
 .choice img { width: 100%; max-width: 100%; box-shadow: 0 6px 18px rgba(30, 43, 35, .12); aspect-ratio: 1; border-radius: 50%; object-fit: cover; display: block; }
 .choice b { font-family: var(--f-display); font-size: 18px; line-height: 1.25; }
