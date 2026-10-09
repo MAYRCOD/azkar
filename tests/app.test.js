@@ -64,7 +64,10 @@ const section = name => console.log("•", name);
     }
   }
 
-  section("Все утренние и все вечерние до конца");
+  section("Все утренние и все вечерние до конца, отметки «прочитано» на главной");
+  const done = t => p.evaluate(t => document.getElementById("go-" + t).classList.contains("done"), t);
+  const badge = t => p.evaluate(t => getComputedStyle(document.querySelector("#go-" + t + " .done-badge")).opacity, t);
+  check(!(await done("morning")) && !(await done("evening")), "отметка «прочитано» есть, хотя ничего не прочитано");
   await setMode(p, "cards");
   for (const t of ["morning", "evening"]) {
     await p.click("#go-" + t); await W(p, 400);
@@ -72,9 +75,13 @@ const section = name => console.log("•", name);
     check(await p.locator("#pos").innerText() === "Готово", `${t}: не дошли до конца`);
     const fin = await p.locator("#track .final").innerText();
     check(/прочитаны/.test(fin) && !/Да примет|Начать заново/.test(fin), `${t}: лишний текст на финальном экране`);
-    await p.click("#track .final .to-home"); await W(p, 300);
+    await p.click("#track .final .to-home"); await W(p, 600);
     check(await p.locator("#home").isVisible(), "«На главную» не вернула на главную");
+    check(await done(t) && await badge(t) === "1", `${t}: после прочтения нет отметки на главной`);
+    if (t === "morning") check(!(await done("evening")), "отметка у вечерних появилась после утренних");
   }
+  await p.reload(); await W(p, 600);
+  check(await done("morning") && await done("evening"), "отметки пропали после перезапуска");
 
   section("Сброс");
   await p.click("#go-morning"); await W(p, 400);
@@ -85,6 +92,7 @@ const section = name => console.log("•", name);
   await p.click("#back"); await p.click("#go-evening"); await W(p, 400);
   check(await p.locator("#pos").innerText() === "Готово", "сброс утренних задел вечерние");
   await p.click("#back"); await W(p, 200);
+  check(!(await done("morning")) && await done("evening"), "после сброса утренних отметки неверные");
 
   section("Список: нажатие считается, транскрипция выключается");
   await setMode(p, "list");
@@ -262,6 +270,13 @@ const section = name => console.log("•", name);
     await q.clock.setSystemTime(new Date("2026-10-07T21:10:00Z"));      // 00:10 следующего дня
     await q.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await W(q, 400);
     check((await q.locator("#counter-0 .num").innerText()) === "0 / 1", "после полуночи счётчики не обнулились");
+    // прочитали все вечерние → отметка; на следующий день — пропала
+    await q.evaluate(() => { const c = {}; AZKAR.filter(z => z.when.includes("evening")).forEach(z => c["evening:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; });
+    await q.click("#back"); await W(q, 300);
+    check(await q.evaluate(() => document.getElementById("go-evening").classList.contains("done")), "нет отметки у вечерних");
+    await q.clock.setSystemTime(new Date("2026-10-08T21:10:00Z"));
+    await q.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await W(q, 300);
+    check(!(await q.evaluate(() => document.getElementById("go-evening").classList.contains("done"))), "после полуночи отметка не пропала");
     await ctx.close();
   }
 
