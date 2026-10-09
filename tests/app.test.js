@@ -97,6 +97,52 @@ const section = name => console.log("•", name);
   await p.context().close();
 
   // ---------------------------------------------------------------
+  section("Размер текста: ползунки, образец, азкары, сохранение, «Как было»");
+  {
+    const q = await freshPage();
+    const fs = sel => q.evaluate(s => parseFloat(getComputedStyle(document.querySelector(s)).fontSize), sel);
+    const slide = (id, v) => q.evaluate(([id, v]) => { const r = document.getElementById(id); r.value = v; r.dispatchEvent(new Event("input", { bubbles: true })); }, [id, v]);
+    await q.click("#tab-settings"); await W(q, 300);
+    check(await q.locator("#size-value").innerText() === "Обычный", "по умолчанию размер не «Обычный»");
+    await q.click("#open-size"); await W(q, 400);
+    check(await q.locator("#size-sheet").isVisible(), "окно размера не открылось");
+    check(await q.locator("#size-reset").isDisabled(), "«Как было» активна при обычном размере");
+    await slide("size-ar", 1.5); await slide("size-tx", 1.2); await W(q, 100);
+    check(Math.abs(await fs(".size-preview .ar") - 42) < 0.5, "образец арабского не увеличился");
+    check(Math.abs(await fs(".size-preview .ru") - 15.5 * 1.2) < 0.5, "образец перевода не увеличился");
+    check(await q.locator("#size-ar-out").innerText() === "150%", "не показан процент");
+    // ползунок тянется настоящей мышью
+    const box = await q.locator("#size-tx").boundingBox();
+    await q.mouse.move(box.x + box.width - 3, box.y + box.height / 2); await q.mouse.down(); await q.mouse.up(); await W(q, 100);
+    check(await q.locator("#size-tx-out").innerText() === "160%", "ползунок не двигается пальцем");
+    await slide("size-tx", 1.2);
+    await q.mouse.click(5, 5); await W(q, 400);
+    check(await q.locator("#size-sheet").isHidden(), "окно размера не закрылось нажатием мимо");
+    check(await q.locator("#size-value").innerText() === "150% · 120%", "в настройках не тот размер: " + await q.locator("#size-value").innerText());
+    // в азкарах, в обоих видах, и после перезапуска
+    for (const m of ["cards", "list"]) {
+      await q.evaluate(m => localStorage.setItem("azkar-mode", JSON.stringify(m)), m);
+      await q.reload(); await W(q, 300);
+      await q.click("#go-morning"); await W(q, 500);
+      const box = m === "cards" ? "#track" : "#list-view";
+      check(Math.abs(await fs(box + " .ar") - 42) < 0.5 && Math.abs(await fs(box + " .ru") - 18.6) < 0.5 && Math.abs(await fs(box + " .tr") - 17.4) < 0.5,
+        `${m}: размер в азкарах не применился или не сохранился`);
+      await q.click("#back"); await W(q, 200);
+    }
+    // «Как было»
+    await q.click("#tab-settings"); await q.click("#open-size"); await W(q, 400);
+    await q.click("#size-reset"); await W(q, 100);
+    check(await q.locator("#size-ar-out").innerText() === "100%" && await q.locator("#size-tx-out").innerText() === "100%", "«Как было» не вернула 100%");
+    await q.mouse.click(5, 5); await W(q, 400);
+    check(await q.locator("#size-value").innerText() === "Обычный" && Math.abs(await fs(".size-preview .ar") - 28) < 0.5, "после «Как было» размер не обычный");
+    // окно влезает на маленький экран
+    await q.setViewportSize({ width: 320, height: 568 }); await q.click("#open-size"); await W(q, 400);
+    const fit = await q.evaluate(() => { const r = document.querySelector("#size-sheet .sheet").getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight + 1; });
+    check(fit, "окно размера не влезает на маленький экран");
+    await q.context().close();
+  }
+
+  // ---------------------------------------------------------------
   section("Счётчик: нажатия, три счётчика, сброс, сохранение, вёрстка");
   {
     const q = await freshPage();

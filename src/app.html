@@ -117,10 +117,10 @@ html.standalone #reader { padding-top: 22px; }
   display: flex; flex-direction: column; padding-left: 12px; padding-right: 36px;
 }
 .content { display: flex; flex-direction: column; gap: 14px; padding-block: 14px 8px; }
-.ar { font-family: var(--f-arabic); font-size: 28px; line-height: 1.95; direction: rtl; text-align: center; margin: 0; }
-.ru { margin: 0; font-size: 15.5px; }
-.tr { margin: 0; color: var(--muted); font-size: 14.5px; }
-.src { margin: 0; font-size: 12.5px; color: var(--muted); }
+.ar { font-family: var(--f-arabic); font-size: calc(28px * var(--ar-k, 1)); line-height: 1.95; direction: rtl; text-align: center; margin: 0; }
+.ru { margin: 0; font-size: calc(15.5px * var(--tx-k, 1)); }
+.tr { margin: 0; color: var(--muted); font-size: calc(14.5px * var(--tx-k, 1)); }
+.src { margin: 0; font-size: calc(12.5px * var(--tx-k, 1)); color: var(--muted); }
 .nowrap { white-space: nowrap; }
 .ar-comma { font-family: "Amiri", "Traditional Arabic", serif; }
 .divider { height: 1px; background: var(--line); margin-block: 4px; }
@@ -215,6 +215,49 @@ html.standalone #reader { padding-top: 22px; }
 #tasbih.enter > :nth-child(2) { animation-delay: .06s; }
 #tasbih.enter > :nth-child(3) { animation-delay: .12s; }
 
+/* ---------- Окно «Размер текста» ---------- */
+/* Множители --ar-k и --tx-k ставит программа на <html>; размеры текста в азкарах
+   умножаются на них (calc выше). Так весь текст меняется одной строчкой */
+.size-preview {
+  border: 1px solid var(--edge); border-radius: 16px; padding: 10px 14px 12px;
+  display: grid; gap: 4px; max-height: 34vh; overflow: hidden; margin-bottom: 4px;
+}
+.size-preview .ar { line-height: 1.8; }
+.size-preview .ru { text-align: center; }
+/* образец виден всегда, даже если какой-то текст выключен в «Что показывать» */
+body .size-preview p { display: block; }
+/* у окна свой стиль абзацев (мелкий серый текст) — для образца возвращаем размеры, как в азкарах */
+.sheet .size-preview p { margin: 0; }
+.sheet .size-preview .ar { font-size: calc(28px * var(--ar-k, 1)); color: var(--fg); }
+.sheet .size-preview .ru { font-size: calc(15.5px * var(--tx-k, 1)); color: var(--fg); }
+.sheet .size-preview .tr { font-size: calc(14.5px * var(--tx-k, 1)); }
+.size-row { display: grid; gap: 8px; padding: 6px 4px; }
+.size-row + .size-row { border-top: 1px solid var(--line); padding-top: 12px; }
+.size-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 14px; }
+.size-head output { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; font-size: 13px; }
+.slider-line { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+.slider-line .s { font-size: 13px; width: 16px; text-align: center; }
+.slider-line .l { font-size: 21px; width: 16px; text-align: center; }
+.slider-line .ar-glyph { font-family: var(--f-arabic); line-height: 1; }
+/* Ползунок в духе iPhone: тонкая дорожка, слева зелёная до кружка (--p — сколько процентов заполнено) */
+input[type=range] {
+  -webkit-appearance: none; appearance: none; flex: 1; height: 28px; margin: 0; background: none;
+  touch-action: none;   /* палец на ползунке двигает ползунок, а не окно */
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--accent) var(--p, 50%), #e3e9e5 var(--p, 50%));
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 28px; height: 28px; margin-top: -12px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.16);
+}
+input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: #e3e9e5; }
+input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
+input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
+.sheet-btn.plain { background: none; color: var(--accent-ink); padding: 10px; }
+.sheet-btn.plain:disabled { color: #b5beb8; }
+
 /* ---------- Настройки (в духе настроек iPhone) ---------- */
 #settings { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 14px; }
 #settings h1 { font-size: 24px; }
@@ -235,6 +278,7 @@ html.standalone #reader { padding-top: 22px; }
 .tile-green { background: #34c759; }
 .tile-blue { background: #007aff; }
 .tile-orange { background: #ff9500; }
+.tile-purple { background: #af52de; }
 .row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   width: 100%; min-height: 48px; padding: 8px 14px; background: none; border: 0; text-align: left;
@@ -426,6 +470,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <span class="group-title">Чтение</span>
     <div class="rows">
       <button class="row" id="open-mode"><span>Вид чтения азкаров</span><span class="value" id="mode-value"></span></button>
+      <button class="row" id="open-size"><span>Размер текста</span><span class="value" id="size-value"></span></button>
     </div>
   </div>
 </main>
@@ -437,6 +482,27 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <p id="reset-text"></p>
     <button class="sheet-btn danger" id="reset-yes">Сбросить</button>
     <button class="sheet-btn" id="reset-no">Отмена</button>
+  </div>
+</div>
+
+<!-- Окно «Размер текста»: два ползунка и образец, который меняется сразу -->
+<div class="sheet-back" id="size-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="size-title">
+    <h2 id="size-title">Размер текста</h2>
+    <div class="size-preview" aria-hidden="true">
+      <p class="ar" lang="ar">سُبْحَانَ اللَّهِ وَبِحَمْدِهِ</p>
+      <p class="ru">Пречист Аллах и хвала Ему</p>
+      <p class="tr">Субхана-Ллахи ва би-хамдихи</p>
+    </div>
+    <div class="size-row">
+      <div class="size-head"><label for="size-ar">Арабский текст</label><output id="size-ar-out"></output></div>
+      <div class="slider-line"><span class="s ar-glyph">ع</span><input type="range" id="size-ar" data-key="ar" min="0.8" max="1.6" step="0.1"><span class="l ar-glyph">ع</span></div>
+    </div>
+    <div class="size-row">
+      <div class="size-head"><label for="size-tx">Перевод и транскрипция</label><output id="size-tx-out"></output></div>
+      <div class="slider-line"><span class="s">А</span><input type="range" id="size-tx" data-key="tx" min="0.8" max="1.6" step="0.1"><span class="l">А</span></div>
+    </div>
+    <button class="sheet-btn plain" id="size-reset">Как было</button>
   </div>
 </div>
 
@@ -706,6 +772,9 @@ document.querySelectorAll(".tab-item").forEach(t =>
 
 /* Настройки */
 const MODE_NAMES = { cards: "По одному", list: "Списком" };
+// Размер текста: множители для арабского (ar) и для перевода с транскрипцией (tx). 1 = обычный
+let size = Object.assign({ ar: 1, tx: 1 }, load("azkar-size", {}));
+const pct = k => Math.round(k * 100) + "%";
 
 function renderSettings() {
   // переключатели
@@ -715,6 +784,19 @@ function renderSettings() {
   }
   // вид чтения
   document.getElementById("mode-value").textContent = MODE_NAMES[mode];
+  // размер текста: множители на <html> — их подхватывают все азкары и образец в окне
+  const root = document.documentElement.style;
+  root.setProperty("--ar-k", size.ar);
+  root.setProperty("--tx-k", size.tx);
+  document.getElementById("size-value").textContent =
+    size.ar === 1 && size.tx === 1 ? "Обычный" : size.ar === size.tx ? pct(size.ar) : `${pct(size.ar)} · ${pct(size.tx)}`;
+  for (const key of ["ar", "tx"]) {
+    const r = document.getElementById("size-" + key);
+    r.value = size[key];
+    r.style.setProperty("--p", (size[key] - r.min) / (r.max - r.min) * 100 + "%");   // зелёная часть дорожки
+    document.getElementById(`size-${key}-out`).textContent = pct(size[key]);
+  }
+  document.getElementById("size-reset").disabled = size.ar === 1 && size.tx === 1;
   document.querySelectorAll(".choice-row[data-mode]").forEach(o =>
     o.setAttribute("aria-checked", o.dataset.mode === mode ? "true" : "false"));
 }
@@ -739,6 +821,22 @@ document.querySelectorAll(".choice-row[data-mode]").forEach(o => o.addEventListe
   renderSettings();
   setTimeout(closeSheet, 180);   // короткая пауза, чтобы увидеть галочку
 }));
+
+// Окно «Размер текста». Событие input приходит на каждом шаге ползунка,
+// поэтому текст меняется прямо пока тянешь
+const sizeSheet = document.getElementById("size-sheet");
+document.getElementById("open-size").addEventListener("click", () => { sizeSheet.hidden = false; });
+sizeSheet.addEventListener("click", e => { if (e.target === sizeSheet) closeSheet(sizeSheet); });
+document.querySelectorAll("#size-sheet input[type=range]").forEach(r => r.addEventListener("input", () => {
+  size[r.dataset.key] = Math.round(r.value * 10) / 10;   // 1.2000001 → 1.2
+  store("azkar-size", size);
+  renderSettings();
+}));
+document.getElementById("size-reset").addEventListener("click", () => {
+  size = { ar: 1, tx: 1 };
+  store("azkar-size", size);
+  renderSettings();
+});
 
 /* ================================================================
    3. ВЫБОР: утренние или вечерние
