@@ -105,6 +105,47 @@ const section = name => console.log("•", name);
   await p.context().close();
 
   // ---------------------------------------------------------------
+  section("Тема: светлая, тёмная, как в системе");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 780 }, colorScheme: "dark" });
+    const q = await ctx.newPage(); q.on("pageerror", e => errs.push(e.message));
+    await q.goto(URL); await q.evaluate(() => localStorage.clear()); await q.reload(); await W(q, 400);
+    const th = () => q.evaluate(() => document.documentElement.dataset.theme);
+    const bg = sel => q.evaluate(s => getComputedStyle(document.querySelector(s)).backgroundColor, sel);
+    const dark = c => { const [r, g, b] = c.match(/\d+/g).map(Number); return r + g + b < 150; };
+    check(await th() === "dark", "по умолчанию тема не следует за тёмной системой");
+    check(dark(await bg("body")) && dark(await bg("#go-morning")) && dark(await bg("#tabbar")), "в тёмной теме остались светлые фоны");
+    // все экраны в тёмной теме — без светлых пятен
+    for (const go of [["#tab-settings", ".rows"], ["#tab-tasbih", ".tb-face"]]) {
+      await q.click(go[0]); await W(q, 300);
+      check(dark(await bg(go[1])), `тёмная тема: светлый фон у ${go[1]}`);
+    }
+    await q.click("#tab-home"); await q.click("#go-morning"); await W(q, 500);
+    check(dark(await bg("#counter-0")), "тёмная тема: светлый счётчик");
+    await q.click("#back"); await W(q, 200);
+    // выбрать светлую при тёмной системе
+    await q.click("#tab-settings"); await q.click("#open-theme"); await W(q, 400);
+    check(await q.locator("#theme-system").getAttribute("aria-checked") === "true", "галочка не на «Как в системе»");
+    await q.click("#theme-light"); await W(q, 500);
+    check(await th() === "light" && !dark(await bg("body")), "светлая тема не включилась");
+    check(await q.locator("#theme-sheet").isHidden() && await q.locator("#theme-value").innerText() === "Светлая", "окно темы не закрылось или подпись не та");
+    // сохраняется после перезапуска
+    await q.reload(); await W(q, 300);
+    check(await th() === "light", "светлая тема не сохранилась");
+    // тёмная при светлой системе
+    await q.emulateMedia({ colorScheme: "light" });
+    await q.click("#tab-settings"); await q.click("#open-theme"); await W(q, 400); await q.click("#theme-dark"); await W(q, 500);
+    check(await th() === "dark", "тёмная тема не включилась при светлой системе");
+    // «как в системе» следует за переключением телефона на ходу
+    await q.click("#open-theme"); await W(q, 400); await q.click("#theme-system"); await W(q, 500);
+    check(await th() === "light", "«как в системе» не взяла светлую систему");
+    await q.emulateMedia({ colorScheme: "dark" }); await W(q, 200);
+    check(await th() === "dark", "«как в системе» не переключилась вслед за телефоном");
+    check(await q.evaluate(() => document.querySelector('meta[name="theme-color"]').content) === "#0e1310", "цвет строки состояния не тёмный");
+    await ctx.close();
+  }
+
+  // ---------------------------------------------------------------
   section("Размер текста: ползунки, образец, азкары, сохранение, «Как было»");
   {
     const q = await freshPage();

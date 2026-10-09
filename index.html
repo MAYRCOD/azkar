@@ -19,6 +19,15 @@
   img { max-width: 100%; }
 </style>
 <title>Азкары утра и вечера</title>
+<script>
+/* Тема ставится самой первой строкой, ещё до того как браузер нарисует страницу, —
+   иначе в тёмной теме на долю секунды мелькал бы белый экран */
+(function () {
+  var t; try { t = JSON.parse(localStorage.getItem("azkar-theme")); } catch (e) {}
+  var dark = t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+})();
+</script>
 <style>
 /* Шрифт для арабского текста: KFGQPC HAFS Uthmanic Script (встроен без изменений) */
 @font-face {
@@ -40,10 +49,11 @@
   font-weight: 700;
   font-display: swap;
 }
-/* Макет: приложение на весь экран, белый фон.
+/* Макет: приложение на весь экран.
    Главная — две большие кнопки-картинки в ряд по центру экрана.
    Чтение — лента карточек, одна на экран, листается свайпом; счётчик всегда внизу.
-   Тема одна, светлая: белый фон задан явно, чтобы приложение выглядело одинаково везде. */
+   Две темы: светлая (ниже) и тёмная (:root[data-theme="dark"]). Все цвета берутся
+   только из этих переменных — поэтому тема переключается сменой одного атрибута на <html> */
 :root {
   color-scheme: light;
   --bg: #ffffff;
@@ -56,13 +66,45 @@
   --counter-bg: #e8ece9;     /* серый фон счётчика — заметно темнее белого фона */
   --counter-fill: #d3d9d5;   /* серое заполнение, пока азкар не дочитан */
   --gold: #b0802a;
-  --shadow: 0 1px 3px rgba(30, 43, 35, .04), 0 8px 24px rgba(30, 43, 35, .08);
-  --edge: rgba(30, 43, 35, .05);
+  --sh: 30, 43, 35;            /* цвет теней (R, G, B) — тёмно-зелёный, мягче чёрного */
+  --bg-rgb: 255, 255, 255;     /* фон в виде R, G, B — для полупрозрачного растворения под счётчиком */
+  --press: #f1f5f2;            /* подсветка нажатой кнопки и выбранной вкладки */
+  --inactive: #b5beb8;         /* неактивные значки и стрелки */
+  --track: #e3e9e5;            /* дорожка переключателей и ползунков */
+  --sheet-btn: #f2f3f2;        /* кнопки в выезжающих окнах */
+  --dim: rgba(30, 43, 35, .3); /* затемнение под выезжающим окном */
+  --shadow: 0 1px 3px rgba(var(--sh), .04), 0 8px 24px rgba(var(--sh), .08);
+  --edge: rgba(var(--sh), .05);
   --ease: cubic-bezier(.22, .8, .3, 1);   /* быстро стартует и мягко тормозит */   /* почти невидимая граница, чтобы края были мягкими */
   --f-display: "Nexa", system-ui, sans-serif;
   --f-body: "Nexa", system-ui, sans-serif;
   --f-arabic: "Hafs", "Amiri", "Traditional Arabic", serif;
 }
+/* Тёмная тема: почти чёрный фон с зелёным оттенком, карточки чуть светлее фона.
+   Зелёный — вариант iPhone для тёмного режима, он ярче и лучше читается на тёмном */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1310;
+  --surface: #19201c;
+  --fg: #e6ece8;
+  --muted: #8d9993;
+  --line: #29322d;
+  --accent: #30d158;
+  --accent-ink: #30d158;
+  --counter-bg: #222a25;
+  --counter-fill: #36423b;
+  --gold: #d6a84e;
+  --sh: 0, 0, 0;
+  --bg-rgb: 14, 19, 16;
+  --press: #252e29;
+  --inactive: #5d6a63;
+  --track: #39443e;
+  --sheet-btn: #252d28;
+  --dim: rgba(0, 0, 0, .55);
+  --shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+  --edge: rgba(255, 255, 255, .06);
+}
+html { background: var(--bg); }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -114,7 +156,7 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 }
 .done-badge svg { width: 12px; height: 12px; }
 .choice.done .done-badge { transform: scale(1); opacity: 1; }
-.choice img { width: 100%; max-width: 100%; box-shadow: 0 6px 18px rgba(30, 43, 35, .12); aspect-ratio: 1; border-radius: 50%; object-fit: cover; display: block; }
+.choice img { width: 100%; max-width: 100%; box-shadow: 0 6px 18px rgba(var(--sh), .12); aspect-ratio: 1; border-radius: 50%; object-fit: cover; display: block; }
 .choice b { font-family: var(--f-display); font-size: 18px; line-height: 1.25; }
 
 /* ---------- Чтение ---------- */
@@ -136,7 +178,7 @@ html.standalone #reader { padding-top: 22px; }
   transition: background .2s ease, transform .15s ease;
 }
 .icon-btn svg { width: 19px; height: 19px; }
-.icon-btn:active { background: #f1f5f2; transform: scale(.92); }
+.icon-btn:active { background: var(--press); transform: scale(.92); }
 
 .viewport { flex: 1; min-height: 0; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .track { display: flex; height: 100%; transition: transform .38s var(--ease); will-change: transform; transform: translate3d(0,0,0); }
@@ -171,7 +213,7 @@ html.standalone #reader { padding-top: 22px; }
 .dock::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
   /* к низу экрана текст плавно растворяется в белый — без резкой границы */
-  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.6) 40%, rgba(255,255,255,.97) 100%);
+  background: linear-gradient(to bottom, rgba(var(--bg-rgb), 0), rgba(var(--bg-rgb), .6) 40%, rgba(var(--bg-rgb), .97) 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px);
   mask-image: linear-gradient(to bottom, transparent, #000 24px);
 }
@@ -188,14 +230,14 @@ html.standalone #reader { padding-top: 22px; }
   background: var(--counter-bg); padding: 14px 18px; min-height: 54px;
   display: flex; justify-content: center; align-items: center; gap: 12px;
   font-size: 14px; user-select: none; -webkit-tap-highlight-color: transparent;
-  box-shadow: inset 0 0 0 1px rgba(30, 43, 35, .08), 0 2px 4px rgba(30, 43, 35, .06), 0 8px 20px rgba(30, 43, 35, .10);
+  box-shadow: inset 0 0 0 1px rgba(var(--sh), .08), 0 2px 4px rgba(var(--sh), .06), 0 8px 20px rgba(var(--sh), .10);
 }
 .counter .fill { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(0); background: var(--counter-fill); transition: transform .3s var(--ease), background .35s ease; }
 .counter.full .fill { background: var(--accent); }   /* дочитал — кнопка становится зелёной */
 .counter span { position: relative; }
 .counter .num { font-size: 17px; font-variant-numeric: tabular-nums; }
 .counter { transition: transform .15s ease, color .35s ease; }
-.counter.full { color: var(--bg); }
+.counter.full { color: #fff; }
 .counter:active { transform: scale(.99); }
 .hint { text-align: center; font-size: 11px; color: var(--muted); margin: 0; }
 
@@ -235,7 +277,7 @@ html.standalone #reader { padding-top: 22px; }
 .tb-dial { position: relative; width: min(100cqh - 40px, 100cqw - 48px, 270px); aspect-ratio: 1; display: grid; place-items: center; pointer-events: none; }
 .tb-face {
   width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--surface);
-  box-shadow: 0 2px 6px rgba(30, 43, 35, .06), 0 18px 44px rgba(30, 43, 35, .14);
+  box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 18px 44px rgba(var(--sh), .14);
   display: grid; place-content: center; text-align: center; transition: transform .12s ease;
 }
 .tb-stage:active .tb-face { transform: scale(.97); }
@@ -279,17 +321,17 @@ input[type=range] {
 }
 input[type=range]::-webkit-slider-runnable-track {
   height: 4px; border-radius: 2px;
-  background: linear-gradient(to right, var(--accent) var(--p, 50%), #e3e9e5 var(--p, 50%));
+  background: linear-gradient(to right, var(--accent) var(--p, 50%), var(--track) var(--p, 50%));
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 28px; height: 28px; margin-top: -12px; border-radius: 50%;
   background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.16);
 }
-input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: #e3e9e5; }
+input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track); }
 input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
 input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
 .sheet-btn.plain { background: none; color: var(--accent-ink); padding: 10px; }
-.sheet-btn.plain:disabled { color: #b5beb8; }
+.sheet-btn.plain:disabled { color: var(--inactive); }
 
 /* ---------- Настройки (в духе настроек iPhone) ---------- */
 #settings { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 14px; }
@@ -318,12 +360,12 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 }
 .row + .row { border-top: 1px solid var(--line); }
 .row .value { color: var(--muted); display: flex; align-items: center; gap: 6px; }
-.row .value::after { content: "›"; font-size: 20px; line-height: 1; color: #b5beb8; }
+.row .value::after { content: "›"; font-size: 20px; line-height: 1; color: var(--inactive); }
 
 /* Переключатель: дорожка и кружок */
 .switch {
   flex: none; position: relative; width: 46px; height: 28px; border-radius: 999px;
-  border: 0; background: #e3e9e5; transition: background .25s var(--ease);
+  border: 0; background: var(--track); transition: background .25s var(--ease);
 }
 .switch::after {
   content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
@@ -333,7 +375,7 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .switch[aria-checked="true"]::after { transform: translateX(18px); }
 
 /* Окно выбора, которое выезжает снизу */
-.sheet-back { position: fixed; inset: 0; background: rgba(30, 43, 35, .3); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet-back { position: fixed; inset: 0; background: var(--dim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
 .sheet-back { animation: dim-in .25s ease; }
 .sheet-back.closing { animation: dim-out .22s ease forwards; }
 .sheet-back.closing .sheet { animation: down .22s var(--ease) forwards; }
@@ -347,7 +389,7 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .sheet p { margin: 0 0 6px; text-align: center; color: var(--muted); font-size: 13.5px; }
 .sheet-btn {
   width: 100%; border: 0; border-radius: 14px; padding: 14px; font-size: 15px;
-  background: #f2f3f2; transition: transform .15s ease, background .2s ease;
+  background: var(--sheet-btn); transition: transform .15s ease, background .2s ease;
 }
 .sheet-btn:active { transform: scale(.98); }
 .sheet-btn.danger { color: #ff3b30; }          /* красный из iPhone: так в iOS выглядят необратимые действия */
@@ -361,8 +403,8 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes down { to { transform: translateY(100%); } }
 @keyframes fade { from { opacity: 0; } }
-@keyframes dim-in { from { background: rgba(30, 43, 35, 0); } }
-@keyframes dim-out { to { background: rgba(30, 43, 35, 0); } }
+@keyframes dim-in { from { background: rgba(var(--sh), 0); } }
+@keyframes dim-out { to { background: rgba(var(--sh), 0); } }
 
 /* Что показывать в азкарах: классы на <body> прячут нужные части */
 body.no-ar .ar, body.no-ru .ru, body.no-tr .tr { display: none; }
@@ -375,21 +417,21 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   width: min(330px, calc(100% - 32px));
   display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;
   background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(30, 43, 35, .06), 0 10px 28px rgba(30, 43, 35, .12);
+  box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 10px 28px rgba(var(--sh), .12);
   padding: 4px; z-index: 10;
   transition: transform .35s var(--ease), opacity .25s ease;
 }
 .tabbar.away { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
 .tabbar::before {
   content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3);
-  border-radius: 999px; background: #f1f5f2; transition: transform .38s var(--ease);
+  border-radius: 999px; background: var(--press); transition: transform .38s var(--ease);
 }
 /* Подложка переезжает под выбранную вкладку: на одну или две своих ширины + промежуток */
 .tabbar[data-active="tasbih"]::before { transform: translateX(calc(100% + 4px)); }
 .tabbar[data-active="settings"]::before { transform: translateX(calc(200% + 8px)); }
 .tab-item {
   display: grid; justify-items: center; gap: 2px; border: 0; background: none;
-  border-radius: 999px; padding: 6px 6px 5px; color: #b5beb8; font-size: 12px; position: relative;
+  border-radius: 999px; padding: 6px 6px 5px; color: var(--inactive); font-size: 12px; position: relative;
   transition: color .25s ease, transform .15s ease;
 }
 .tab-item svg { width: 21px; height: 21px; }
@@ -414,7 +456,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* Нажатие: кнопка чуть «проседает» */
 .choice, .btn, .row, .choice-row, .counter { transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
 .btn:active, button.row:active { transform: scale(.98); }
-.choice-row:active { background: #f1f5f2; }
+.choice-row:active { background: var(--press); }
 .tab-item:active { transform: scale(.94); }
 .counter:active { transform: scale(.985); }
 
@@ -505,6 +547,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
   </div>
   <div class="group" style="--i:1">
+    <span class="group-title">Оформление</span>
+    <div class="rows">
+      <button class="row" id="open-theme"><span>Тема</span><span class="value" id="theme-value"></span></button>
+    </div>
+  </div>
+  <div class="group" style="--i:2">
     <span class="group-title">Чтение</span>
     <div class="rows">
       <button class="row" id="open-mode"><span>Вид чтения азкаров</span><span class="value" id="mode-value"></span></button>
@@ -541,6 +589,22 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
       <div class="slider-line"><span class="s">А</span><input type="range" id="size-tx" data-key="tx" min="0.8" max="1.6" step="0.1"><span class="l">А</span></div>
     </div>
     <button class="sheet-btn plain" id="size-reset">Как было</button>
+  </div>
+</div>
+
+<!-- Окно выбора темы -->
+<div class="sheet-back" id="theme-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="theme-title">
+    <h2 id="theme-title">Тема</h2>
+    <button class="choice-row" role="radio" id="theme-light" data-theme-choice="light">
+      <span class="txt">Светлая<small>Белый фон</small></span><span class="check">✓</span>
+    </button>
+    <button class="choice-row" role="radio" id="theme-dark" data-theme-choice="dark">
+      <span class="txt">Тёмная<small>Тёмный фон — удобно читать вечером</small></span><span class="check">✓</span>
+    </button>
+    <button class="choice-row" role="radio" id="theme-system" data-theme-choice="system">
+      <span class="txt">Как в системе<small>Меняется вместе с настройкой телефона</small></span><span class="check">✓</span>
+    </button>
   </div>
 </div>
 
@@ -823,6 +887,18 @@ document.querySelectorAll(".tab-item").forEach(t =>
 
 /* Настройки */
 const MODE_NAMES = { cards: "По одному", list: "Списком" };
+// Тема: "light", "dark" или "system" (как в телефоне). По умолчанию — как в системе
+const THEME_NAMES = { light: "Светлая", dark: "Тёмная", system: "Как в системе" };
+let theme = load("azkar-theme", "system");
+const systemDark = matchMedia("(prefers-color-scheme: dark)");
+function applyTheme() {
+  const dark = theme === "dark" || (theme === "system" && systemDark.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  // цвет полосы браузера и строки состояния — под цвет фона
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = dark ? "#0e1310" : "#ffffff");
+}
+// телефон сам переключил тему (например, вечером по расписанию) — переключаемся и мы
+systemDark.addEventListener("change", () => { if (theme === "system") applyTheme(); });
 // Размер текста: множители для арабского (ar) и для перевода с транскрипцией (tx). 1 = обычный
 let size = Object.assign({ ar: 1, tx: 1 }, load("azkar-size", {}));
 const pct = k => Math.round(k * 100) + "%";
@@ -835,6 +911,10 @@ function renderSettings() {
   }
   // вид чтения
   document.getElementById("mode-value").textContent = MODE_NAMES[mode];
+  applyTheme();
+  document.getElementById("theme-value").textContent = THEME_NAMES[theme];
+  document.querySelectorAll(".choice-row[data-theme-choice]").forEach(o =>
+    o.setAttribute("aria-checked", o.dataset.themeChoice === theme ? "true" : "false"));
   // размер текста: множители на <html> — их подхватывают все азкары и образец в окне
   const root = document.documentElement.style;
   root.setProperty("--ar-k", size.ar);
@@ -871,6 +951,17 @@ document.querySelectorAll(".choice-row[data-mode]").forEach(o => o.addEventListe
   store("azkar-mode", mode);
   renderSettings();
   setTimeout(closeSheet, 180);   // короткая пауза, чтобы увидеть галочку
+}));
+
+// Окно выбора темы — устроено так же, как окно вида чтения
+const themeSheet = document.getElementById("theme-sheet");
+document.getElementById("open-theme").addEventListener("click", () => { themeSheet.hidden = false; });
+themeSheet.addEventListener("click", e => { if (e.target === themeSheet) closeSheet(themeSheet); });
+document.querySelectorAll(".choice-row[data-theme-choice]").forEach(o => o.addEventListener("click", () => {
+  theme = o.dataset.themeChoice;
+  store("azkar-theme", theme);
+  renderSettings();
+  setTimeout(() => closeSheet(themeSheet), 180);
 }));
 
 // Окно «Размер текста». Событие input приходит на каждом шаге ползунка,
