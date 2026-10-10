@@ -285,7 +285,14 @@ const section = name => console.log("•", name);
     const t = await freshPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
     const cdp = await t.context().newCDPSession(t);
     const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
-    await t.click("#go-morning"); await W(t, 600);
+    await t.click("#go-morning");
+    // сразу после открытия: у экрана не должно быть проявления, иначе размытие внизу появится с опозданием
+    {
+      const o = await t.evaluate(() => { const r = document.getElementById("reader"); const cs = getComputedStyle(r); return { anim: cs.animationName, opacity: cs.opacity, blur: getComputedStyle(document.querySelector(".slide.active .dock"), "::before").backdropFilter }; });
+      check(o.anim === "none" && o.opacity === "1", "экран чтения должен появляться сразу, без проявления: " + JSON.stringify(o));
+      check(o.blur !== "none", "размытие должно быть с первого кадра после открытия");
+    }
+    await W(t, 600);
     await t.evaluate(() => {
       window.__ev = [];
       for (const n of ["pointerdown", "pointermove", "pointerup", "pointercancel"])
