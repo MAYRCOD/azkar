@@ -1,6 +1,6 @@
 // Сохраняет приложение в телефоне, чтобы оно открывалось без интернета.
 // Когда выкладываешь новую версию — поменяй число в VERSION, и телефоны обновятся.
-const VERSION = "azkar-v15";
+const VERSION = "azkar-v16";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
