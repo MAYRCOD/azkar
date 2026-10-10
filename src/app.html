@@ -225,7 +225,9 @@ html.standalone #reader { padding-top: 22px; }
 .counter { transition: transform .15s ease, color .35s ease; }
 .counter.full { color: #fff; }
 .counter:active { transform: scale(.99); }
-.hint { text-align: center; font-size: 11px; color: var(--muted); margin: 0; }
+/* margin-block, а не margin: 0 — иначе это правило стирает margin-inline: auto из .dock > *,
+   и на широком экране (iPad) блок подсказки прижимается влево, а не стоит под счётчиком */
+.hint { text-align: center; font-size: 11px; color: var(--muted); margin-block: 0; }
 
 .final { flex: 1; display: grid; place-content: center; text-align: center; gap: 14px; padding-bottom: 16vh; }   /* компенсируем полосу сверху — надпись ровно посередине экрана */
 .final h2 { font-family: var(--f-display); font-size: 25px; margin: 0; }
