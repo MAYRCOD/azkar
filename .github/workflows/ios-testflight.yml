@@ -1,0 +1,91 @@
+# Сборка iOS-приложения на облачном Mac от GitHub и отправка в TestFlight.
+# Запускается вручную: вкладка Actions → «iOS → TestFlight» → Run workflow.
+#
+# Нужны секреты репозитория (Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID       — Team ID из developer.apple.com → Membership (10 символов)
+#   ASC_KEY_ID          — Key ID ключа App Store Connect API
+#   ASC_ISSUER_ID       — Issuer ID (над списком ключей)
+#   ASC_KEY_P8          — всё содержимое файла AuthKey_XXXX.p8, вместе со строками BEGIN/END
+
+name: iOS → TestFlight
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Собрать веб-часть и перенести её в iOS-проект
+        run: |
+          npm install
+          npm run sync
+
+      - name: Положить ключ App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s\n' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          echo "ASC_KEY_PATH=$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" >> $GITHUB_ENV
+
+      - name: Собрать архив (с подписью через ключ)
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild -version
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }}
+
+      - name: Отправить в App Store Connect (TestFlight)
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Удалить ключ
+        if: always()
+        run: rm -rf ~/private_keys

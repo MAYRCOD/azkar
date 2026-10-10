@@ -1,0 +1,8 @@
+{
+  "appId": "com.mayrcod.azkar",
+  "appName": "Азкары",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never"
+  }
+}
