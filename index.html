@@ -187,8 +187,15 @@ html.standalone #reader { padding-top: 22px; }
    перевод и транскрипция ниже — до них листают пальцем.
    Полосу прокрутки прячем так: прокручиваемый блок (.scroll) на 24px шире карточки,
    а карточка обрезает всё, что за её краем. Полоса оказывается в обрезанной части */
-.slide { flex: 0 0 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+/* touch-action не «просачивается» через блок с прокруткой: у .scroll своё значение, иначе браузер
+   перехватывает горизонтальный жест, присылает pointercancel, и карточка не едет за пальцем.
+   Поэтому pan-y указан и на карточке, и на .scroll */
+.slide { flex: 0 0 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; touch-action: pan-y; }
+/* Карточки дальше чем на одну от текущей прячем: телефон не держит в памяти
+   полтора десятка экранов с большим текстом, а свайп идёт только к соседней */
+.slide.far { visibility: hidden; }
 .slide > .scroll {
+  touch-action: pan-y;
   height: 100%; width: calc(100% + 24px); overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; padding-left: 20px; padding-right: 44px;
 }
@@ -217,11 +224,10 @@ html.standalone #reader { padding-top: 22px; }
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px);
   mask-image: linear-gradient(to bottom, transparent, #000 24px);
 }
-/* Размытие — тяжёлая операция для телефона. Включаем его только у карточки,
-   которую сейчас читают, и только когда лента не двигается */
-.track:not(.dragging):not(.moving) .slide.active .dock::before {
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-}
+/* Размытие включено всегда: раньше мы выключали его на время свайпа, и оно пропадало под пальцем,
+   а само переключение вызывало перерисовку и рывок в начале жеста. Далёкие карточки скрыты (.far),
+   так что размытие считается только у текущей и двух соседних */
+.dock::before { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 
 /* Счётчик: длинная кнопка, которая заполняется по мере нажатий */
 .dock > *, .item > .counter { width: 100%; max-width: 560px; margin-inline: auto; }
@@ -1175,7 +1181,6 @@ function updatePos() {
 function goTo(i, animate = true) {
   index = Math.max(0, Math.min(items.length, i));
   const track = document.getElementById("track");
-  track.classList.toggle("moving", animate);          // пока лента едет, размытие выключено
   if (animate) {
     track.classList.remove("dragging");
     track.style.transform = `translate3d(${-index * 100}%, 0, 0)`;
@@ -1186,7 +1191,10 @@ function goTo(i, animate = true) {
     void track.offsetWidth;
     track.classList.remove("dragging");
   }
-  [...track.children].forEach((sl, k) => sl.classList.toggle("active", k === index));
+  [...track.children].forEach((sl, k) => {
+    sl.classList.toggle("active", k === index);
+    sl.classList.toggle("far", Math.abs(k - index) > 1);   // видны текущая и соседние
+  });
   document.getElementById("pos").textContent =
     index < items.length ? `${index + 1} из ${items.length}` : "Готово";
 }
@@ -1199,9 +1207,6 @@ function goTo(i, animate = true) {
    ================================================================ */
 const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
-// Лента доехала — убираем отметку движения, размытие включится снова
-track.addEventListener("transitionend", e => { if (e.target === track) track.classList.remove("moving"); });
-
 let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, justSwiped = false;
 let lastX = 0, lastT = 0, speed = 0, frame = 0, width = 0;
 

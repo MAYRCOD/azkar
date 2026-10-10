@@ -244,11 +244,16 @@ const section = name => console.log("•", name);
   }
 
   // ---------------------------------------------------------------
-  section("Свайп: смах, перетаскивание, «резинка», размытие только на текущей карточке");
+  section("Свайп: смах, перетаскивание, «резинка», настоящие касания, размытие не пропадает");
   {
     const q = await freshPage({ viewport: { width: 390, height: 844 } });
     const pos = () => q.locator("#pos").innerText();
-    const blur = () => q.evaluate(() => [...document.querySelectorAll(".dock")].filter(d => getComputedStyle(d, "::before").backdropFilter !== "none").length);
+    // сколько видимых карточек с размытием и сколько вообще видимых (далёкие скрыты классом far)
+    const blurState = () => q.evaluate(() => {
+      const vis = [...document.querySelectorAll("#track .slide")].filter(s => getComputedStyle(s).visibility !== "hidden");
+      const withBlur = vis.filter(s => { const d = s.querySelector(".dock"); return d && getComputedStyle(d, "::before").backdropFilter !== "none"; });
+      return { visible: vis.length, docks: vis.filter(s => s.querySelector(".dock")).length, blurred: withBlur.length };
+    });
     const drag = async (x0, step, n, pause = 0) => {
       await q.mouse.move(x0, 300); await q.mouse.down();
       for (let i = 1; i <= n; i++) { await q.mouse.move(x0 + i * step, 300); if (pause) await W(q, pause); }
@@ -256,16 +261,76 @@ const section = name => console.log("•", name);
       await q.mouse.up(); await W(q, 500);
     };
     await q.click("#go-morning"); await W(q, 600);
-    check(await blur() === 1, "размытие должно быть ровно у одной карточки сразу после открытия");
+    {
+      const b = await blurState();
+      check(b.visible === 2, "на первой карточке видны только она и соседняя, а не все: " + b.visible);
+      check(b.blurred === b.docks, "размытие должно быть у всех видимых карточек сразу после открытия");
+    }
     await drag(100, 10, 20);       check(await pos() === "1 из 16", "на первой карточке свайп вправо должен оставлять на месте");
     await drag(300, -5, 10, 40);   check(await pos() === "1 из 16", "медленное короткое движение не должно листать");
     await drag(300, -10, 5);       check(await pos() === "2 из 16", "быстрый смах должен листать вперёд");
     await drag(330, -10, 13, 30);  check(await pos() === "3 из 16", "перетаскивание на треть экрана должно листать");
     await drag(60, 12, 5);         check(await pos() === "2 из 16", "быстрый смах вправо должен листать назад");
-    check(await blur() === 1, "после свайпа размытие должно быть ровно у одной карточки");
+    {
+      const b = await blurState();
+      check(b.visible === 3, "в середине видны текущая и две соседние: " + b.visible);
+      check(b.blurred === b.docks, "после свайпа размытие должно остаться у всех видимых карточек");
+    }
     await q.click("#counter-1"); await W(q, 300);
     check((await q.locator("#counter-1 .num").innerText()) === "1 / 10", "после свайпа нажатие на счётчик не считается");
     await q.context().close();
+
+    // Настоящие касания (как на iPhone). Мышь этого не проверяет: у неё нет touch-action.
+    // Раньше браузер отменял жест после первого движения (pointercancel), и карточка не ехала за пальцем.
+    const t = await freshPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+    const cdp = await t.context().newCDPSession(t);
+    const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
+    await t.click("#go-morning"); await W(t, 600);
+    await t.evaluate(() => {
+      window.__ev = [];
+      for (const n of ["pointerdown", "pointermove", "pointerup", "pointercancel"])
+        document.getElementById("viewport").addEventListener(n, () => window.__ev.push(n));
+    });
+    const touchSwipe = async (x0, y0, dxTotal, steps = 12) => {
+      await t.evaluate(() => { window.__ev = []; });
+      await touch("touchStart", x0, y0);
+      let midClass = "", midBlur = null;
+      for (let i = 1; i <= steps; i++) {
+        await touch("touchMove", x0 + dxTotal * i / steps, y0); await W(t, 16);
+        if (i === Math.floor(steps / 2)) {
+          midClass = await t.evaluate(() => document.getElementById("track").className);
+          midBlur = await t.evaluate(() => { const d = document.querySelector(".slide.active .dock"); return getComputedStyle(d, "::before").backdropFilter; });
+        }
+      }
+      const cancelled = await t.evaluate(() => window.__ev.includes("pointercancel"));
+      await touch("touchEnd"); await W(t, 700);
+      return { midClass, midBlur, cancelled };
+    };
+    const tpos = () => t.locator("#pos").innerText({ timeout: 3000 }).catch(() => "(нет счётчика позиции)");
+
+    let r = await touchSwipe(330, 300, -240);   // палец на тексте
+    check(!r.cancelled, "браузер не должен отменять горизонтальный жест (pointercancel)");
+    check(r.midClass.includes("dragging"), "пока палец едет, лента должна следовать за ним");
+    check(r.midBlur !== "none", "под пальцем размытие не должно пропадать");
+    check(await tpos() === "2 из 16", "свайп пальцем влево должен листать вперёд");
+
+    const cbox = await t.locator("#counter-1").boundingBox();   // палец на кнопке-счётчике
+    r = await touchSwipe(cbox.x + cbox.width - 20, cbox.y + cbox.height / 2, -240);
+    check(!r.cancelled, "жест, начатый на кнопке счётчика, не должен отменяться");
+    check(await tpos() === "3 из 16", "свайп, начатый на кнопке счётчика, должен листать");
+    check((await t.locator("#counter-1 .num").innerText()) === "0 / 10", "свайп с кнопки не должен считаться нажатием");
+
+    r = await touchSwipe(60, 300, 250);          // назад
+    check(await tpos() === "2 из 16", "свайп пальцем вправо должен листать назад");
+    {
+      const b = await t.evaluate(() => ({
+        far: [...document.querySelectorAll("#track .slide.far")].every(s => getComputedStyle(s).visibility === "hidden"),
+        classes: document.getElementById("track").className
+      }));
+      check(b.far, "далёкие карточки должны быть скрыты");
+      check(!b.classes.includes("moving"), "после свайпа не должно оставаться отметки «moving»");
+    }
+    await t.context().close();
   }
 
   // ---------------------------------------------------------------
