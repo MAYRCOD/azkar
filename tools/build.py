@@ -34,6 +34,8 @@ EMBED = {
 EMBED_TEXT = {
     # расчёт времени намазов: библиотека adhan 4.4.6 (лицензия MIT, src/vendor/adhan-LICENSE.txt)
     "__ADHAN_JS__": SRC / "vendor" / "adhan.umd.min.js",
+    # готовые расписания намазов по городам (делает tools/make_schedules.py)
+    "__SCHEDULES_JSON__": SRC / "data" / "schedules.json",
 }
 
 PWA_TAIL = """

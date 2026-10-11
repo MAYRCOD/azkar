@@ -590,10 +590,11 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <span class="group-title">Время намазов</span>
     <div class="rows">
       <button class="row" id="open-city"><span>Город</span><span class="value" id="city-value"></span></button>
+      <button class="row" id="open-source" hidden><span>Расписание</span><span class="value" id="source-value"></span></button>
       <button class="row" id="open-method"><span>Способ расчёта</span><span class="value" id="method-value"></span></button>
       <button class="row" id="open-asr"><span>Время аср</span><span class="value" id="asr-value"></span></button>
     </div>
-    <p class="group-note">Время считается в телефоне по положению солнца, интернет не нужен. Сверьте его с расписанием вашей мечети и, если расходится, выберите другой способ расчёта.</p>
+    <p class="group-note" id="prayer-note"></p>
   </div>
   <div class="group" style="--i:2">
     <span class="group-title">Оформление</span>
@@ -676,6 +677,19 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <h2 id="method-title">Способ расчёта</h2>
     <p>Под каким углом солнца под горизонтом начинается фаджр и иша. У разных муфтиятов он разный, отсюда разница в несколько минут.</p>
     <div class="sheet-list" id="method-list"></div>
+  </div>
+</div>
+
+<!-- Окно выбора: готовое расписание этого места или расчёт по солнцу -->
+<div class="sheet-back" id="source-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="source-title">
+    <h2 id="source-title">Расписание</h2>
+    <button class="choice-row" role="radio" data-source="preset">
+      <span class="txt">Предустановленное<small id="source-preset-note">Готовое расписание на каждый день года</small></span><span class="check">✓</span>
+    </button>
+    <button class="choice-row" role="radio" data-source="auto">
+      <span class="txt">Автоматическое вычисление<small>Расчёт по солнцу, способ и аср выбираются ниже</small></span><span class="check">✓</span>
+    </button>
   </div>
 </div>
 
@@ -1109,8 +1123,53 @@ function placeDay(shift = 0) {
     year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d).map(x => [x.type, x.value]));
   return new Date(+parts.year, parts.month - 1, +parts.day);
 }
+/* --- Предустановленные расписания ---
+   Готовая таблица на каждый день года: 6 времён в минутах от полуночи, в постоянном сдвиге от Гринвича (off).
+   Хранится сжатой: первый день целиком, дальше — изменение к вчерашнему дню одной буквой (a = −12 … m = 0 … y = +12).
+   Для Чечни одно расписание на всю республику (так в мечетях), для остальных городов — если место ближе 40 км */
+const SCHEDULES = __SCHEDULES_JSON__;
+const NEAR_KM = 40;
+function distKm(lat1, lng1, lat2, lng2) {
+  const r = Math.PI / 180, a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
+    Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lng2 - lng1) * r / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(a));
+}
+// Какое готовое расписание подходит месту (id или null)
+function scheduleFor(lat, lng, region = "") {
+  const byRegion = SCHEDULES.find(s => s.cover.startsWith("region:") && region.includes(s.cover.slice(7)));
+  if (byRegion) return byRegion.id;
+  let best = null, bestKm = NEAR_KM;
+  for (const s of SCHEDULES) {
+    const d = distKm(lat, lng, s.lat, s.lng);
+    if (d <= bestKm) { bestKm = d; best = s.id; }
+  }
+  return best;
+}
+const unpacked = {};
+function scheduleTable(s) {
+  if (unpacked[s.id]) return unpacked[s.id];
+  const p = s.p, m = [];
+  for (let i = 0; i < 24; i += 4) m.push(+p.slice(i, i + 2) * 60 + +p.slice(i + 2, i + 4));
+  for (let i = 24; i < p.length; i++) m.push(m[m.length - 6] + p.charCodeAt(i) - 109);
+  return (unpacked[s.id] = m);
+}
+function presetTimes(shift) {
+  const s = SCHEDULES.find(x => x.id === place.sched);
+  if (!s) return null;
+  const d = placeDay(shift), y = d.getFullYear(), mo = d.getMonth(), da = d.getDate();
+  const base = Date.UTC(y, mo, da);
+  // номер дня в году; таблица на 365 дней, поэтому в високосный год 29 февраля берём как 28-е
+  let n = Math.round((base - Date.UTC(y, 0, 1)) / 864e5);
+  if ((y % 4 === 0 && y % 100 !== 0 || y % 400 === 0) && n >= 59) n--;
+  const t = scheduleTable(s), o = {};
+  PRAYERS.forEach(([k], i) => { o[k] = new Date(base + (t[n * 6 + i] - s.off) * 60000); });
+  return o;
+}
+
 function prayerTimes(shift = 0) {
-  if (!place || !window.adhan) return null;
+  if (!place) return null;
+  if (place.sched) return presetTimes(shift);
+  if (!window.adhan) return null;
   const c = new adhan.Coordinates(place.lat, place.lng);
   const params = METHODS[method][2] ? METHODS[method][2]() : adhan.CalculationMethod[method]();
   params.madhab = adhan.Madhab[asrSchool];
@@ -1148,7 +1207,7 @@ function renderWindow() {
   // строка с временем намазов; ближайший намаз подсвечен
   const now = new Date();
   const nextPrayer = (PRAYERS.find(([k]) => w.t[k] > now) || PRAYERS[0])[0];
-  document.getElementById("pt-city").textContent = place.name;
+  document.getElementById("pt-city").textContent = place.name + (place.sched ? " · предустановленное время" : "");
   document.getElementById("pt-row").innerHTML = PRAYERS.map(([k, name]) =>
     `<span class="pt${k === nextPrayer ? " next" : ""}" data-p="${k}"><small>${name}</small><b>${hm(w.t[k])}</b></span>`).join("");
 }
@@ -1157,6 +1216,20 @@ setInterval(() => { if (!document.getElementById("home").hidden) renderWindow();
 
 function renderPrayerSettings() {
   document.getElementById("city-value").textContent = place ? place.name : "Не выбран";
+  // выбор «предустановленное / автоматическое» есть, только если для места есть готовое расписание;
+  // способ расчёта и аср нужны только для автоматического
+  const avail = place && place.avail;
+  document.getElementById("open-source").hidden = !avail;
+  document.getElementById("source-value").textContent = place && place.sched ? "Предустановленное" : "Автоматическое";
+  document.getElementById("open-method").hidden = !!(place && place.sched);
+  document.getElementById("open-asr").hidden = !!(place && place.sched);
+  document.getElementById("prayer-note").textContent = place && place.sched
+    ? "Готовое расписание на каждый день года, как в мечетях. Интернет не нужен."
+    : place && place.avail
+      ? "Время считается в телефоне по положению солнца. Чтобы было как в мечетях, выберите «Предустановленное»."
+      : "Время считается в телефоне по положению солнца, интернет не нужен. Сверьте его с расписанием вашей мечети и, если расходится, выберите другой способ расчёта.";
+  document.querySelectorAll("[data-source]").forEach(o => o.setAttribute("aria-checked",
+    (o.dataset.source === "preset") === !!(place && place.sched) ? "true" : "false"));
   document.getElementById("method-value").textContent = METHODS[method][0];
   document.getElementById("asr-value").textContent = ASR_NAMES[asrSchool];
   document.getElementById("city-geo").setAttribute("aria-checked", place && place.geo ? "true" : "false");
@@ -1182,6 +1255,12 @@ function sheetOf(id, openers) {
 const citySheet = sheetOf("city-sheet", ["open-city", "set-city"]);
 const methodSheet = sheetOf("method-sheet", ["open-method"]);
 const asrSheet = sheetOf("asr-sheet", ["open-asr"]);
+const sourceSheet = sheetOf("source-sheet", ["open-source"]);
+document.querySelectorAll("[data-source]").forEach(o => o.addEventListener("click", () => {
+  place.sched = o.dataset.source === "preset" ? place.avail : null;
+  savePrayer();
+  setTimeout(() => closeSheet(sourceSheet), 180);
+}));
 
 /* --- Геопозиция ---
    Координаты округляем до сотых (около километра): для намазов этого хватает, а точный адрес не храним.
@@ -1193,8 +1272,8 @@ function askLocation(fromButton) {
   note.textContent = "Определяю…";
   navigator.geolocation.getCurrentPosition(async pos => {
     store("azkar-geo-denied", false);
-    place = { name: "Моё местоположение", lat: round2(pos.coords.latitude), lng: round2(pos.coords.longitude),
-              tz: Intl.DateTimeFormat().resolvedOptions().timeZone, geo: true };
+    const lat = round2(pos.coords.latitude), lng = round2(pos.coords.longitude), avail = scheduleFor(lat, lng);
+    place = { name: "Моё местоположение", lat, lng, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, geo: true, avail, sched: avail };
     note.textContent = "Определено";
     savePrayer();
     if (fromButton) setTimeout(() => closeSheet(citySheet), 400);
@@ -1202,7 +1281,12 @@ function askLocation(fromButton) {
       const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=ru&lat=${place.lat}&lon=${place.lng}`);
       const a = (await r.json()).address || {};
       const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county;
-      if (name && place.geo) { place.name = name; savePrayer(); }
+      if (!place.geo) return;
+      if (name) place.name = name;
+      // теперь знаем регион: в любом селе Чечни — общее расписание республики
+      const avail = scheduleFor(place.lat, place.lng, a.state || "");
+      if (avail !== place.avail) { place.avail = avail; place.sched = avail; }
+      savePrayer();
     } catch (e) {}
   }, err => {
     if (err.code === err.PERMISSION_DENIED) store("azkar-geo-denied", true);   // больше сами не спрашиваем
@@ -1237,16 +1321,22 @@ async function searchPlaces(q) {
   searchNote.textContent = found.length ? "" : "Ничего не нашлось. Проверьте название или попробуйте соседний город";
   cityList.innerHTML = "";
   found.forEach((f, i) => {
-    const b = document.createElement("button");
-    b.className = "choice-row"; b.setAttribute("role", "radio"); b.dataset.i = i;
-    const txt = document.createElement("span"); txt.className = "txt";
-    txt.textContent = f.name;   // textContent, а не innerHTML: название пришло из интернета, вставляем как простой текст
-    const small = document.createElement("small");
-    small.textContent = [f.admin1, f.country].filter(Boolean).join(", ");
-    txt.appendChild(small);
-    const check = document.createElement("span"); check.className = "check"; check.textContent = "✓";
-    b.append(txt, check);
-    cityList.appendChild(b);
+    const where = [f.admin1, f.country].filter(Boolean).join(", ");
+    const avail = scheduleFor(f.latitude, f.longitude, f.admin1 || "");
+    // есть готовое расписание → две строки: «предустановленное» и «автоматическое»; нет → одна
+    const variants = avail ? [[avail, "Предустановленное время"], ["", "Автоматическое вычисление"]] : [["", ""]];
+    for (const [sched, how] of variants) {
+      const b = document.createElement("button");
+      b.className = "choice-row"; b.setAttribute("role", "radio"); b.dataset.i = i; b.dataset.sched = sched;
+      const txt = document.createElement("span"); txt.className = "txt";
+      txt.textContent = f.name;   // textContent, а не innerHTML: название пришло из интернета, вставляем как простой текст
+      const small = document.createElement("small");
+      small.textContent = [how, where].filter(Boolean).join(" · ");
+      txt.appendChild(small);
+      const check = document.createElement("span"); check.className = "check"; check.textContent = "✓";
+      b.append(txt, check);
+      cityList.appendChild(b);
+    }
   });
 }
 document.getElementById("city-search").addEventListener("input", e => {
@@ -1259,7 +1349,8 @@ cityList.addEventListener("click", e => {
   const o = e.target.closest(".choice-row");
   if (!o) return;
   const f = found[o.dataset.i];
-  place = { name: f.name, region: f.admin1 || "", lat: round2(f.latitude), lng: round2(f.longitude), tz: f.timezone || undefined };
+  place = { name: f.name, region: f.admin1 || "", lat: round2(f.latitude), lng: round2(f.longitude), tz: f.timezone || undefined,
+            avail: scheduleFor(f.latitude, f.longitude, f.admin1 || ""), sched: o.dataset.sched || null };
   o.setAttribute("aria-checked", "true");
   savePrayer();
   setTimeout(() => closeSheet(citySheet), 180);
