@@ -32,8 +32,9 @@ EMBED = {
 
 PWA_TAIL = """
 <script>
-  // Включаем офлайн-режим
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+  // Включаем офлайн-режим — только на сайте (http/https). Внутри iOS-приложения файла sw.js нет,
+  // приложение и так работает без интернета; .catch — чтобы неудачная регистрация не давала ошибку
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>
