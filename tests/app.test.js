@@ -53,8 +53,9 @@ const section = name => console.log("•", name);
     dup: AZKAR.length - new Set(AZKAR.map(z => z.id)).size }));
   check(counts.m === 16, `основных утренних не 16, а ${counts.m}`);
   check(counts.e === 15, `основных вечерних не 15, а ${counts.e}`);
-  check(counts.mf === 16 + 22 && counts.ef === 15, `всего утренних (основные + полные) не 38 или вечерних не 15: ${counts.mf}/${counts.ef}`);
-  check(await p.evaluate(() => AZKAR.filter(z => z.full).map(z => z.times).join(",")) === "3,3,3,1,3,7,3,3,1,1,1,1,1,100,100,1,1,4,1,1,3,1", "полные утренние: не тот порядок или число повторов, что в видео");
+  check(counts.mf === 16 + 6 && counts.ef === 15, `всего утренних (основные + только полные) не 22 или вечерних не 15: ${counts.mf}/${counts.ef}`);
+  check(await p.evaluate(() => FULL_ORDER.morning.join(",")) === "m-ikhlas,m-falaq,m-nas,m-sayyid,m-adada,m-hasbi,m-bismillah,m-radiitu,m-bika,m-hayyu,m-fitra,m-asbahna,m-alim,m-tahlil10,m-subhan100,f-16,f-17,f-18,f-19,f-20,f-21,m-afiya", "полные утренние: не тот порядок, что в видео");
+  check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("morning") && !z.full).every(z => FULL_ORDER.morning.includes(z.id))), "не все основные утренние входят в полные");
   check(counts.dup === 0, "повторяются id азкаров");
 
   section("Основные и полные: переключатель, число азкаров, чтение, отметка «прочитано», сохранение");
@@ -70,7 +71,7 @@ const section = name => console.log("•", name);
     await p.click("#go-morning"); await W(p, 800);
     check((await p.locator("#pos").innerText()).endsWith("из 22"), "в полных утренних не 22 карточки: " + await p.locator("#pos").innerText());
     // аят аль-Курси есть, номер аята не оторван
-    check(await p.evaluate(() => items[15].id === "f-16" && items[15].name === "Аят аль-Курси" && items.every(z => z.full)), "в полных утренних не тот список (16-й должен быть аят аль-Курси)");
+    check(await p.evaluate(() => items[15].id === "f-16" && items[15].name === "Аят аль-Курси" && items[0].id === "m-ikhlas" && items[21].id === "m-afiya"), "в полных утренних не тот список (16-й должен быть аят аль-Курси)");
     await p.click("#back"); await W(p, 300);
     // выбор сохраняется после перезапуска
     await p.reload(); await W(p, 400);
@@ -82,7 +83,7 @@ const section = name => console.log("•", name);
     await p.click('.set-opt[data-set="full"]'); await W(p, 400);
     check(!(await p.evaluate(() => document.getElementById("go-morning").classList.contains("done"))), "в полных галочка, хотя прочитаны не все");
     await p.click("#go-morning"); await W(p, 800);
-    check((await p.locator("#pos").innerText()).startsWith("1 из 22"), "полные — свой счёт, должны начаться с первого: " + await p.locator("#pos").innerText());
+    check((await p.locator("#pos").innerText()).startsWith("16 из 22"), "прогресс общий: после основных полные должны продолжиться с аят аль-Курси: " + await p.locator("#pos").innerText());
     await p.click("#back"); await W(p, 300);
     await p.click('.set-opt[data-set="main"]'); await W(p, 300);
     await p.evaluate(() => { localStorage.removeItem(KEY); counts = {}; updateHome(); });
