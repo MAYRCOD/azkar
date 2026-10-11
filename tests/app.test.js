@@ -51,37 +51,43 @@ const section = name => console.log("•", name);
     m: AZKAR.filter(z => z.when.includes("morning") && !z.full).length, e: AZKAR.filter(z => z.when.includes("evening") && !z.full).length,
     mf: AZKAR.filter(z => z.when.includes("morning")).length, ef: AZKAR.filter(z => z.when.includes("evening")).length,
     dup: AZKAR.length - new Set(AZKAR.map(z => z.id)).size }));
-  check(counts.m === 16, `основных утренних не 16, а ${counts.m}`);
-  check(counts.e === 15, `основных вечерних не 15, а ${counts.e}`);
-  check(counts.mf === 25 && counts.ef === 22, `полных не 25/22, а ${counts.mf}/${counts.ef}`);
+  check(counts.m === 17, `основных утренних не 17, а ${counts.m}`);
+  check(counts.e === 16, `основных вечерних не 16, а ${counts.e}`);
+  check(counts.mf === 17 + 6 && counts.ef === 16 + 5, `всего утренних (основные + только полные) не 23 или вечерних не 21: ${counts.mf}/${counts.ef}`);
+  check(await p.evaluate(() => FULL_ORDER.morning.join(",")) === "m-ikhlas,m-falaq,m-nas,m-sayyid,m-adada,m-hasbi,m-bismillah,m-radiitu,m-bika,m-hayyu,m-fitra,m-asbahna,m-alim,f-14,m-subhan100,m-kursi,f-17,f-18,f-19,f-20,f-21,m-afiya", "полные утренние: не тот порядок, что в видео");
+  check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("morning") && !z.full && z.id !== "m-tahlil10").every(z => FULL_ORDER.morning.includes(z.id))), "не все основные утренние входят в полные");
+  check(await p.evaluate(() => { const a = AZKAR.find(z => z.id === "m-tahlil10"), b = AZKAR.find(z => z.id === "f-14"); return b.times === 100 && a.times === 10 && ["ar","ru","tr","src"].every(k => a[k] === b[k]); }), "«Ля иляха илля-Ллах» в полных: не 100 раз или текст отличается от основных");
+  check(await p.evaluate(() => FULL_ORDER.evening.join(",")) === "e-ikhlas,e-falaq,e-nas,e-sayyid,e-hasbi,e-bismillah,e-radiitu,e-bika,fe-ushhiduka,e-hayyu,fe-maamsa,e-alim,fe-tahlil100,e-subhan100,e-kursi,fe-baqara285,fe-baqara286,f-19,f-20,f-21,e-amsayna,e-kalimat,e-afiya", "полные вечерние: не тот порядок, что в видео");
+  check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("evening") && !z.full && z.id !== "e-tahlil10").every(z => FULL_ORDER.evening.includes(z.id))), "не все основные вечерние входят в полные");
+  check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("evening") && !z.full).map(z => z.id).join(",")) === "e-ikhlas,e-falaq,e-nas,e-sayyid,e-hasbi,e-bismillah,e-radiitu,e-bika,e-hayyu,e-alim,e-tahlil10,e-subhan100,e-kursi,e-amsayna,e-kalimat,e-afiya", "основные вечерние не в порядке полных");
   check(counts.dup === 0, "повторяются id азкаров");
 
   section("Основные и полные: переключатель, число азкаров, чтение, отметка «прочитано», сохранение");
   {
     check(await p.locator("#set-switch").isVisible(), "нет переключателя «Основные | Полные»");
     check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Основные", "по умолчанию не «Основные»");
-    check((await p.locator("#count-morning").innerText()) === "16 азкаров" && (await p.locator("#count-evening").innerText()) === "15 азкаров", "неверное число на кнопках (основные)");
+    check((await p.locator("#count-morning").innerText()) === "17 азкаров" && (await p.locator("#count-evening").innerText()) === "16 азкаров", "неверное число на кнопках (основные)");
     await p.click('.set-opt[data-set="full"]'); await W(p, 500);
-    check((await p.locator("#count-morning").innerText()) === "25 азкаров" && (await p.locator("#count-evening").innerText()) === "22 азкара", "неверное число на кнопках (полные)");
+    check((await p.locator("#count-morning").innerText()) === "22 азкара" && (await p.locator("#count-evening").innerText()) === "23 азкара", "неверное число на кнопках (полные): " + await p.locator("#count-morning").innerText() + " / " + await p.locator("#count-evening").innerText());
     // таблетка переехала вправо
     const pill = await p.evaluate(() => getComputedStyle(document.getElementById("set-switch"), "::before").transform);
     check(pill !== "none", "подложка переключателя не переехала");
     await p.click("#go-morning"); await W(p, 800);
-    check((await p.locator("#pos").innerText()).endsWith("из 25"), "в полных утренних не 25 карточек: " + await p.locator("#pos").innerText());
+    check((await p.locator("#pos").innerText()).endsWith("из 22"), "в полных утренних не 22 карточки: " + await p.locator("#pos").innerText());
     // аят аль-Курси есть, номер аята не оторван
-    check(await p.evaluate(() => items.some(z => z.id === "m-kursi") && document.querySelectorAll("#track .ar .nowrap").length > 0), "нет аят аль-Курси в полных");
+    check(await p.evaluate(() => items[15].id === "m-kursi" && items[15].name === "Аят аль-Курси" && items[0].id === "m-ikhlas" && items[21].id === "m-afiya"), "в полных утренних не тот список (16-й должен быть аят аль-Курси)");
     await p.click("#back"); await W(p, 300);
     // выбор сохраняется после перезапуска
     await p.reload(); await W(p, 400);
     check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Полные", "выбор набора не сохранился");
-    // в основных аят аль-Курси нет; основные прочитаны → галочка только в основных
+    // основные прочитаны → галочка только в основных
     await p.click('.set-opt[data-set="main"]'); await W(p, 400);
     await p.evaluate(() => { const c = {}; AZKAR.filter(z => z.when.includes("morning") && !z.full).forEach(z => c["morning:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; updateHome(); });
     check(await p.evaluate(() => document.getElementById("go-morning").classList.contains("done")), "основные прочитаны, а галочки нет");
     await p.click('.set-opt[data-set="full"]'); await W(p, 400);
     check(!(await p.evaluate(() => document.getElementById("go-morning").classList.contains("done"))), "в полных галочка, хотя прочитаны не все");
     await p.click("#go-morning"); await W(p, 800);
-    check((await p.locator("#pos").innerText()).startsWith("3 из 25"), "полные не начались с первого непрочитанного (3 — сто раз ля иляха): " + await p.locator("#pos").innerText());
+    check((await p.locator("#pos").innerText()).startsWith("14 из 22"), "прогресс общий: после основных полные должны продолжиться с «Ля иляха» ×100: " + await p.locator("#pos").innerText());
     await p.click("#back"); await W(p, 300);
     await p.click('.set-opt[data-set="main"]'); await W(p, 300);
     await p.evaluate(() => { localStorage.removeItem(KEY); counts = {}; updateHome(); });
@@ -287,7 +293,7 @@ const section = name => console.log("•", name);
     // азкары после всего этого работают как прежде
     await q.click("#tab-home"); await q.click("#go-morning"); await W(q, 400);
     await q.click("#counter-0"); await W(q, 200);
-    check((await q.locator("#counter-0 .num").innerText()) === "1 / 1", "азкары сломались после счётчика");
+    check((await q.locator("#counter-0 .num").innerText()) === "1 / 3", "азкары сломались после счётчика");
     await q.context().close();
   }
 
@@ -314,18 +320,18 @@ const section = name => console.log("•", name);
       check(b.visible === 2, "на первой карточке видны только она и соседняя, а не все: " + b.visible);
       check(b.blurred === b.docks, "размытие должно быть у всех видимых карточек сразу после открытия");
     }
-    await drag(100, 10, 20);       check(await pos() === "1 из 16", "на первой карточке свайп вправо должен оставлять на месте");
-    await drag(300, -5, 10, 40);   check(await pos() === "1 из 16", "медленное короткое движение не должно листать");
-    await drag(300, -10, 5);       check(await pos() === "2 из 16", "быстрый смах должен листать вперёд");
-    await drag(330, -10, 13, 30);  check(await pos() === "3 из 16", "перетаскивание на треть экрана должно листать");
-    await drag(60, 12, 5);         check(await pos() === "2 из 16", "быстрый смах вправо должен листать назад");
+    await drag(100, 10, 20);       check(await pos() === "1 из 17", "на первой карточке свайп вправо должен оставлять на месте");
+    await drag(300, -5, 10, 40);   check(await pos() === "1 из 17", "медленное короткое движение не должно листать");
+    await drag(300, -10, 5);       check(await pos() === "2 из 17", "быстрый смах должен листать вперёд");
+    await drag(330, -10, 13, 30);  check(await pos() === "3 из 17", "перетаскивание на треть экрана должно листать");
+    await drag(60, 12, 5);         check(await pos() === "2 из 17", "быстрый смах вправо должен листать назад");
     {
       const b = await blurState();
       check(b.visible === 3, "в середине видны текущая и две соседние: " + b.visible);
       check(b.blurred === b.docks, "после свайпа размытие должно остаться у всех видимых карточек");
     }
     await q.click("#counter-1"); await W(q, 300);
-    check((await q.locator("#counter-1 .num").innerText()) === "1 / 10", "после свайпа нажатие на счётчик не считается");
+    check((await q.locator("#counter-1 .num").innerText()) === "1 / 3", "после свайпа нажатие на счётчик не считается");
     await q.context().close();
 
     // Настоящие касания (как на iPhone). Мышь этого не проверяет: у неё нет touch-action.
@@ -367,16 +373,16 @@ const section = name => console.log("•", name);
     check(!r.cancelled, "браузер не должен отменять горизонтальный жест (pointercancel)");
     check(r.midClass.includes("dragging"), "пока палец едет, лента должна следовать за ним");
     check(r.midBlur !== "none", "под пальцем размытие не должно пропадать");
-    check(await tpos() === "2 из 16", "свайп пальцем влево должен листать вперёд");
+    check(await tpos() === "2 из 17", "свайп пальцем влево должен листать вперёд");
 
     const cbox = await t.locator("#counter-1").boundingBox();   // палец на кнопке-счётчике
     r = await touchSwipe(cbox.x + cbox.width - 20, cbox.y + cbox.height / 2, -240);
     check(!r.cancelled, "жест, начатый на кнопке счётчика, не должен отменяться");
-    check(await tpos() === "3 из 16", "свайп, начатый на кнопке счётчика, должен листать");
-    check((await t.locator("#counter-1 .num").innerText()) === "0 / 10", "свайп с кнопки не должен считаться нажатием");
+    check(await tpos() === "3 из 17", "свайп, начатый на кнопке счётчика, должен листать");
+    check((await t.locator("#counter-1 .num").innerText()) === "0 / 3", "свайп с кнопки не должен считаться нажатием");
 
     r = await touchSwipe(60, 300, 250);          // назад
-    check(await tpos() === "2 из 16", "свайп пальцем вправо должен листать назад");
+    check(await tpos() === "2 из 17", "свайп пальцем вправо должен листать назад");
     {
       const b = await t.evaluate(() => ({
         far: [...document.querySelectorAll("#track .slide.far")].every(s => getComputedStyle(s).visibility === "hidden"),
@@ -430,7 +436,7 @@ const section = name => console.log("•", name);
     await q.click("#go-morning"); await W(q, 300); await q.click("#counter-0"); await W(q, 900);
     await q.clock.setSystemTime(new Date("2026-10-07T21:10:00Z"));      // 00:10 следующего дня
     await q.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await W(q, 400);
-    check((await q.locator("#counter-0 .num").innerText()) === "0 / 1", "после полуночи счётчики не обнулились");
+    check((await q.locator("#counter-0 .num").innerText()) === "0 / 3", "после полуночи счётчики не обнулились");
     // прочитали все вечерние → отметка; на следующий день — пропала
     await q.evaluate(() => { const c = {}; AZKAR.filter(z => z.when.includes("evening")).forEach(z => c["evening:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; });
     await q.click("#back"); await W(q, 300);
