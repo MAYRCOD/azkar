@@ -436,6 +436,25 @@ const section = name => console.log("•", name);
       check(await g.locator("#set-city").isVisible(), "после запрета нет подсказки «Укажите город»");
       await ctx.close();
     }
+    // 2б) место сохранено в версии 17 (без готовых расписаний): после обновления включается предустановленное
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow" });
+      await mock(ctx);
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.clock.install({ time: new Date("2026-10-11T03:00:00Z") });
+      await g.goto(URL); await g.evaluate(() => { localStorage.clear();
+        localStorage.setItem("azkar-place", JSON.stringify({ name: "Моё местоположение", lat: 43.21, lng: 45.15, tz: "Europe/Moscow", geo: true })); });
+      await g.reload(); await W(g, 1200);
+      const pl = await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+      check(pl.avail === "grozny" && pl.sched === "grozny", "старое место из версии 17 не получило предустановленное время: " + JSON.stringify(pl));
+      check((await g.locator('.pt[data-p="fajr"] b').innerText()) === "4:51", "после обновления фаджр не 4:51");
+      // место по поиску, далеко от городов с таблицами — остаётся автоматическое
+      await g.evaluate(() => { localStorage.setItem("azkar-place", JSON.stringify({ name: "Красноярск", region: "Красноярский край", lat: 56.01, lng: 92.85, tz: "Asia/Krasnoyarsk" })); });
+      await g.reload(); await W(g, 600);
+      const kr = await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+      check(kr.avail === null && !kr.sched, "Красноярск после обновления: " + JSON.stringify(kr));
+      await ctx.close();
+    }
     // 3) поиск города и всё остальное
     const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", viewport: { width: 390, height: 844 } });
     await mock(ctx);

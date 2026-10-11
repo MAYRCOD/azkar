@@ -1191,6 +1191,20 @@ function presetTimes(shift) {
   return o;
 }
 
+// Место, сохранённое до версии 18, ещё не знает про готовые расписания: проверяем его один раз.
+// Если готовое есть — включаем его (так же, как при новом выборе места). У места по геопозиции
+// региона нет, поэтому заодно спрашиваем у OpenStreetMap, не Чечня ли это
+if (place && place.avail === undefined) {
+  place.avail = scheduleFor(place.lat, place.lng, place.region || "");
+  place.sched = place.avail;
+  store("azkar-place", place);
+  if (place.geo) fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=ru&lat=${place.lat}&lon=${place.lng}`)
+    .then(r => r.json()).then(j => {
+      const avail = scheduleFor(place.lat, place.lng, (j.address || {}).state || "");
+      if (place.geo && avail !== place.avail) { place.avail = avail; place.sched = avail; savePrayer(); }
+    }).catch(() => {});
+}
+
 function prayerTimes(shift = 0) {
   if (!place) return null;
   if (place.sched) return presetTimes(shift);
