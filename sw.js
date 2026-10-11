@@ -1,6 +1,6 @@
 // Сохраняет приложение в телефоне, чтобы оно открывалось без интернета.
 // Когда выкладываешь новую версию — поменяй число в VERSION, и телефоны обновятся.
-const VERSION = "azkar-v16";
+const VERSION = "azkar-v17";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -11,8 +11,10 @@ self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))));
   self.clients.claim();
 });
-// Сначала пробуем интернет (чтобы получать обновления), без интернета — берём сохранённое
+// Сначала пробуем интернет (чтобы получать обновления), без интернета — берём сохранённое.
+// Чужие адреса (поиск города, название места) не трогаем: их ответы не нужно хранить в телефоне
 self.addEventListener("fetch", e => {
+  if (new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(
     fetch(e.request)
       .then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return res; })

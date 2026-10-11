@@ -396,24 +396,72 @@ const section = name => console.log("•", name);
   // ---------------------------------------------------------------
   section("Окно азкаров: время намазов, что подсвечено в разное время суток");
   {
+    // Интернет в проверках не нужен: ответы поиска и названия места подменяем заготовками
+    const GEO = { results: [
+      { name: "Грозный", latitude: 43.31195, longitude: 45.68895, timezone: "Europe/Moscow", admin1: "Чечня", country: "Россия" },
+      { name: "Грозный", latitude: 55.1, longitude: 61.4, timezone: "Asia/Yekaterinburg", admin1: "Челябинская область", country: "Россия" },
+      { name: "<img src=x onerror=window.hacked=1>", latitude: 1, longitude: 1, timezone: "UTC", admin1: "", country: "" } ] };
+    const mock = async ctx => {
+      await ctx.route("https://geocoding-api.open-meteo.com/**", r => r.fulfill({ json: /name=%D0%93%D1%80/.test(r.request().url()) ? GEO : {} }));
+      await ctx.route("https://nominatim.openstreetmap.org/**", r => r.fulfill({ json: { address: { city: "Грозный" } } }));
+    };
+    // 1) человек разрешил геопозицию: при первом запуске место определяется само
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", permissions: ["geolocation"], geolocation: { latitude: 43.3178, longitude: 45.6949 } });
+      await mock(ctx);
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.clock.install({ time: new Date("2026-10-11T03:00:00Z") });
+      await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 1200);
+      const pl = await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+      check(pl && pl.geo && pl.lat === 43.32 && pl.lng === 45.69, "при первом запуске геопозиция не определилась: " + JSON.stringify(pl));
+      check(pl && pl.name === "Грозный", "название места не подставилось: " + (pl && pl.name));
+      check(await g.locator("#ptimes").isVisible() && (await g.locator("#pt-city").innerText()) === "Грозный", "после геопозиции не видно время намазов");
+      await ctx.close();
+    }
+    // 2) человек запретил: больше не спрашиваем, на главной — «Укажите город или село»
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow" });
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.goto(URL); await g.evaluate(() => localStorage.clear());
+      await g.evaluate(() => { navigator.geolocation.getCurrentPosition = (ok, err) => err({ code: 1, PERMISSION_DENIED: 1 }); });
+      await g.addInitScript(() => { navigator.geolocation.getCurrentPosition = (ok, err) => { window.asked = (window.asked || 0) + 1; err({ code: 1, PERMISSION_DENIED: 1 }); }; });
+      await g.reload(); await W(g, 400);
+      check(await g.evaluate(() => window.asked) === 1, "при первом запуске не спросили геопозицию");
+      check(await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-geo-denied"))) === true, "запрет не запомнился");
+      await g.reload(); await W(g, 400);
+      check(!(await g.evaluate(() => window.asked)), "после запрета спрашивают снова при каждом запуске");
+      check(await g.locator("#set-city").isVisible(), "после запрета нет подсказки «Укажите город»");
+      await ctx.close();
+    }
+    // 3) поиск города и всё остальное
     const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", viewport: { width: 390, height: 844 } });
+    await mock(ctx);
+    await ctx.addInitScript(() => { navigator.geolocation.getCurrentPosition = (ok, err) => err({ code: 1, PERMISSION_DENIED: 1 }); });
     const q = await ctx.newPage(); q.on("pageerror", e => errs.push(e.message));
     await q.clock.install({ time: new Date("2026-10-11T03:00:00Z") });   // 06:00 по Москве, после фаджра
     await q.goto(URL); await q.evaluate(() => localStorage.clear()); await q.reload(); await W(q, 300);
-    // город не выбран: подсказка вместо строки, ничего не выделено
+    // место не выбрано: подсказка вместо строки, ничего не выделено
     check(await q.locator("#set-city").isVisible(), "нет подсказки «Укажите город»");
-    check(!(await q.locator("#ptimes").isVisible()), "время намазов видно без города");
-    check(await q.locator(".choice.now").count() === 0, "без города что-то подсвечено");
-    // выбираем город прямо с главной
+    check(!(await q.locator("#ptimes").isVisible()), "время намазов видно без места");
+    check(await q.locator(".choice.now").count() === 0, "без места что-то подсвечено");
+    // ищем город прямо с главной
     await q.click("#set-city"); await W(q, 350);
-    await q.click('#city-list [data-city="Грозный"]'); await W(q, 500);
-    check(await q.locator("#city-sheet").isHidden(), "окно города не закрылось");
-    check(await q.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")).name) === "Грозный", "город не сохранился");
-    const pt = await q.evaluate(() => Object.fromEntries([...document.querySelectorAll(".pt")].map(e => [e.dataset.p, e.querySelector("b").textContent])));
-    // сверено с 5namaz.com (тот же способ, Всемирная исламская лига): 4:29 / 6:04 / 11:46 / 14:52 / 17:23 / 18:52
+    await q.fill("#city-search", "Г"); await W(q, 500);
+    check(await q.locator("#city-list .choice-row").count() === 0, "поиск по одной букве не должен начинаться");
+    await q.fill("#city-search", "Грозный"); await W(q, 700);
+    check(await q.locator("#city-list .choice-row").count() === 3, "поиск не показал результаты");
+    check(await q.evaluate(() => !window.hacked && !document.querySelector("#city-list img")), "название из интернета вставилось как код");
+    check((await q.locator("#city-list .choice-row").nth(1).innerText()).includes("Челябинская область"), "у одинаковых названий не видно область");
+    await q.locator("#city-list .choice-row").first().click(); await W(q, 500);
+    check(await q.locator("#city-sheet").isHidden(), "окно места не закрылось");
+    const saved = await q.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+    check(saved.name === "Грозный" && saved.tz === "Europe/Moscow" && saved.lat === 43.31, "место не сохранилось: " + JSON.stringify(saved));
+    const ptimes = () => q.evaluate(() => Object.fromEntries([...document.querySelectorAll(".pt")].map(e => [e.dataset.p, e.querySelector("b").textContent])));
     const mins = s => { const [h, m] = s.split(":"); return h * 60 + +m; };
-    const ref = { fajr: "4:29", sunrise: "6:04", dhuhr: "11:46", asr: "14:52", maghrib: "17:23", isha: "18:52" };
-    for (const k in ref) check(pt[k] && Math.abs(mins(pt[k]) - mins(ref[k])) <= 4, `Грозный 11.10: ${k} = ${pt[k]}, ожидалось около ${ref[k]}`);
+    const near = (pt, ref, tol, what) => { for (const k in ref) check(pt[k] && Math.abs(mins(pt[k]) - mins(ref[k])) <= tol, `${what}: ${k} = ${pt[k]}, ожидалось ${ref[k]}`); };
+    // по умолчанию — ДУМ России; сверено с moynamaz.org (ДУМ России, 18°/15°) на 11.10.2026
+    const pt = await ptimes();
+    near(pt, { fajr: "4:31", sunrise: "6:01", dhuhr: "11:49", asr: "14:50", maghrib: "17:26", isha: "18:39" }, 1, "Грозный, ДУМ России");
     const state = () => q.evaluate(() => ({ m: document.getElementById("go-morning").classList.contains("now"),
       e: document.getElementById("go-evening").classList.contains("now"), main: document.getElementById("now-main").textContent,
       sub: document.getElementById("now-sub").textContent, next: document.querySelector(".pt.next")?.dataset.p }));
@@ -439,6 +487,17 @@ const section = name => console.log("•", name);
     await q.click("#open-asr"); await W(q, 350); await q.click('[data-asr="Hanafi"]'); await W(q, 450);
     await q.click("#open-method"); await W(q, 350); await q.click('[data-method="Egyptian"]'); await W(q, 450);
     check((await q.locator("#method-value").innerText()) === "Египетское управление", "способ расчёта не сменился");
+    await q.click("#tab-home"); await W(q, 300);
+    const egy = await ptimes();
+    await q.click("#tab-settings"); await W(q, 200);
+    await q.click("#open-asr"); await W(q, 350); await q.click('[data-asr="Shafi"]'); await W(q, 450);
+    await q.click("#open-method"); await W(q, 350); await q.click('[data-method="MuslimWorldLeague"]'); await W(q, 450);
+    await q.click("#tab-home"); await W(q, 300);
+    // сверено с 5namaz.com (Всемирная исламская лига) на 11.10.2026
+    near(await ptimes(), { fajr: "4:29", sunrise: "6:04", dhuhr: "11:46", asr: "14:52", maghrib: "17:23", isha: "18:52" }, 4, "Грозный, МВЛ");
+    await q.click("#tab-settings"); await W(q, 200);
+    await q.click("#open-asr"); await W(q, 350); await q.click('[data-asr="Hanafi"]'); await W(q, 450);
+    await q.click("#open-method"); await W(q, 350); await q.click('[data-method="Egyptian"]'); await W(q, 450);
     await q.click("#tab-home"); await W(q, 300);
     const asr2 = await q.locator('.pt[data-p="asr"] b').innerText(), fajr2 = await q.locator('.pt[data-p="fajr"] b').innerText();
     check(mins(asr2) - mins(asr1) > 30, `ханафитский аср не позже: ${asr1} → ${asr2}`);
