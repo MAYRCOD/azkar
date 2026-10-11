@@ -290,7 +290,7 @@ const section = name => console.log("•", name);
     // азкары после всего этого работают как прежде
     await q.click("#tab-home"); await q.click("#go-morning"); await W(q, 400);
     await q.click("#counter-0"); await W(q, 200);
-    check((await q.locator("#counter-0 .num").innerText()) === "1 / 1", "азкары сломались после счётчика");
+    check((await q.locator("#counter-0 .num").innerText()) === "1 / 3", "азкары сломались после счётчика");
     await q.context().close();
   }
 
@@ -328,7 +328,7 @@ const section = name => console.log("•", name);
       check(b.blurred === b.docks, "после свайпа размытие должно остаться у всех видимых карточек");
     }
     await q.click("#counter-1"); await W(q, 300);
-    check((await q.locator("#counter-1 .num").innerText()) === "1 / 10", "после свайпа нажатие на счётчик не считается");
+    check((await q.locator("#counter-1 .num").innerText()) === "1 / 3", "после свайпа нажатие на счётчик не считается");
     await q.context().close();
 
     // Настоящие касания (как на iPhone). Мышь этого не проверяет: у неё нет touch-action.
@@ -376,7 +376,7 @@ const section = name => console.log("•", name);
     r = await touchSwipe(cbox.x + cbox.width - 20, cbox.y + cbox.height / 2, -240);
     check(!r.cancelled, "жест, начатый на кнопке счётчика, не должен отменяться");
     check(await tpos() === "3 из 17", "свайп, начатый на кнопке счётчика, должен листать");
-    check((await t.locator("#counter-1 .num").innerText()) === "0 / 10", "свайп с кнопки не должен считаться нажатием");
+    check((await t.locator("#counter-1 .num").innerText()) === "0 / 3", "свайп с кнопки не должен считаться нажатием");
 
     r = await touchSwipe(60, 300, 250);          // назад
     check(await tpos() === "2 из 17", "свайп пальцем вправо должен листать назад");
@@ -433,7 +433,7 @@ const section = name => console.log("•", name);
     await q.click("#go-morning"); await W(q, 300); await q.click("#counter-0"); await W(q, 900);
     await q.clock.setSystemTime(new Date("2026-10-07T21:10:00Z"));      // 00:10 следующего дня
     await q.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await W(q, 400);
-    check((await q.locator("#counter-0 .num").innerText()) === "0 / 1", "после полуночи счётчики не обнулились");
+    check((await q.locator("#counter-0 .num").innerText()) === "0 / 3", "после полуночи счётчики не обнулились");
     // прочитали все вечерние → отметка; на следующий день — пропала
     await q.evaluate(() => { const c = {}; AZKAR.filter(z => z.when.includes("evening")).forEach(z => c["evening:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; });
     await q.click("#back"); await W(q, 300);
