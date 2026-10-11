@@ -275,7 +275,7 @@ html.standalone #reader { padding-top: 22px; }
 /* Размытие включено всегда: раньше мы выключали его на время свайпа, и оно пропадало под пальцем,
    а само переключение вызывало перерисовку и рывок в начале жеста. Далёкие карточки скрыты (.far),
    так что размытие считается только у текущей и двух соседних */
-.dock::before { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }   /* было 4px — Майрбек попросил чуть мягче */
+.dock::before { -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }   /* было 4px, потом 3px — Майрбек попросил ещё мягче */
 
 /* Счётчик: длинная кнопка, которая заполняется по мере нажатий */
 .dock > *, .item > .counter { width: 100%; max-width: 560px; margin-inline: auto; }
@@ -475,7 +475,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   background: linear-gradient(to bottom, rgba(var(--bg-rgb), 0), rgba(var(--bg-rgb), .6) 40%, rgba(var(--bg-rgb), .97) 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px);
   mask-image: linear-gradient(to bottom, transparent, #000 24px);
-  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   transition: opacity .25s ease;
 }
 .tab-veil.away { opacity: 0; }   /* в чтении панели нет — и дымки нет (там своя, за счётчиком) */
