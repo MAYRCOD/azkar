@@ -53,7 +53,8 @@ const section = name => console.log("•", name);
     dup: AZKAR.length - new Set(AZKAR.map(z => z.id)).size }));
   check(counts.m === 16, `основных утренних не 16, а ${counts.m}`);
   check(counts.e === 15, `основных вечерних не 15, а ${counts.e}`);
-  check(counts.mf === 25 && counts.ef === 22, `полных не 25/22, а ${counts.mf}/${counts.ef}`);
+  check(counts.mf === 16 + 22 && counts.ef === 15, `всего утренних (основные + полные) не 38 или вечерних не 15: ${counts.mf}/${counts.ef}`);
+  check(await p.evaluate(() => AZKAR.filter(z => z.full).map(z => z.times).join(",")) === "3,3,3,1,3,7,3,3,1,1,1,1,1,100,100,1,1,4,1,1,3,1", "полные утренние: не тот порядок или число повторов, что в видео");
   check(counts.dup === 0, "повторяются id азкаров");
 
   section("Основные и полные: переключатель, число азкаров, чтение, отметка «прочитано», сохранение");
@@ -62,14 +63,14 @@ const section = name => console.log("•", name);
     check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Основные", "по умолчанию не «Основные»");
     check((await p.locator("#count-morning").innerText()) === "16 азкаров" && (await p.locator("#count-evening").innerText()) === "15 азкаров", "неверное число на кнопках (основные)");
     await p.click('.set-opt[data-set="full"]'); await W(p, 500);
-    check((await p.locator("#count-morning").innerText()) === "25 азкаров" && (await p.locator("#count-evening").innerText()) === "22 азкара", "неверное число на кнопках (полные)");
+    check((await p.locator("#count-morning").innerText()) === "22 азкара" && (await p.locator("#count-evening").innerText()) === "15 азкаров", "неверное число на кнопках (полные): " + await p.locator("#count-morning").innerText() + " / " + await p.locator("#count-evening").innerText());
     // таблетка переехала вправо
     const pill = await p.evaluate(() => getComputedStyle(document.getElementById("set-switch"), "::before").transform);
     check(pill !== "none", "подложка переключателя не переехала");
     await p.click("#go-morning"); await W(p, 800);
-    check((await p.locator("#pos").innerText()).endsWith("из 25"), "в полных утренних не 25 карточек: " + await p.locator("#pos").innerText());
+    check((await p.locator("#pos").innerText()).endsWith("из 22"), "в полных утренних не 22 карточки: " + await p.locator("#pos").innerText());
     // аят аль-Курси есть, номер аята не оторван
-    check(await p.evaluate(() => items.some(z => z.id === "m-kursi") && document.querySelectorAll("#track .ar .nowrap").length > 0), "нет аят аль-Курси в полных");
+    check(await p.evaluate(() => items[15].id === "f-16" && items[15].name === "Аят аль-Курси" && items.every(z => z.full)), "в полных утренних не тот список (16-й должен быть аят аль-Курси)");
     await p.click("#back"); await W(p, 300);
     // выбор сохраняется после перезапуска
     await p.reload(); await W(p, 400);
@@ -81,7 +82,7 @@ const section = name => console.log("•", name);
     await p.click('.set-opt[data-set="full"]'); await W(p, 400);
     check(!(await p.evaluate(() => document.getElementById("go-morning").classList.contains("done"))), "в полных галочка, хотя прочитаны не все");
     await p.click("#go-morning"); await W(p, 800);
-    check((await p.locator("#pos").innerText()).startsWith("3 из 25"), "полные не начались с первого непрочитанного (3 — сто раз ля иляха): " + await p.locator("#pos").innerText());
+    check((await p.locator("#pos").innerText()).startsWith("1 из 22"), "полные — свой счёт, должны начаться с первого: " + await p.locator("#pos").innerText());
     await p.click("#back"); await W(p, 300);
     await p.click('.set-opt[data-set="main"]'); await W(p, 300);
     await p.evaluate(() => { localStorage.removeItem(KEY); counts = {}; updateHome(); });
