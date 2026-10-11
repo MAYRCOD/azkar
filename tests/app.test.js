@@ -394,6 +394,81 @@ const section = name => console.log("•", name);
   }
 
   // ---------------------------------------------------------------
+  section("Окно азкаров: время намазов, что подсвечено в разное время суток");
+  {
+    const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", viewport: { width: 390, height: 844 } });
+    const q = await ctx.newPage(); q.on("pageerror", e => errs.push(e.message));
+    await q.clock.install({ time: new Date("2026-10-11T03:00:00Z") });   // 06:00 по Москве, после фаджра
+    await q.goto(URL); await q.evaluate(() => localStorage.clear()); await q.reload(); await W(q, 300);
+    // город не выбран: подсказка вместо строки, ничего не выделено
+    check(await q.locator("#set-city").isVisible(), "нет подсказки «Укажите город»");
+    check(!(await q.locator("#ptimes").isVisible()), "время намазов видно без города");
+    check(await q.locator(".choice.now").count() === 0, "без города что-то подсвечено");
+    // выбираем город прямо с главной
+    await q.click("#set-city"); await W(q, 350);
+    await q.click('#city-list [data-city="Грозный"]'); await W(q, 500);
+    check(await q.locator("#city-sheet").isHidden(), "окно города не закрылось");
+    check(await q.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")).name) === "Грозный", "город не сохранился");
+    const pt = await q.evaluate(() => Object.fromEntries([...document.querySelectorAll(".pt")].map(e => [e.dataset.p, e.querySelector("b").textContent])));
+    // сверено с 5namaz.com (тот же способ, Всемирная исламская лига): 4:29 / 6:04 / 11:46 / 14:52 / 17:23 / 18:52
+    const mins = s => { const [h, m] = s.split(":"); return h * 60 + +m; };
+    const ref = { fajr: "4:29", sunrise: "6:04", dhuhr: "11:46", asr: "14:52", maghrib: "17:23", isha: "18:52" };
+    for (const k in ref) check(pt[k] && Math.abs(mins(pt[k]) - mins(ref[k])) <= 4, `Грозный 11.10: ${k} = ${pt[k]}, ожидалось около ${ref[k]}`);
+    const state = () => q.evaluate(() => ({ m: document.getElementById("go-morning").classList.contains("now"),
+      e: document.getElementById("go-evening").classList.contains("now"), main: document.getElementById("now-main").textContent,
+      sub: document.getElementById("now-sub").textContent, next: document.querySelector(".pt.next")?.dataset.p }));
+    let s = await state();
+    check(s.m && !s.e && s.main === "Сейчас время утренних азкаров", "06:00: не подсвечены утренние: " + JSON.stringify(s));
+    check(s.sub.startsWith("Вечерние — после аср, в 14:") && s.next === "sunrise", "06:00: неверная подсказка: " + JSON.stringify(s));
+    const at = async iso => { await q.clock.setSystemTime(new Date(iso)); await q.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await W(q, 200); return state(); };
+    s = await at("2026-10-11T10:00:00Z");   // 13:00 — между зухром и аср
+    check(!s.m && !s.e && s.main.startsWith("Вечерние — после аср") && !s.sub, "13:00: неверно: " + JSON.stringify(s));
+    s = await at("2026-10-11T12:30:00Z");   // 15:30 — после аср
+    check(s.e && !s.m && s.main === "Сейчас время вечерних азкаров" && s.sub.startsWith("Утренние — после фаджра, в 4:"), "15:30: неверно: " + JSON.stringify(s));
+    s = await at("2026-10-11T23:00:00Z");   // 02:00 ночи — ещё вечер, утренние после фаджра
+    check(s.e && s.sub.startsWith("Утренние — после фаджра, в 4:") && s.next === "fajr", "02:00: неверно: " + JSON.stringify(s));
+    // прочитал вечерние — строка меняется, метка «Сейчас» остаётся
+    await q.evaluate(() => { const c = {}; AZKAR.filter(z => z.when.includes("evening")).forEach(z => c["evening:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; updateHome(); });
+    s = await state();
+    check(s.main === "Вечерние азкары прочитаны", "после чтения не написано «прочитаны»: " + s.main);
+    // ханафитский аср позже шафиитского, другой способ расчёта меняет фаджр
+    await q.clock.setSystemTime(new Date("2026-10-11T03:00:00Z"));
+    const asr1 = await q.locator('.pt[data-p="asr"] b').innerText();
+    await q.click("#tab-settings"); await W(q, 200);
+    check((await q.locator("#city-value").innerText()) === "Грозный", "в настройках не виден город");
+    await q.click("#open-asr"); await W(q, 350); await q.click('[data-asr="Hanafi"]'); await W(q, 450);
+    await q.click("#open-method"); await W(q, 350); await q.click('[data-method="Egyptian"]'); await W(q, 450);
+    check((await q.locator("#method-value").innerText()) === "Египетское управление", "способ расчёта не сменился");
+    await q.click("#tab-home"); await W(q, 300);
+    const asr2 = await q.locator('.pt[data-p="asr"] b').innerText(), fajr2 = await q.locator('.pt[data-p="fajr"] b').innerText();
+    check(mins(asr2) - mins(asr1) > 30, `ханафитский аср не позже: ${asr1} → ${asr2}`);
+    check(mins(fajr2) < mins(pt.fajr), `египетский способ не сдвинул фаджр раньше: ${pt.fajr} → ${fajr2}`);
+    // далёкий часовой пояс: время показывается по городу, а не по телефону
+    await q.evaluate(() => { localStorage.setItem("azkar-place", JSON.stringify({ name: "Уфа", lat: 54.7388, lng: 55.9721, tz: "Asia/Yekaterinburg" })); });
+    await q.reload(); await W(q, 300);
+    const ufaFajr = await q.locator('.pt[data-p="fajr"] b').innerText();
+    check(mins(ufaFajr) >= 5 * 60 && mins(ufaFajr) <= 7 * 60, "Уфа: фаджр не по местному времени: " + ufaFajr);
+    // узкий экран: время намазов влезает
+    for (const [w, h] of [[320, 568], [390, 844], [430, 932]]) {
+      await q.setViewportSize({ width: w, height: h }); await q.click("#tab-home"); await W(q, 1000);
+      const r = await q.evaluate(() => {
+        const bs = [...document.querySelectorAll(".pt b")].map(b => { const r = document.createRange(); r.selectNodeContents(b); return r.getBoundingClientRect(); });   // размер самих цифр, а не ячейки
+        // соседние времена в одной строке не должны касаться друг друга
+        const touch = bs.some((a, i) => i && Math.abs(bs[i - 1].top - a.top) < 2 && a.left - bs[i - 1].right < 4);
+        const home = document.getElementById("home");
+        return { pageW: document.documentElement.scrollWidth, touch,
+                 titleTop: document.querySelector(".ar-title").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop,
+                 ptBottom: document.getElementById("ptimes").getBoundingClientRect().bottom, tabTop: document.getElementById("tabbar").getBoundingClientRect().top,
+                 scrollable: home.scrollHeight > home.clientHeight };
+      });
+      check(r.pageW <= w && !r.touch, `${w}px: время намазов не влезает или слиплось`);
+      check(r.titleTop >= 0, `${w}×${h}: заголовок обрезан сверху`);
+      check(r.scrollable || r.ptBottom <= r.tabTop, `${w}×${h}: время намазов под нижней панелью, а прокрутки нет`);
+    }
+    await ctx.close();
+  }
+
+  // ---------------------------------------------------------------
   section("Установка на телефон и работа без интернета");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
