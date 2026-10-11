@@ -5,6 +5,9 @@
 //   apple-touch-icon.png  180×180  — иконка на экране «Домой» iPhone
 //   icon-192.png          192×192  — Android и manifest
 //   icon-512.png          512×512  — Android, экран загрузки
+//   ios/.../AppIcon-512@2x.png  1024×1024 — иконка iOS-приложения (Capacitor).
+//     App Store не принимает иконку с прозрачностью, поэтому после этой команды
+//     прозрачность убирается: python3 tools/flatten_icon.py
 
 const { chromium } = require("playwright");
 const fs = require("fs");
@@ -12,7 +15,12 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const svg = fs.readFileSync(path.join(ROOT, "src/logo/logo.svg"), "utf8");
-const SIZES = { "apple-touch-icon.png": 180, "icon-192.png": 192, "icon-512.png": 512 };
+const SIZES = {
+  "apple-touch-icon.png": 180,
+  "icon-192.png": 192,
+  "icon-512.png": 512,
+  "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png": 1024,
+};
 
 (async () => {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });

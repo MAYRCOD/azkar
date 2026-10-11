@@ -3,3 +3,6 @@ build/
 # Установленные пакеты для проверок — ставятся командой (cd tests && npm install)
 node_modules/
 package-lock.json
+
+# Папка для Capacitor — собирается командой npm run www
+www/

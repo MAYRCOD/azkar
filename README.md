@@ -75,3 +75,15 @@ python3 tools/build.py --version <следующая>
   бесплатно, без изменений — см. `src/fonts/KFGQPC-COPYRIGHT.txt`.
 - Русский шрифт: Nexa (Fontfabric) — платный. Перед публичным распространением
   нужна лицензия или замена на бесплатный шрифт.
+
+## Приложение для iPhone
+
+То же приложение упаковано для iPhone через Capacitor (папка `ios/`) и раздаётся через TestFlight.
+Внутри него — тот же `index.html`, поэтому правки делаются один раз в `src/app.html`.
+
+- Обычная публикация (push в `main`) обновляет **только сайт**.
+- Приложение собирается **только вручную**, когда накопились изменения:
+  `gh workflow run ios-testflight.yml -R MAYRCOD/azkar` (или Actions → «iOS → TestFlight» → Run workflow).
+  Облачный Mac соберёт, подпишет и отправит в TestFlight; через 15–30 минут придёт обновление.
+- Перенести свежий сайт в iOS-проект на своём Mac: `npm install && npm run sync`.
+

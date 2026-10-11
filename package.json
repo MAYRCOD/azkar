@@ -1,0 +1,16 @@
+{
+  "name": "azkar",
+  "private": true,
+  "description": "Азкары — упаковка веб-приложения в iOS через Capacitor",
+  "scripts": {
+    "www": "python3 tools/build.py && bash tools/make_www.sh",
+    "sync": "npm run www && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
+}
