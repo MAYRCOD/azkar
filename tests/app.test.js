@@ -47,9 +47,57 @@ const section = name => console.log("•", name);
   await p.click("#tab-settings"); await W(p, 200);
   check(await p.locator("#settings").isVisible(), "настройки не открылись");
   await p.click("#tab-home"); await W(p, 200);
-  const counts = await p.evaluate(() => ({ m: AZKAR.filter(z => z.when.includes("morning")).length, e: AZKAR.filter(z => z.when.includes("evening")).length }));
-  check(counts.m === 16, `утренних не 16, а ${counts.m}`);
-  check(counts.e === 15, `вечерних не 15, а ${counts.e}`);
+  const counts = await p.evaluate(() => ({
+    m: AZKAR.filter(z => z.when.includes("morning") && !z.full).length, e: AZKAR.filter(z => z.when.includes("evening") && !z.full).length,
+    mf: AZKAR.filter(z => z.when.includes("morning")).length, ef: AZKAR.filter(z => z.when.includes("evening")).length,
+    dup: AZKAR.length - new Set(AZKAR.map(z => z.id)).size }));
+  check(counts.m === 16, `основных утренних не 16, а ${counts.m}`);
+  check(counts.e === 15, `основных вечерних не 15, а ${counts.e}`);
+  check(counts.mf === 25 && counts.ef === 22, `полных не 25/22, а ${counts.mf}/${counts.ef}`);
+  check(counts.dup === 0, "повторяются id азкаров");
+
+  section("Основные и полные: переключатель, число азкаров, чтение, отметка «прочитано», сохранение");
+  {
+    check(await p.locator("#set-switch").isVisible(), "нет переключателя «Основные | Полные»");
+    check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Основные", "по умолчанию не «Основные»");
+    check((await p.locator("#count-morning").innerText()) === "16 азкаров" && (await p.locator("#count-evening").innerText()) === "15 азкаров", "неверное число на кнопках (основные)");
+    await p.click('.set-opt[data-set="full"]'); await W(p, 500);
+    check((await p.locator("#count-morning").innerText()) === "25 азкаров" && (await p.locator("#count-evening").innerText()) === "22 азкара", "неверное число на кнопках (полные)");
+    // таблетка переехала вправо
+    const pill = await p.evaluate(() => getComputedStyle(document.getElementById("set-switch"), "::before").transform);
+    check(pill !== "none", "подложка переключателя не переехала");
+    await p.click("#go-morning"); await W(p, 800);
+    check((await p.locator("#pos").innerText()).endsWith("из 25"), "в полных утренних не 25 карточек: " + await p.locator("#pos").innerText());
+    // аят аль-Курси есть, номер аята не оторван
+    check(await p.evaluate(() => items.some(z => z.id === "m-kursi") && document.querySelectorAll("#track .ar .nowrap").length > 0), "нет аят аль-Курси в полных");
+    await p.click("#back"); await W(p, 300);
+    // выбор сохраняется после перезапуска
+    await p.reload(); await W(p, 400);
+    check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Полные", "выбор набора не сохранился");
+    // в основных аят аль-Курси нет; основные прочитаны → галочка только в основных
+    await p.click('.set-opt[data-set="main"]'); await W(p, 400);
+    await p.evaluate(() => { const c = {}; AZKAR.filter(z => z.when.includes("morning") && !z.full).forEach(z => c["morning:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; updateHome(); });
+    check(await p.evaluate(() => document.getElementById("go-morning").classList.contains("done")), "основные прочитаны, а галочки нет");
+    await p.click('.set-opt[data-set="full"]'); await W(p, 400);
+    check(!(await p.evaluate(() => document.getElementById("go-morning").classList.contains("done"))), "в полных галочка, хотя прочитаны не все");
+    await p.click("#go-morning"); await W(p, 800);
+    check((await p.locator("#pos").innerText()).startsWith("3 из 25"), "полные не начались с первого непрочитанного (3 — сто раз ля иляха): " + await p.locator("#pos").innerText());
+    await p.click("#back"); await W(p, 300);
+    await p.click('.set-opt[data-set="main"]'); await W(p, 300);
+    await p.evaluate(() => { localStorage.removeItem(KEY); counts = {}; updateHome(); });
+    // на любом экране заголовок не обрезан сверху, а кнопки видны или до них можно долистать
+    for (const [w, h] of [[320, 568], [375, 667], [390, 844], [430, 932]]) {
+      for (const s of ["main", "full"]) {
+        await p.setViewportSize({ width: w, height: h }); await p.click(`.set-opt[data-set="${s}"]`); await W(p, 300);
+        const r = await p.evaluate(() => { const home = document.getElementById("home");
+          return { top: document.querySelector(".ar-title").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop,
+                   pageW: document.documentElement.scrollWidth }; });
+        check(r.top >= 0, `${w}×${h} ${s}: заголовок обрезан сверху (${Math.round(r.top)})`);
+        check(r.pageW <= w, `${w}×${h} ${s}: главная шире экрана`);
+      }
+    }
+    await p.setViewportSize({ width: 390, height: 780 }); await p.click('.set-opt[data-set="main"]'); await W(p, 300);
+  }
 
   section("Оба вида чтения, переключение туда и обратно");
   for (const mode of ["cards", "list", "cards", "list"]) {
