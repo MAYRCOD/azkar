@@ -30,6 +30,14 @@ EMBED = {
     "__IMG_EVENING__": SRC / "images" / "evening.jpg",
 }
 
+# метка → скрипт, который вставляем как есть (текстом, не base64)
+EMBED_TEXT = {
+    # расчёт времени намазов: библиотека adhan 4.4.6 (лицензия MIT, src/vendor/adhan-LICENSE.txt)
+    "__ADHAN_JS__": SRC / "vendor" / "adhan.umd.min.js",
+    # готовые расписания намазов по городам (делает tools/make_schedules.py)
+    "__SCHEDULES_JSON__": SRC / "data" / "schedules.json",
+}
+
 PWA_TAIL = """
 <script>
   // Включаем офлайн-режим — только на сайте (http/https). Внутри iOS-приложения файла sw.js нет,
@@ -46,6 +54,11 @@ def build_preview() -> str:
     for mark, path in EMBED.items():
         assert mark in html, f"в src/app.html нет метки {mark}"
         html = html.replace(mark, base64.b64encode(path.read_bytes()).decode())
+    for mark, path in EMBED_TEXT.items():
+        assert mark in html, f"в src/app.html нет метки {mark}"
+        code = path.read_text(encoding="utf-8")
+        assert "</script" not in code, f"{path.name}: внутри есть </script>, он оборвёт страницу"
+        html = html.replace(mark, code)
     left = re.findall(r"__[A-Z_]+__", html)
     assert not left, f"остались невстроенные метки: {left}"
     return html

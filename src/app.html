@@ -115,11 +115,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 /* Центрируем «пружинами» сверху и снизу, а не justify-content: center: если блок не влезает
    по высоте (iPhone SE), center обрезал бы верх так, что до него не долистать.
    Нижняя пружина — отдельный пустой элемент, поэтому из отступа снизу вычли один --gap */
-#home > .home-title { margin-top: auto; }
+#home > .pt-card { margin-top: auto; }
 #home::after { content: ""; margin-top: auto; }
-.home-title { display: grid; gap: 2px; text-align: center; }
-.home-title h1 { font-size: clamp(28px, 4.4vh, 38px); }
-.home-title .ar-title { font-family: var(--f-arabic); font-size: clamp(44px, 7vh, 60px); line-height: 1.5; color: var(--gold); }
 h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-height: 1.1; margin: 0; text-wrap: balance; }
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .choice {
@@ -186,6 +183,42 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .ayah-ref { font-size: 12.5px; color: var(--muted); }
 .ayah-day[aria-expanded="true"] .ayah-ar { display: block; }
 .ayah-day[aria-expanded="true"] .ayah-ru { -webkit-line-clamp: unset; display: block; }
+
+/* Время намазов на главной: место, «Аср через 1:08» и шесть времён в ряд; текущий намаз выделен */
+.pt-card { background: var(--surface); border: 1px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow); padding: 12px 8px 10px; display: grid; gap: 8px; }
+.pt-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-inline: 6px; font-size: 13.5px; min-height: 24px; }
+.pt-place { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; border: 0; background: none; padding: 2px 0; min-width: 0; }
+.pt-place span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-place svg { flex: none; width: 14px; height: 14px; color: var(--gold); }
+.pt-next { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; } .pt-next b { color: var(--fg); }
+.pt-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.pt { display: grid; justify-items: center; gap: 1px; padding: 7px 0 6px; border-radius: 12px; }
+.pt small { font-size: clamp(10px, 2.9vw, 11.5px); color: var(--muted); }
+.pt b { font-size: clamp(13px, 3.9vw, 15.5px); font-variant-numeric: tabular-nums; }
+.pt.now { background: var(--press); } .pt.now small, .pt.now b { color: var(--accent-ink); }
+.set-city { border: 0; background: none; color: var(--accent-ink); font-size: 14.5px; font-weight: 700; padding: 10px 8px 6px; text-wrap: balance; }
+.pt-card.empty .pt-head, .pt-card.empty .pt-row { display: none; }
+.set-switch { margin-top: calc(24px - var(--gap)); }
+
+/* Настройки времени намазов */
+.group-note { margin: 2px 0 0; padding-inline: 14px; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.sheet-list { display: grid; max-height: 55vh; overflow-y: auto; }
+#city-list { max-height: 40vh; }
+.search {
+  width: 100%; border: 0; border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 16px;   /* 16px — иначе iPhone приближает экран при вводе */
+  background: var(--sheet-btn); color: var(--fg); -webkit-appearance: none; appearance: none;
+}
+.search::placeholder { color: var(--muted); }
+.search:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+.sheet p.search-note { margin: 0; font-size: 12.5px; }
+/* Поправки: строка «Магриб  − +2 мин +» */
+.adj-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; }
+.adj-row + .adj-row { border-top: 1px solid var(--line); }
+.adj-row .name { flex: 1; font-weight: 700; }
+.adj-row .val { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+.adj-row .val.on { color: var(--accent-ink); font-weight: 700; }
+.adj-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--sheet-btn); font-size: 20px; line-height: 1; }
+.adj-btn:active { transform: scale(.94); }
 
 /* ---------- Чтение ---------- */
 /* Чтение — на всю ширину экрана: карточки при свайпе уезжают прямо за край телефона,
@@ -495,7 +528,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 @keyframes screen-in { from { opacity: 0; transform: translateY(10px); } }
 
 /* На главной элементы появляются по очереди */
-#home.enter .home-title, #home.enter .choice { animation: rise .5s var(--ease) backwards; }
+#home.enter .pt-card, #home.enter .choice { animation: rise .5s var(--ease) backwards; }
 #home.enter .choice:nth-child(1) { animation-delay: .06s; }
 #home.enter .choice:nth-child(2) { animation-delay: .12s; }
 /* Хадисы и строки настроек — тоже по очереди, задержку задаёт --i */
@@ -524,10 +557,16 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== ГЛАВНАЯ ===== -->
 <main class="screen" id="home">
-  <div class="home-title">
-    <span class="ar-title" lang="ar">أَذْكَار</span>
-    <h1>Азкары</h1>
-  </div>
+  <!-- Время намазов на сегодня. Нажатие на место — выбор города или села.
+       Пока место не выбрано — вместо времени кнопка «Укажите город или село» -->
+  <section class="pt-card" id="ptimes" aria-label="Время намазов">
+    <div class="pt-head">
+      <button class="pt-place" id="pt-place"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="pt-city"></span></button>
+      <span class="pt-next" id="pt-next"></span>
+    </div>
+    <div class="pt-row" id="pt-row"></div>
+    <button class="set-city" id="set-city" hidden>Укажите город или село — покажем время намазов</button>
+  </section>
   <!-- Набор азкаров: «Основные» — самые известные, «Полные» — вся глава из «Крепости мусульманина» -->
   <div class="set-switch" id="set-switch" role="radiogroup" aria-label="Набор азкаров">
     <button class="set-opt" role="radio" data-set="main">Основные</button>
@@ -607,6 +646,28 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
   </div>
   <div class="group" style="--i:1">
+    <span class="group-title">Время намазов</span>
+    <div class="rows">
+      <button class="row" id="open-city"><span>Город или село</span><span class="value" id="city-value"></span></button>
+      <button class="row" id="open-source" hidden><span>Расписание</span><span class="value" id="source-value"></span></button>
+      <button class="row" id="open-method"><span>Способ расчёта</span><span class="value" id="method-value"></span></button>
+      <button class="row" id="open-asr"><span>Время аср</span><span class="value" id="asr-value"></span></button>
+      <button class="row" id="open-adjust"><span>Поправки по минутам</span><span class="value" id="adjust-value"></span></button>
+    </div>
+    <p class="group-note" id="prayer-note"></p>
+  </div>
+  <!-- Напоминания есть только в приложении для iPhone: сайт в Safari не умеет присылать уведомления -->
+  <div class="group" style="--i:1" id="notify-group" hidden>
+    <span class="group-title">Напоминания</span>
+    <div class="rows">
+      <div class="row"><span id="lbl-nm">Утренние азкары — после фаджра</span>
+        <button class="switch" role="switch" id="sw-nm" data-notify="morning" aria-labelledby="lbl-nm"></button></div>
+      <div class="row"><span id="lbl-ne">Вечерние азкары — после аср</span>
+        <button class="switch" role="switch" id="sw-ne" data-notify="evening" aria-labelledby="lbl-ne"></button></div>
+    </div>
+    <p class="group-note" id="notify-note"></p>
+  </div>
+  <div class="group" style="--i:2">
     <span class="group-title">Оформление</span>
     <div class="rows">
       <button class="row" id="open-theme"><span>Тема</span><span class="value" id="theme-value"></span></button>
@@ -620,6 +681,64 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
   </div>
 </main>
+
+<!-- Окно выбора места: геопозиция или поиск города и села (результаты строятся в скрипте) -->
+<div class="sheet-back" id="city-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="city-title">
+    <h2 id="city-title">Где вы находитесь</h2>
+    <button class="choice-row" role="radio" id="city-geo">
+      <span class="txt">Моё местоположение<small id="geo-note">Определить по геопозиции телефона</small></span><span class="check">✓</span>
+    </button>
+    <input class="search" id="city-search" type="search" placeholder="Город или село" autocomplete="off" enterkeyhint="search">
+    <p class="search-note" id="search-note">Начните писать название, например «Курчалой»</p>
+    <div class="sheet-list" id="city-list"></div>
+  </div>
+</div>
+
+<!-- Окно: готовое расписание этого места или расчёт по солнцу -->
+<div class="sheet-back" id="source-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="source-title">
+    <h2 id="source-title">Расписание</h2>
+    <button class="choice-row" role="radio" data-source="preset">
+      <span class="txt">Предустановленное<small>Готовое расписание на каждый день года, как в мечетях</small></span><span class="check">✓</span>
+    </button>
+    <button class="choice-row" role="radio" data-source="auto">
+      <span class="txt">Автоматическое вычисление<small>Расчёт по солнцу, способ и аср выбираются ниже</small></span><span class="check">✓</span>
+    </button>
+  </div>
+</div>
+
+<!-- Окно выбора способа расчёта. Строки строятся в скрипте (METHODS) -->
+<div class="sheet-back" id="method-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="method-title">
+    <h2 id="method-title">Способ расчёта</h2>
+    <p>Под каким углом солнца под горизонтом начинается фаджр и иша. У разных муфтиятов он разный, отсюда разница в несколько минут.</p>
+    <div class="sheet-list" id="method-list"></div>
+  </div>
+</div>
+
+<!-- Окно выбора времени аср -->
+<div class="sheet-back" id="asr-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="asr-title">
+    <h2 id="asr-title">Время аср</h2>
+    <button class="choice-row" role="radio" data-asr="Shafi">
+      <span class="txt">Шафиитский<small>Когда тень равна высоте предмета. Так же у маликитов и ханбалитов</small></span><span class="check">✓</span>
+    </button>
+    <button class="choice-row" role="radio" data-asr="Hanafi">
+      <span class="txt">Ханафитский<small>Когда тень вдвое длиннее предмета. Аср позже</small></span><span class="check">✓</span>
+    </button>
+  </div>
+</div>
+
+<!-- Окно поправок: сдвинуть любой намаз на несколько минут, чтобы совпало с мечетью -->
+<div class="sheet-back" id="adjust-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="adjust-title">
+    <h2 id="adjust-title">Поправки по минутам</h2>
+    <p>Если время в вашей мечети отличается, сдвиньте нужный намаз на несколько минут.</p>
+    <div id="adjust-list"></div>
+    <button class="sheet-btn" id="adjust-reset">Сбросить поправки</button>
+  </div>
+</div>
 
 <!-- Окно подтверждения сброса -->
 <div class="sheet-back" id="reset-sheet" hidden>
@@ -700,6 +819,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   </button>
 </nav>
 
+<script>__ADHAN_JS__</script>
 <script>
 /* ================================================================
    1. ДАННЫЕ. Сюда будем добавлять азкары по одному.
@@ -1103,6 +1223,7 @@ let show = Object.assign({ ar: true, ru: true, tr: true }, load("azkar-show", {}
 function updateHome() {
   checkNewDay();   // если день сменился — отметки должны пропасть
   renderAyah();   // в полночь — новый аят
+  renderPrayer();
   for (const t of ["morning", "evening"]) {
     const all = setItems(t);
     const done = all.every(z => (counts[t + ":" + z.id] || 0) >= z.times);
@@ -1128,6 +1249,385 @@ function renderAyah() {
 document.getElementById("ayah-day").addEventListener("click", e => {
   const box = e.currentTarget;
   box.setAttribute("aria-expanded", box.getAttribute("aria-expanded") === "true" ? "false" : "true");
+});
+
+
+/* ================================================================
+   ВРЕМЯ НАМАЗОВ
+   Где готовое расписание (Чечня — одно на всю республику, Казань и ещё 12 городов) — берём его,
+   иначе считает библиотека adhan по координатам и дате (способ «ДУМ России» по умолчанию).
+   Поверх любого — поправки по минутам, чтобы человек подогнал время под свою мечеть.
+   Всё считается в телефоне, интернет нужен только для поиска места.
+   ================================================================ */
+// Способы расчёта: название, подпись и настройки для библиотеки adhan.
+// «ДУМ России» — угол 18°/15° плюс поправки муфтията (восход −5 мин, зухр и магриб +5 мин),
+// так считает, например, moynamaz.org. Сверено по Грозному на 11.10.2026: всё совпало до минуты
+const METHODS = {
+  DumRussia: ["ДУМ России", "Фаджр 18°, иша 15°, с поправками на восход, зухр и магриб", () => {
+    const p = adhan.CalculationMethod.Other();
+    p.fajrAngle = 18; p.ishaAngle = 15;
+    p.methodAdjustments = { fajr: 0, sunrise: -5, dhuhr: 5, asr: 0, maghrib: 5, isha: 0 };
+    return p;
+  }],
+  MuslimWorldLeague: ["Всемирная исламская лига", "Фаджр 18°, иша 17°"],
+  Egyptian: ["Египетское управление", "Фаджр 19,5°, иша 17,5°: фаджр раньше"],
+  UmmAlQura: ["Умм аль-Кура (Мекка)", "Фаджр 18,5°, иша через 90 минут после магриба"],
+  Turkey: ["Диянет (Турция)", "Фаджр 18°, иша 17°, с поправками в несколько минут"],
+  MoonsightingCommittee: ["Комитет наблюдения луны", "Фаджр и иша 18°, с поправкой на время года"],
+};
+const PRAYERS = [["fajr", "Фаджр"], ["sunrise", "Восход"], ["dhuhr", "Зухр"], ["asr", "Аср"], ["maghrib", "Магриб"], ["isha", "Иша"]];
+const PRAYER_NAME = Object.fromEntries(PRAYERS);
+const ASR_NAMES = { Shafi: "Шафиитский", Hanafi: "Ханафитский" };
+
+let place = load("azkar-place", null);   // { name, region, lat, lng, tz, geo, avail, sched } или null — место не выбрано
+let method = load("azkar-method", "DumRussia");
+let asrSchool = load("azkar-asr", "Shafi");
+let adjust = load("azkar-adjust", {});   // поправки в минутах: { maghrib: 2, ... }
+if (!METHODS[method]) method = "DumRussia";
+
+// Дата «сегодня» (или соседняя) в часовом поясе выбранного места. adhan берёт из даты только год, месяц и число
+function placeDay(shift = 0, now = Date.now()) {
+  const d = new Date(now + shift * 864e5);
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: place.tz || undefined,
+    year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d).map(x => [x.type, x.value]));
+  return new Date(+parts.year, parts.month - 1, +parts.day);
+}
+/* --- Предустановленные расписания ---
+   Готовая таблица на каждый день года: 6 времён в минутах от полуночи, в постоянном сдвиге от Гринвича (off).
+   Хранится сжатой: первый день целиком, дальше — изменение к вчерашнему дню одной буквой (a = −12 … m = 0 … y = +12).
+   Для Чечни одно расписание на всю республику (так в мечетях), для остальных городов — если место ближе 40 км */
+const SCHEDULES = __SCHEDULES_JSON__;
+const NEAR_KM = 40;
+function distKm(lat1, lng1, lat2, lng2) {
+  const r = Math.PI / 180, a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
+    Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lng2 - lng1) * r / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(a));
+}
+// Какое готовое расписание подходит месту (id или null). region — название региона («Чеченская Республика», «Чечня»)
+function scheduleFor(lat, lng, region = "") {
+  const byRegion = SCHEDULES.find(s => s.cover.startsWith("region:") && region.includes(s.cover.slice(7)));
+  if (byRegion) return byRegion.id;
+  let best = null, bestKm = NEAR_KM;
+  for (const s of SCHEDULES) {
+    if (s.cover.startsWith("region:") && region) continue;   // регион известен и это не он — таблица республики не подходит
+    const d = distKm(lat, lng, s.lat, s.lng);
+    if (d <= bestKm) { bestKm = d; best = s.id; }
+  }
+  return best;
+}
+const unpacked = {};
+function scheduleTable(s) {
+  if (unpacked[s.id]) return unpacked[s.id];
+  const p = s.p, m = [];
+  for (let i = 0; i < 24; i += 4) m.push(+p.slice(i, i + 2) * 60 + +p.slice(i + 2, i + 4));
+  for (let i = 24; i < p.length; i++) m.push(m[m.length - 6] + p.charCodeAt(i) - 109);
+  return (unpacked[s.id] = m);
+}
+function presetTimes(shift, now) {
+  const s = SCHEDULES.find(x => x.id === place.sched);
+  if (!s) return null;
+  const d = placeDay(shift, now), y = d.getFullYear(), mo = d.getMonth(), da = d.getDate();
+  const base = Date.UTC(y, mo, da);
+  // номер дня в году; таблица на 365 дней, поэтому в високосный год 29 февраля берём как 28-е
+  let n = Math.round((base - Date.UTC(y, 0, 1)) / 864e5);
+  if ((y % 4 === 0 && y % 100 !== 0 || y % 400 === 0) && n >= 59) n--;
+  const t = scheduleTable(s), o = {};
+  PRAYERS.forEach(([k], i) => { o[k] = new Date(base + (t[n * 6 + i] - s.off) * 60000); });
+  return o;
+}
+// Время намазов на день (shift: 0 — сегодня, 1 — завтра) с поправками человека. null — место не выбрано
+function prayerTimes(shift = 0, now = Date.now()) {
+  if (!place) return null;
+  let t;
+  if (place.sched) t = presetTimes(shift, now);
+  else if (window.adhan) {
+    const c = new adhan.Coordinates(place.lat, place.lng);
+    const params = METHODS[method][2] ? METHODS[method][2]() : adhan.CalculationMethod[method]();
+    params.madhab = adhan.Madhab[asrSchool];
+    // на севере летом ночь бывает такой светлой, что фаджр «не наступает» — библиотека подбирает правило сама
+    params.highLatitudeRule = adhan.HighLatitudeRule.recommended(c);
+    const r = new adhan.PrayerTimes(c, placeDay(shift, now), params);
+    t = Object.fromEntries(PRAYERS.map(([k]) => [k, r[k]]));
+  }
+  if (!t) return null;
+  for (const [k] of PRAYERS) if (adjust[k]) t[k] = new Date(t[k].getTime() + adjust[k] * 60000);
+  return t;
+}
+const hm = d => d.toLocaleTimeString("ru-RU", { hour: "numeric", minute: "2-digit", timeZone: place.tz || undefined });
+
+// Карточка на главной: место, «Аср через 1:08», шесть времён; выделен текущий намаз
+function renderPrayer() {
+  const card = document.getElementById("ptimes"), t = prayerTimes();
+  card.classList.toggle("empty", !t);
+  document.getElementById("set-city").hidden = !!t;
+  if (!t) return;
+  const now = new Date();
+  // текущий — последний наступивший (до фаджра — ещё вчерашний иша); следующий — первый ненаступивший
+  let cur = "isha";
+  for (const [k] of PRAYERS) if (t[k] <= now) cur = k;
+  const nextK = (PRAYERS.find(([k]) => t[k] > now) || [])[0];
+  const nextAt = nextK ? t[nextK] : prayerTimes(1).fajr;
+  const mins = Math.max(0, Math.round((nextAt - now) / 60000));
+  document.getElementById("pt-city").textContent = place.name;
+  document.getElementById("pt-next").innerHTML =
+    `${PRAYER_NAME[nextK || "fajr"]} через <b>${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}</b>`;
+  document.getElementById("pt-row").innerHTML = PRAYERS.map(([k, name]) =>
+    `<div class="pt${k === cur ? " now" : ""}" data-p="${k}"><small>${name}</small><b>${hm(t[k])}</b></div>`).join("");
+}
+// Пока главная открыта, обновляем каждые полминуты: обратный отсчёт и выделение переезжают сами
+setInterval(() => { if (!document.getElementById("home").hidden) renderPrayer(); }, 30000);
+
+function renderPrayerSettings() {
+  document.getElementById("city-value").textContent = place ? place.name : "Не выбрано";
+  // выбор «предустановленное / автоматическое» есть, только если для места есть готовое расписание;
+  // способ расчёта и аср нужны только для автоматического
+  const avail = place && place.avail;
+  document.getElementById("open-source").hidden = !avail;
+  document.getElementById("source-value").textContent = place && place.sched ? "Предустановленное" : "Автоматическое";
+  document.getElementById("open-method").hidden = !!(place && place.sched);
+  document.getElementById("open-asr").hidden = !!(place && place.sched);
+  const n = Object.values(adjust).filter(Boolean).length;
+  document.getElementById("adjust-value").textContent = n ? `${n} ${n === 1 ? "намаз" : n < 5 ? "намаза" : "намазов"}` : "Нет";
+  document.getElementById("prayer-note").textContent = !place
+    ? "Укажите город или село — покажем время намазов на главной и будем напоминать об азкарах."
+    : place.sched ? "Готовое расписание на каждый день года, как в мечетях. Интернет не нужен."
+    : "Время считается в телефоне по положению солнца, интернет не нужен. Если в вашей мечети время отличается, подправьте его поправками по минутам.";
+  document.querySelectorAll("[data-source]").forEach(o => o.setAttribute("aria-checked",
+    (o.dataset.source === "preset") === !!(place && place.sched) ? "true" : "false"));
+  document.getElementById("method-value").textContent = METHODS[method][0];
+  document.getElementById("asr-value").textContent = ASR_NAMES[asrSchool];
+  document.getElementById("city-geo").setAttribute("aria-checked", place && place.geo ? "true" : "false");
+  document.querySelectorAll("#method-list .choice-row").forEach(o => o.setAttribute("aria-checked", o.dataset.method === method ? "true" : "false"));
+  document.querySelectorAll("[data-asr]").forEach(o => o.setAttribute("aria-checked", o.dataset.asr === asrSchool ? "true" : "false"));
+  renderAdjust();
+}
+function savePrayer() {
+  store("azkar-place", place); store("azkar-method", method); store("azkar-asr", asrSchool); store("azkar-adjust", adjust);
+  renderPrayerSettings(); renderPrayer(); scheduleNotifications();
+}
+
+const row = (attr, value, title, note = "") =>
+  `<button class="choice-row" role="radio" ${attr}="${value}"><span class="txt">${title}${note ? `<small>${note}</small>` : ""}</span><span class="check">✓</span></button>`;
+document.getElementById("method-list").innerHTML = Object.entries(METHODS).map(([k, [name, note]]) => row("data-method", k, name, note)).join("");
+
+// Общий помощник: открыть окно, закрыть по нажатию мимо
+function sheetOf(id, openers) {
+  const el = document.getElementById(id);
+  openers.forEach(b => document.getElementById(b).addEventListener("click", () => { el.hidden = false; }));
+  el.addEventListener("click", e => { if (e.target === el) closeSheet(el); });
+  return el;
+}
+const citySheet = sheetOf("city-sheet", ["open-city", "set-city", "pt-place"]);
+const methodSheet = sheetOf("method-sheet", ["open-method"]);
+const asrSheet = sheetOf("asr-sheet", ["open-asr"]);
+const sourceSheet = sheetOf("source-sheet", ["open-source"]);
+const adjustSheet = sheetOf("adjust-sheet", ["open-adjust"]);
+document.querySelectorAll("[data-source]").forEach(o => o.addEventListener("click", () => {
+  place.sched = o.dataset.source === "preset" ? place.avail : null;
+  savePrayer();
+  setTimeout(() => closeSheet(sourceSheet), 180);
+}));
+
+/* --- Поправки по минутам: от −30 до +30 для каждого намаза --- */
+function renderAdjust() {
+  document.getElementById("adjust-list").innerHTML = PRAYERS.map(([k, name]) => {
+    const v = adjust[k] || 0;
+    return `<div class="adj-row"><span class="name">${name}</span>
+      <button class="adj-btn" data-adj="${k}" data-d="-1" aria-label="${name}: на минуту раньше">−</button>
+      <span class="val${v ? " on" : ""}">${v ? (v > 0 ? "+" : "−") + Math.abs(v) + " мин" : "0"}</span>
+      <button class="adj-btn" data-adj="${k}" data-d="1" aria-label="${name}: на минуту позже">+</button></div>`;
+  }).join("");
+  document.getElementById("adjust-reset").disabled = !Object.values(adjust).some(Boolean);
+}
+document.getElementById("adjust-list").addEventListener("click", e => {
+  const b = e.target.closest(".adj-btn");
+  if (!b) return;
+  const v = Math.max(-30, Math.min(30, (adjust[b.dataset.adj] || 0) + +b.dataset.d));
+  if (v) adjust[b.dataset.adj] = v; else delete adjust[b.dataset.adj];
+  savePrayer();
+});
+document.getElementById("adjust-reset").addEventListener("click", () => { adjust = {}; savePrayer(); });
+
+/* --- Геопозиция ---
+   Координаты округляем до сотых (около километра): для намазов этого хватает, а точный адрес не храним.
+   Название места и регион узнаём у OpenStreetMap (нужен интернет). Без интернета место всё равно сохраняется,
+   а название и регион уточним при следующем запуске с интернетом */
+const round2 = x => Math.round(x * 100) / 100;
+async function lookupPlaceName() {
+  if (!place || !place.geo || place.checked) return;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=ru&lat=${place.lat}&lon=${place.lng}`);
+    const a = (await r.json()).address || {};
+    if (!place || !place.geo) return;
+    const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county;
+    if (name) place.name = name;
+    place.region = a.state || "";
+    // теперь знаем регион: в любом селе Чечни — общее расписание республики
+    const avail = scheduleFor(place.lat, place.lng, place.region);
+    if (avail !== place.avail) { place.sched = place.sched || !place.avail ? avail : place.sched; place.avail = avail; }
+    if (!avail) place.sched = null;
+    place.checked = true;
+    savePrayer();
+  } catch (e) {}
+}
+const GEO = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+  ? window.Capacitor.Plugins.Geolocation : null;
+// Узнать координаты: в приложении — плагином (один системный запрос iOS), на сайте — средствами браузера
+function getPosition(ok, fail, opts) {
+  if (!GEO) return navigator.geolocation.getCurrentPosition(ok, fail, opts);
+  GEO.getCurrentPosition({ enableHighAccuracy: false, timeout: opts.timeout, maximumAge: opts.maximumAge }).then(ok, async e => {
+    let denied = false;
+    try { denied = (await GEO.checkPermissions()).location === "denied"; } catch (x) {}
+    fail({ code: denied ? 1 : 2, PERMISSION_DENIED: 1 });
+  });
+}
+function askLocation(fromButton) {
+  const note = document.getElementById("geo-note");
+  return new Promise(done => {
+    if (!GEO && !navigator.geolocation) { note.textContent = "Телефон не даёт определить место. Найдите город через поиск"; return done(); }
+    note.textContent = "Определяю…";
+    getPosition(pos => {
+      store("azkar-geo-denied", false);
+      const lat = round2(pos.coords.latitude), lng = round2(pos.coords.longitude), avail = scheduleFor(lat, lng);
+      place = { name: "Моё местоположение", region: "", lat, lng, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, geo: true, avail, sched: avail };
+      note.textContent = "Определено";
+      savePrayer();
+      if (fromButton) setTimeout(() => closeSheet(citySheet), 400);
+      lookupPlaceName();
+      done();
+    }, err => {
+      if (err.code === err.PERMISSION_DENIED) store("azkar-geo-denied", true);   // больше сами не спрашиваем
+      note.textContent = err.code === err.PERMISSION_DENIED
+        ? "Доступ к геопозиции запрещён. Найдите город через поиск или разрешите доступ в настройках телефона"
+        : "Не получилось определить. Попробуйте ещё раз или найдите город через поиск";
+      done();
+    }, { timeout: 15000, maximumAge: 3600e3 });
+  });
+}
+document.getElementById("city-geo").addEventListener("click", () => askLocation(true));
+
+/* --- Поиск города или села ---
+   Ищем в открытой базе географических названий через сервис Open-Meteo (бесплатно, без ключа).
+   Он сразу отдаёт и часовой пояс места. Найденное место сохраняется, дальше время считается без интернета */
+let found = [], searchTimer, searchId = 0;
+const searchNote = document.getElementById("search-note");
+const cityList = document.getElementById("city-list");
+async function searchPlaces(q) {
+  const id = ++searchId;   // ответы на старые запросы (человек уже дописал слово) выбрасываем
+  searchNote.textContent = "Ищу…";
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?count=10&language=ru&format=json&name=${encodeURIComponent(q)}`);
+    const data = await r.json();
+    if (id !== searchId) return;
+    found = data.results || [];
+  } catch (e) {
+    if (id !== searchId) return;
+    found = []; cityList.innerHTML = "";
+    searchNote.textContent = "Для поиска нужен интернет";
+    return;
+  }
+  searchNote.textContent = found.length ? "" : "Ничего не нашлось. Проверьте название или попробуйте соседний город";
+  cityList.innerHTML = "";
+  found.forEach((f, i) => {
+    const b = document.createElement("button");
+    b.className = "choice-row"; b.setAttribute("role", "radio"); b.dataset.i = i;
+    const txt = document.createElement("span"); txt.className = "txt";
+    txt.textContent = f.name;   // textContent, а не innerHTML: название пришло из интернета, вставляем как простой текст
+    const small = document.createElement("small");
+    small.textContent = [f.admin1, f.country].filter(Boolean).join(", ");
+    txt.appendChild(small);
+    const check = document.createElement("span"); check.className = "check"; check.textContent = "✓";
+    b.append(txt, check);
+    cityList.appendChild(b);
+  });
+}
+document.getElementById("city-search").addEventListener("input", e => {
+  const q = e.target.value.trim();
+  clearTimeout(searchTimer);
+  if (q.length < 2) { searchId++; found = []; cityList.innerHTML = ""; searchNote.textContent = "Начните писать название, например «Курчалой»"; return; }
+  searchTimer = setTimeout(() => searchPlaces(q), 350);   // ждём, пока человек перестанет печатать
+});
+cityList.addEventListener("click", e => {
+  const o = e.target.closest(".choice-row");
+  if (!o) return;
+  const f = found[o.dataset.i];
+  // готовое расписание есть — включаем его сразу (как в мечетях); переключить на расчёт можно в настройках
+  const avail = scheduleFor(f.latitude, f.longitude, f.admin1 || "");
+  place = { name: f.name, region: f.admin1 || "", lat: round2(f.latitude), lng: round2(f.longitude), tz: f.timezone || undefined,
+            avail, sched: avail, checked: true };
+  o.setAttribute("aria-checked", "true");
+  savePrayer();
+  setTimeout(() => closeSheet(citySheet), 180);
+});
+document.getElementById("method-list").addEventListener("click", e => {
+  const o = e.target.closest(".choice-row");
+  if (!o) return;
+  method = o.dataset.method; savePrayer();
+  setTimeout(() => closeSheet(methodSheet), 180);
+});
+document.querySelectorAll("[data-asr]").forEach(o => o.addEventListener("click", () => {
+  asrSchool = o.dataset.asr; savePrayer();
+  setTimeout(() => closeSheet(asrSheet), 180);
+}));
+
+/* ================================================================
+   НАПОМИНАНИЯ (только в приложении для iPhone)
+   Утром — в момент фаджра «Утренние азкары», вечером — в момент аср «Вечерние азкары».
+   iOS держит не больше 64 запланированных уведомлений, поэтому ставим на 30 дней вперёд (2 в день)
+   и переставляем при каждом открытии приложения и при смене места или поправок
+   ================================================================ */
+const LN = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+  ? window.Capacitor.Plugins.LocalNotifications : null;
+let notify = load("azkar-notify", { morning: true, evening: true });
+const NOTIFY_DAYS = 30;
+// Что и когда напомнить: список { id, at, time } на NOTIFY_DAYS дней вперёд (без прошедших)
+function notificationPlan(now = Date.now()) {
+  if (!place) return [];
+  const plan = [];
+  for (let d = 0; d < NOTIFY_DAYS + 1; d++) {
+    const t = prayerTimes(d, now);
+    if (!t) break;
+    if (notify.morning && t.fajr > now) plan.push({ id: d * 2 + 1, at: t.fajr, time: "morning" });
+    if (notify.evening && t.asr > now) plan.push({ id: d * 2 + 2, at: t.asr, time: "evening" });
+  }
+  // по одному напоминанию каждого включённого вида на NOTIFY_DAYS дней (всего не больше 60 — в лимите iOS 64)
+  return plan.slice(0, NOTIFY_DAYS * ((notify.morning ? 1 : 0) + (notify.evening ? 1 : 0)));
+}
+async function scheduleNotifications() {
+  if (!LN) return;
+  try {
+    const pending = await LN.getPending();
+    if (pending.notifications.length) await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+    const perm = await LN.checkPermissions();
+    if (perm.display !== "granted") return;
+    const plan = notificationPlan();
+    if (!plan.length) return;
+    await LN.schedule({ notifications: plan.map(n => ({
+      id: n.id, schedule: { at: n.at, allowWhileIdle: true },
+      title: n.time === "morning" ? "Утренние азкары" : "Вечерние азкары",
+      body: n.time === "morning" ? "Время утренних азкаров" : "Время вечерних азкаров",
+      extra: { time: n.time } })) });
+  } catch (e) {}
+}
+async function renderNotify() {
+  document.getElementById("notify-group").hidden = !LN;
+  if (!LN) return;
+  document.getElementById("sw-nm").setAttribute("aria-checked", notify.morning ? "true" : "false");
+  document.getElementById("sw-ne").setAttribute("aria-checked", notify.evening ? "true" : "false");
+  let note = !place ? "Чтобы напоминать вовремя, укажите город или село выше." : "Напоминание приходит в начале времени фаджра и аср.";
+  try { if ((await LN.checkPermissions()).display === "denied") note = "Уведомления запрещены. Включите их в настройках iPhone: Настройки → Азкары → Уведомления."; } catch (e) {}
+  document.getElementById("notify-note").textContent = note;
+}
+document.querySelectorAll(".switch[data-notify]").forEach(sw => sw.addEventListener("click", async () => {
+  notify[sw.dataset.notify] = !notify[sw.dataset.notify];
+  store("azkar-notify", notify);
+  if (LN && notify[sw.dataset.notify]) { try { await LN.requestPermissions(); } catch (e) {} }
+  renderNotify(); scheduleNotifications();
+}));
+// Нажали на уведомление — сразу открываем нужные азкары
+if (LN) LN.addListener("localNotificationActionPerformed", a => {
+  const t = a && a.notification && a.notification.extra && a.notification.extra.time;
+  if (t === "morning" || t === "evening") openTime(t);
 });
 
 /* Переключатель «Основные | Полные» на главной */
@@ -1221,7 +1721,7 @@ function renderSettings() {
     o.setAttribute("aria-checked", o.dataset.mode === mode ? "true" : "false"));
 }
 
-document.querySelectorAll(".switch").forEach(sw => sw.addEventListener("click", () => {
+document.querySelectorAll(".switch[data-key]").forEach(sw => sw.addEventListener("click", () => {
   show[sw.dataset.key] = !show[sw.dataset.key];
   store("azkar-show", show);
   renderSettings();
@@ -1296,9 +1796,11 @@ document.getElementById("back").addEventListener("click", () => showScreen("home
 // Вернулись в приложение (например, утром, а открыто оно было с вечера):
 // если день сменился и азкары открыты — показываем их уже с обнулёнными счётчиками
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible" || !checkNewDay()) return;
-  if (!document.getElementById("reader").hidden) openTime(time);
+  if (document.visibilityState !== "visible") return;
+  if (checkNewDay() && !document.getElementById("reader").hidden) openTime(time);
   updateHome();
+  renderNotify();
+  scheduleNotifications();   // напоминания всегда на месяц вперёд от сегодняшнего дня
 });
 
 /* Сброс счётчиков открытых азкаров (утренних или вечерних).
@@ -1608,6 +2110,20 @@ document.getElementById("tb-reset").addEventListener("click", () => askReset(
 // Запомнили, открыто ли приложение с экрана «Домой» (старые iPhone сообщают это только так)
 if (navigator.standalone) document.documentElement.classList.add("standalone");
 renderSettings();
+renderPrayerSettings();
 renderTasbih();
 showScreen("home");
+renderNotify();
+// Первый запуск, место ещё не выбрано: сразу спрашиваем геопозицию (телефон покажет запрос),
+// а в приложении после неё — разрешение на уведомления. Запретил геопозицию — больше сами не спрашиваем
+(async () => {
+  if (!place && !load("azkar-geo-denied", false)) await askLocation(false);
+  else lookupPlaceName();   // место по геопозиции без названия и региона (не было интернета) — уточняем
+  if (LN && !load("azkar-notify-asked", false)) {
+    store("azkar-notify-asked", true);
+    try { await LN.requestPermissions(); } catch (e) {}
+    renderNotify();
+  }
+  scheduleNotifications();
+})();
 </script>

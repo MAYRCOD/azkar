@@ -91,14 +91,14 @@ const section = name => console.log("•", name);
     await p.click("#back"); await W(p, 300);
     await p.click('.set-opt[data-set="main"]'); await W(p, 300);
     await p.evaluate(() => { localStorage.removeItem(KEY); counts = {}; updateHome(); });
-    // на любом экране заголовок не обрезан сверху, а кнопки видны или до них можно долистать
+    // на любом экране верх главной (время намазов) не обрезан, а кнопки видны или до них можно долистать
     for (const [w, h] of [[320, 568], [375, 667], [390, 844], [430, 932]]) {
       for (const s of ["main", "full"]) {
         await p.setViewportSize({ width: w, height: h }); await p.click(`.set-opt[data-set="${s}"]`); await W(p, 300);
         const r = await p.evaluate(() => { const home = document.getElementById("home");
-          return { top: document.querySelector(".ar-title").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop,
+          return { top: document.getElementById("ptimes").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop,
                    pageW: document.documentElement.scrollWidth }; });
-        check(r.top >= 0, `${w}×${h} ${s}: заголовок обрезан сверху (${Math.round(r.top)})`);
+        check(r.top >= 0, `${w}×${h} ${s}: верх главной обрезан (${Math.round(r.top)})`);
         check(r.pageW <= w, `${w}×${h} ${s}: главная шире экрана`);
       }
     }
@@ -477,6 +477,219 @@ const section = name => console.log("•", name);
   }
 
   // ---------------------------------------------------------------
+  section("Время намазов: место, Чечня по геопозиции, поиск, способы расчёта, поправки, напоминания");
+  {
+    // Интернет в проверках не нужен: ответы поиска и названия места подменяем заготовками
+    const REF_1M = { fajr: "4:51", sunrise: "6:02", dhuhr: "12:30", asr: "15:08", maghrib: "17:25", isha: "18:54" };   // 1Muslim, Ассиновская, 11.10.2026
+    const GEO = { results: [
+      { name: "Грозный", latitude: 43.31195, longitude: 45.68895, timezone: "Europe/Moscow", admin1: "Чечня", country: "Россия" },
+      { name: "Грозный", latitude: 55.1, longitude: 61.4, timezone: "Asia/Yekaterinburg", admin1: "Челябинская область", country: "Россия" },
+      { name: "<img src=x onerror=window.hacked=1>", latitude: 1, longitude: 1, timezone: "UTC", admin1: "", country: "" } ] };
+    const mock = async (ctx, offline) => {
+      await ctx.route("https://geocoding-api.open-meteo.com/**", r => r.fulfill({ json:
+        /name=%D0%93%D1%80/.test(r.request().url()) ? GEO :
+        /name=%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D1%8F/.test(r.request().url()) ? { results: [{ name: "Красноярск", latitude: 56.01, longitude: 92.85, timezone: "Asia/Krasnoyarsk", admin1: "Красноярский край", country: "Россия" }] } : {} }));
+      await ctx.route("https://nominatim.openstreetmap.org/**", r => offline ? r.abort() : r.fulfill({ json: /lat=43\.2/.test(r.request().url())
+        ? { address: { village: "Ассиновская", state: "Чеченская Республика" } } : { address: { city: "Грозный", state: "Чеченская Республика" } } }));
+    };
+    const times = g => g.evaluate(() => Object.fromEntries([...document.querySelectorAll("#pt-row .pt")].map(e => [e.dataset.p, e.querySelector("b").textContent])));
+    const mins = x => { const [h, m] = x.split(":"); return h * 60 + +m; };
+    const near = (pt, ref, tol, what) => { for (const k in ref) check(pt[k] && Math.abs(mins(pt[k]) - mins(ref[k])) <= tol, `${what}: ${k} = ${pt[k]}, ожидалось ${ref[k]}`); };
+    // 1) Ассиновская по геопозиции: она в 45 км от Грозного, поэтому сначала таблицы нет — регион узнаём у OpenStreetMap
+    //    и включаем общее расписание Чечни. В v18 здесь была ошибка: оставался расчёт по солнцу (зухр 11:51 вместо 12:30)
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", permissions: ["geolocation"], geolocation: { latitude: 43.2167, longitude: 45.15 } });
+      await mock(ctx);
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.clock.install({ time: new Date("2026-10-11T11:00:00Z") });   // 14:00 по Москве
+      await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 1200);
+      const pl = await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+      check(pl && pl.geo && pl.name === "Ассиновская" && pl.sched === "grozny" && pl.region === "Чеченская Республика", "Ассиновская по геопозиции: не включилось расписание Чечни: " + JSON.stringify(pl));
+      const t = await times(g);
+      check(JSON.stringify(t) === JSON.stringify(REF_1M), "Ассиновская 11.10: время не как в 1Muslim: " + JSON.stringify(t));
+      check((await g.locator("#pt-city").innerText()) === "Ассиновская", "на главной не видно места");
+      // 14:00: сейчас зухр (выделен), до аср 15:08 — 1:08
+      check(await g.evaluate(() => document.querySelector(".pt.now").dataset.p) === "dhuhr", "14:00: выделен не зухр");
+      check((await g.locator("#pt-next").innerText()) === "Аср через 1:08", "14:00: неверный отсчёт: " + await g.locator("#pt-next").innerText());
+      // ночь 02:00 — ещё иша, следующий фаджр
+      await g.clock.setSystemTime(new Date("2026-10-11T23:00:00Z")); await g.evaluate(() => renderPrayer());
+      check(await g.evaluate(() => document.querySelector(".pt.now").dataset.p) === "isha" && (await g.locator("#pt-next").innerText()).startsWith("Фаджр через 2:"), "02:00: неверно: " + await g.locator("#pt-next").innerText());
+      // на сайте (не в приложении) раздела «Напоминания» нет
+      check(await g.locator("#notify-group").isHidden(), "на сайте видны напоминания");
+      await ctx.close();
+    }
+    // 1б) без интернета: место по геопозиции сохраняется (считаем по солнцу), при следующем запуске с интернетом — уточняется
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", permissions: ["geolocation"], geolocation: { latitude: 43.2167, longitude: 45.15 } });
+      await mock(ctx, true);
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.clock.install({ time: new Date("2026-10-11T11:00:00Z") });
+      await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 1000);
+      let pl = await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+      check(pl && pl.geo && !pl.sched && !pl.checked && await g.locator("#pt-row .pt").count() === 6, "без интернета место по геопозиции не сохранилось: " + JSON.stringify(pl));
+      await ctx.unroute("https://nominatim.openstreetmap.org/**"); await mock(ctx);
+      await g.reload(); await W(g, 1000);
+      pl = await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-place")));
+      check(pl.sched === "grozny" && pl.name === "Ассиновская" && JSON.stringify(await times(g)) === JSON.stringify(REF_1M), "с интернетом место не уточнилось: " + JSON.stringify(pl));
+      await ctx.close();
+    }
+    // 2) запретил геопозицию: больше не спрашиваем, на главной — «Укажите город или село»
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow" });
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.addInitScript(() => { navigator.geolocation.getCurrentPosition = (ok, err) => { window.asked = (window.asked || 0) + 1; err({ code: 1, PERMISSION_DENIED: 1 }); }; });
+      await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 400);
+      check(await g.evaluate(() => window.asked) === 1, "при первом запуске не спросили геопозицию");
+      check(await g.evaluate(() => JSON.parse(localStorage.getItem("azkar-geo-denied"))) === true, "запрет не запомнился");
+      await g.reload(); await W(g, 400);
+      check(!(await g.evaluate(() => window.asked)), "после запрета спрашивают снова");
+      check(await g.locator("#set-city").isVisible() && !(await g.locator("#pt-row").isVisible()), "после запрета нет «Укажите город или село»");
+      await ctx.close();
+    }
+    // 3) поиск места, способы расчёта, аср, поправки
+    const ctx = await browser.newContext({ timezoneId: "Europe/Moscow", viewport: { width: 390, height: 844 } });
+    await mock(ctx);
+    await ctx.addInitScript(() => { navigator.geolocation.getCurrentPosition = (ok, err) => err({ code: 1, PERMISSION_DENIED: 1 }); });
+    const q = await ctx.newPage(); q.on("pageerror", e => errs.push(e.message));
+    await q.clock.install({ time: new Date("2026-10-11T03:00:00Z") });   // 06:00 по Москве
+    await q.goto(URL); await q.evaluate(() => localStorage.clear()); await q.reload(); await W(q, 300);
+    await q.click("#set-city"); await W(q, 350);
+    await q.fill("#city-search", "Г"); await W(q, 500);
+    check(await q.locator("#city-list .choice-row").count() === 0, "поиск по одной букве не должен начинаться");
+    await q.fill("#city-search", "Грозный"); await W(q, 700);
+    check(await q.locator("#city-list .choice-row").count() === 3, "поиск не показал результаты");
+    check(await q.evaluate(() => !window.hacked && !document.querySelector("#city-list img")), "название из интернета вставилось как код");
+    check((await q.locator("#city-list .choice-row").nth(1).innerText()).includes("Челябинская область"), "у одинаковых названий не видно область");
+    await q.locator("#city-list .choice-row").first().click(); await W(q, 500);
+    check(await q.locator("#city-sheet").isHidden(), "окно места не закрылось");
+    check(JSON.stringify(await times(q)) === JSON.stringify(REF_1M), "Грозный: по умолчанию не предустановленное время: " + JSON.stringify(await times(q)));
+    await q.click("#tab-settings"); await W(q, 200);
+    check((await q.locator("#city-value").innerText()) === "Грозный" && (await q.locator("#source-value").innerText()) === "Предустановленное", "в настройках не видно места или расписания");
+    check(!(await q.locator("#open-method").isVisible()) && !(await q.locator("#open-asr").isVisible()), "при предустановленном видны способ и аср");
+    await q.click("#open-source"); await W(q, 350); await q.click('[data-source="auto"]'); await W(q, 450);
+    await q.click("#tab-home"); await W(q, 300);
+    // ДУМ России, сверено с moynamaz.org на 11.10.2026
+    near(await times(q), { fajr: "4:31", sunrise: "6:01", dhuhr: "11:49", asr: "14:50", maghrib: "17:26", isha: "18:39" }, 1, "Грозный, ДУМ России");
+    await q.click("#tab-settings"); await W(q, 200);
+    await q.click("#open-method"); await W(q, 350); await q.click('[data-method="MuslimWorldLeague"]'); await W(q, 450);
+    check((await q.locator("#method-value").innerText()) === "Всемирная исламская лига", "способ расчёта не сменился");
+    await q.click("#tab-home"); await W(q, 300);
+    near(await times(q), { fajr: "4:29", sunrise: "6:04", dhuhr: "11:46", asr: "14:52", maghrib: "17:23", isha: "18:52" }, 4, "Грозный, МВЛ");   // 5namaz.com
+    const asr1 = (await times(q)).asr;
+    await q.click("#tab-settings"); await W(q, 200);
+    await q.click("#open-asr"); await W(q, 350); await q.click('[data-asr="Hanafi"]'); await W(q, 450);
+    await q.click("#tab-home"); await W(q, 300);
+    check(mins((await times(q)).asr) - mins(asr1) > 30, "ханафитский аср не позже");
+    // поправки: магриб +2, фаджр −1
+    await q.click("#tab-settings"); await W(q, 200);
+    const mg = (await (async () => { await q.click("#tab-home"); await W(q, 200); return times(q); })()).maghrib;
+    await q.click("#tab-settings"); await W(q, 200);
+    await q.click("#open-adjust"); await W(q, 350);
+    await q.click('.adj-btn[data-adj="maghrib"][data-d="1"]'); await q.click('.adj-btn[data-adj="maghrib"][data-d="1"]');
+    await q.click('.adj-btn[data-adj="fajr"][data-d="-1"]'); await W(q, 200);
+    check((await q.locator("#adjust-value").innerText()) === "2 намаза", "поправки не подписаны: " + await q.locator("#adjust-value").innerText());
+    await q.click("#adjust-sheet", { position: { x: 10, y: 10 } }); await W(q, 400);
+    await q.click("#tab-home"); await W(q, 300);
+    check(mins((await times(q)).maghrib) - mins(mg) === 2, "поправка магриба не сработала");
+    await q.reload(); await W(q, 400);
+    check(mins((await times(q)).maghrib) - mins(mg) === 2, "поправки не сохранились после перезапуска");
+    await q.click("#tab-settings"); await W(q, 200); await q.click("#open-adjust"); await W(q, 350); await q.click("#adjust-reset"); await W(q, 200);
+    check((await q.locator("#adjust-value").innerText()) === "Нет", "поправки не сбросились");
+    await q.click("#adjust-sheet", { position: { x: 10, y: 10 } }); await W(q, 400);
+    // Красноярск — готовой таблицы нет, только расчёт
+    await q.click("#open-city"); await W(q, 350); await q.fill("#city-search", "Краснояр"); await W(q, 700);
+    await q.locator("#city-list .choice-row").first().click(); await W(q, 500);
+    check(!(await q.locator("#open-source").isVisible()) && await q.locator("#open-method").isVisible(), "у Красноярска виден выбор «Расписание»");
+    await q.click("#tab-home"); await W(q, 300);
+    // все готовые таблицы на весь год: восход и магриб не дальше 8 минут от солнца, 29 февраля не ломается
+    const audit = await q.evaluate(() => {
+      const bad = [];
+      for (const s of SCHEDULES) {
+        const t = scheduleTable(s);
+        if (t.length !== 365 * 6) bad.push(`${s.name}: ${t.length / 6} дней`);
+        const c = new adhan.Coordinates(s.lat, s.lng);
+        for (let d = 0; d < 365; d++) {
+          const date = new Date(Date.UTC(2026, 0, 1 + d));
+          const pt = new adhan.PrayerTimes(c, new Date(2026, 0, 1 + d), adhan.CalculationMethod.MuslimWorldLeague());
+          for (const [k, i] of [["sunrise", 1], ["maghrib", 4]]) {
+            const diff = Math.round((date.getTime() + (t[d * 6 + i] - s.off) * 60000 - pt[k].getTime()) / 60000);
+            if (Math.abs(diff) > 8) { bad.push(`${s.name} день ${d + 1} ${k}: ${diff} мин`); break; }
+          }
+        }
+      }
+      const keep = place; place = { name: "x", lat: 43.3, lng: 45.7, tz: "Europe/Moscow", sched: "grozny", avail: "grozny" };
+      const at = iso => presetTimes(0, new Date(iso).getTime()).fajr.toISOString().slice(11, 16);
+      const leap = [at("2028-02-28T09:00:00Z"), at("2028-02-29T09:00:00Z"), at("2028-03-01T09:00:00Z"), at("2027-03-01T09:00:00Z")];
+      place = keep;
+      if (leap[0] !== leap[1] || leap[2] !== leap[3]) bad.push("29 февраля: " + leap.join(" "));
+      return bad.slice(0, 10);
+    });
+    check(audit.length === 0, "готовые расписания: " + audit.join("; "));
+    // далёкий часовой пояс: время по месту, а не по телефону
+    await q.evaluate(() => { localStorage.setItem("azkar-place", JSON.stringify({ name: "Уфа", lat: 54.74, lng: 55.97, tz: "Asia/Yekaterinburg", checked: true })); });
+    await q.reload(); await W(q, 300);
+    const ufa = mins((await times(q)).fajr);
+    check(ufa >= 5 * 60 && ufa <= 7 * 60, "Уфа: фаджр не по местному времени");
+    // узкий экран: шесть времён влезают и не слипаются, верх не обрезан
+    for (const [w, h] of [[320, 568], [390, 844], [430, 932]]) {
+      await q.setViewportSize({ width: w, height: h }); await W(q, 500);
+      const r = await q.evaluate(() => {
+        const bs = [...document.querySelectorAll("#pt-row .pt b")].map(b => { const r = document.createRange(); r.selectNodeContents(b); return r.getBoundingClientRect(); });
+        const touch = bs.some((a, i) => i && Math.abs(bs[i - 1].top - a.top) < 2 && a.left - bs[i - 1].right < 4);
+        const home = document.getElementById("home");
+        return { pageW: document.documentElement.scrollWidth, touch, top: document.getElementById("ptimes").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop };
+      });
+      check(r.pageW <= w && !r.touch, `${w}px: время намазов не влезает или слиплось`);
+      check(r.top >= 0, `${w}×${h}: верх главной обрезан`);
+    }
+    await ctx.close();
+    // 4) напоминания в приложении: подменяем Capacitor и смотрим, что ставится в очередь
+    {
+      const ctx = await browser.newContext({ timezoneId: "Europe/Moscow" });
+      await mock(ctx);
+      const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+      await g.addInitScript(() => {
+        window.__sched = []; window.__asked = 0; window.__perm = "granted";
+        const LN = {
+          checkPermissions: async () => ({ display: window.__perm }),
+          requestPermissions: async () => { window.__asked++; return { display: window.__perm }; },
+          getPending: async () => ({ notifications: window.__sched.map(n => ({ id: n.id })) }),
+          cancel: async ({ notifications }) => { const ids = notifications.map(n => n.id); window.__sched = window.__sched.filter(n => !ids.includes(n.id)); },
+          schedule: async ({ notifications }) => { window.__sched.push(...notifications); },
+          addListener: (ev, fn) => { window.__tap = fn; },
+        };
+        const GEO = {
+          getCurrentPosition: async () => ({ coords: { latitude: 43.2167, longitude: 45.15 } }),
+          checkPermissions: async () => ({ location: "granted" }),
+        };
+        window.Capacitor = { isNativePlatform: () => true, Plugins: { LocalNotifications: LN, Geolocation: GEO } };
+      });
+      await g.clock.install({ time: new Date("2026-10-11T11:00:00Z") });   // 14:00
+      await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 1500);
+      const st = await g.evaluate(() => ({ n: __sched.length, asked: __asked, first: __sched.map(n => [n.title, new Date(n.schedule.at).toISOString()]).sort((a, b) => a[1] < b[1] ? -1 : 1).slice(0, 3),
+        place: JSON.parse(localStorage.getItem("azkar-place")) }));
+      check(st.asked === 1, "в приложении при первом запуске не спросили разрешение на уведомления");
+      check(st.place && st.place.sched === "grozny", "в приложении геопозиция через плагин не сработала: " + JSON.stringify(st.place));
+      check(st.n === 60, "напоминаний не 60 (30 дней × 2): " + st.n);
+      // первое — сегодняшний аср 15:08 (12:08 UTC), второе — завтрашний фаджр
+      check(st.first[0][0] === "Вечерние азкары" && st.first[0][1] === "2026-10-11T12:08:00.000Z" && st.first[1][0] === "Утренние азкары", "напоминания не по времени: " + JSON.stringify(st.first));
+      await g.click("#tab-settings"); await W(g, 200);
+      check(await g.locator("#notify-group").isVisible(), "в приложении нет раздела «Напоминания»");
+      await g.click("#sw-nm"); await W(g, 400);
+      const ev = await g.evaluate(() => ({ n: __sched.length, morning: __sched.filter(n => n.title !== "Вечерние азкары").length, sw: document.getElementById("sw-nm").getAttribute("aria-checked"), notify: localStorage.getItem("azkar-notify") }));
+      check(ev.n === 30 && ev.morning === 0 && ev.sw === "false", "после выключения утренних остались утренние напоминания: " + JSON.stringify(ev));
+      // поправка аср +3 — напоминание переезжает
+      await g.click("#open-adjust"); await W(g, 350); for (let i = 0; i < 3; i++) await g.click('.adj-btn[data-adj="asr"][data-d="1"]'); await W(g, 300);
+      const first = await g.evaluate(() => __sched.map(n => new Date(n.schedule.at).toISOString()).sort()[0]);
+      check(first === "2026-10-11T12:11:00.000Z", "напоминание не учло поправку: " + first);
+      // нажатие на уведомление открывает нужные азкары
+      await g.click("#adjust-sheet", { position: { x: 10, y: 10 } }); await W(g, 400);
+      await g.evaluate(() => __tap({ notification: { extra: { time: "evening" } } })); await W(g, 600);
+      check(await g.locator("#reader").isVisible() && await g.evaluate(() => time === "evening"), "нажатие на уведомление не открыло вечерние азкары");
+      await ctx.close();
+    }
+  }
+
   section("Установка на телефон и работа без интернета");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
