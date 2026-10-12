@@ -517,6 +517,24 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  section("Вибрация в приложении: лёгкая на каждое нажатие, чуть заметнее на последнем");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+    await g.addInitScript(() => { window.__hap = [];
+      window.Capacitor = { isNativePlatform: () => true, Plugins: { Haptics: { impact: async o => { window.__hap.push(o.style); } } } }; });
+    await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 400);
+    await g.click("#go-morning"); await W(g, 600);
+    const need = +(await g.locator("#counter-0 .num").innerText()).split(" / ")[1];   // первый азкар (Ихлас ×3)
+    for (let k = 0; k < need; k++) { await g.click("#counter-0"); await W(g, 60); }
+    const hap = await g.evaluate(() => window.__hap.slice());
+    check(hap.length === need && hap.slice(0, -1).every(x => x === "LIGHT") && hap[need - 1] === "MEDIUM", "вибрация счётчика не та: " + JSON.stringify(hap));
+    await g.click("#back"); await W(g, 300); await g.click("#tab-tasbih"); await W(g, 300);
+    await g.evaluate(() => { window.__hap = []; }); await g.click("#tb-tap"); await W(g, 100);
+    check(JSON.stringify(await g.evaluate(() => window.__hap)) === '["LIGHT"]', "в тасбихе нет лёгкой вибрации");
+    await ctx.close();
+  }
+
   section("Установка на телефон и работа без интернета");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });

@@ -1508,11 +1508,12 @@ function tap(i) {
   counts[ckey(z)] = n + 1;
   store(KEY, counts);
   updateCounter(i);
+  if (n + 1 < z.times) haptic("tap");   // на последнем нажатии — вибрация «дочитан» ниже
   const num = document.querySelector("#counter-" + i + " .num");
   num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump");
   if (mode === "list") updatePos();
   if (n + 1 === z.times) {
-    if (navigator.vibrate) navigator.vibrate(30);
+    haptic("done");
     // небольшая пауза, чтобы увидеть «Прочитано», потом к следующему
     if (mode === "cards") setTimeout(() => { if (index === i) goTo(i + 1); }, 600);
     else setTimeout(() => {
@@ -1630,8 +1631,15 @@ const hapticLabel = (() => {
   label.appendChild(input); document.body.appendChild(label);
   return label;
 })();
-function haptic(ms) {
-  if (navigator.vibrate) navigator.vibrate(ms);
+// В приложении для iPhone — системная вибрация (плагин Capacitor Haptics), самая лёгкая:
+//   "tap"  — каждое нажатие счётчика: короткий мягкий «тук» (ImpactStyle.Light);
+//   "done" — азкар дочитан: чуть заметнее (ImpactStyle.Medium), но всё равно не резко.
+// На сайте — щелчок переключателя (iOS 18) или navigator.vibrate (Android)
+const HAPTICS = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+  ? window.Capacitor.Plugins.Haptics : null;
+function haptic(kind = "tap") {
+  if (HAPTICS) { HAPTICS.impact({ style: kind === "done" ? "MEDIUM" : "LIGHT" }).catch(() => {}); return; }
+  if (navigator.vibrate) navigator.vibrate(kind === "done" ? 30 : 8);
   else hapticLabel.click();
 }
 
@@ -1650,7 +1658,7 @@ const stage = document.getElementById("tb-tap");
 stage.addEventListener("click", () => {
   tb.values[tb.active]++;
   store("azkar-counter", tb);
-  haptic(8);
+  haptic("tap");
   renderTasbih();
   const num = document.getElementById("tb-num");
   num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump");
