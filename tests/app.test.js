@@ -533,6 +533,14 @@ const section = name => console.log("•", name);
       check(pl.sched === "grozny" && pl.name === "Ассиновская" && JSON.stringify(await times(g)) === JSON.stringify(REF_1M), "с интернетом место не уточнилось: " + JSON.stringify(pl));
       await ctx.close();
     }
+    // 1в) названия из OpenStreetMap без приписок
+    {
+      const ctx = await browser.newContext(); const g = await ctx.newPage();
+      await g.goto(URL);
+      const r = await g.evaluate(() => [cleanName("Ассиновское сельское поселение"), cleanName("Гудермесское городское поселение"), cleanName("городской округ Грозный"), cleanName("Ассиновская")]);
+      check(JSON.stringify(r) === JSON.stringify(["Ассиновское", "Гудермесское", "Грозный", "Ассиновская"]), "названия не очищаются: " + JSON.stringify(r));
+      await ctx.close();
+    }
     // 2) запретил геопозицию: больше не спрашиваем, на главной — «Укажите город или село»
     {
       const ctx = await browser.newContext({ timezoneId: "Europe/Moscow" });

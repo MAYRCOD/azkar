@@ -1478,13 +1478,17 @@ document.getElementById("adjust-reset").addEventListener("click", () => { adjust
    Название места и регион узнаём у OpenStreetMap (нужен интернет). Без интернета место всё равно сохраняется,
    а название и регион уточним при следующем запуске с интернетом */
 const round2 = x => Math.round(x * 100) / 100;
-async function lookupPlaceName() {
+// «Ассиновское сельское поселение» → «Ассиновское», «городской округ Грозный» → «Грозный»
+const cleanName = s => s && s.replace(/\s*(сельское|городское) поселение$/i, "").replace(/^городской округ\s+/i, "").trim();
+// lat/lng — точные координаты телефона: по ним название точнее (по округлённым иногда попадает соседнее село).
+// Сохраняем всё равно только округлённые
+async function lookupPlaceName(lat = place && place.lat, lng = place && place.lng) {
   if (!place || !place.geo || place.checked) return;
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=ru&lat=${place.lat}&lon=${place.lng}`);
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=14&accept-language=ru&lat=${lat}&lon=${lng}`);
     const a = (await r.json()).address || {};
     if (!place || !place.geo) return;
-    const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county;
+    const name = cleanName(a.city || a.town || a.village || a.hamlet || a.municipality || a.county);
     if (name) place.name = name;
     place.region = a.state || "";
     // теперь знаем регион: в любом селе Чечни — общее расписание республики
@@ -1518,7 +1522,7 @@ function askLocation(fromButton) {
       note.textContent = "Определено";
       savePrayer();
       if (fromButton) setTimeout(() => closeSheet(citySheet), 400);
-      lookupPlaceName();
+      lookupPlaceName(pos.coords.latitude, pos.coords.longitude);
       done();
     }, err => {
       if (err.code === err.PERMISSION_DENIED) store("azkar-geo-denied", true);   // больше сами не спрашиваем
