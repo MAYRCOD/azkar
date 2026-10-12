@@ -545,6 +545,34 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  section("Дуа: вкладка, темы, карточки, «Назад» в список, поиск, «скоро»");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const d = await ctx.newPage(); d.on("pageerror", e => errs.push(e.message));
+    await d.goto(URL); await d.evaluate(() => localStorage.clear()); await d.reload(); await W(d, 400);
+    await d.click("#tab-duas"); await W(d, 500);
+    check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "вкладка «Дуа» не открылась");
+    const soon = await d.locator(".dua-row.soon").count(), ready = await d.locator(".dua-row:not(.soon)").count();
+    check(ready === 4 && soon > 0, `тем с текстами ${ready}, «скоро» ${soon}`);
+    await d.click('[data-cat="eat-before"]'); await W(d, 600);
+    check(await d.locator("#reader").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "тема не открылась в чтении");
+    check((await d.locator("#track .slide").count()) === 3, "в «Перед едой» не 2 карточки + финальная");
+    await d.click("#counter-0"); await W(d, 900);
+    check((await d.locator("#counter-0 .num").innerText()) === "1 / 1", "счётчик дуа не сработал");
+    check((await d.locator("#track .slide").nth(1).locator(".note").innerText()) === "Если забыл сказать в начале", "нет пометки над вторым дуа");
+    await d.click("#back"); await W(d, 500);
+    check(await d.locator("#duas").isVisible(), "«Назад» из дуа ведёт не в список дуа");
+    await d.fill("#dua-search", "сон"); await W(d, 200);
+    const found = await d.locator(".dua-row").allInnerTexts();
+    check(found.length === 2 && found.every(t => /сном|пробуждении/.test(t)), "поиск «сон» нашёл не то: " + JSON.stringify(found));
+    await d.fill("#dua-search", "абракадабра"); await W(d, 200);
+    check(await d.locator(".dua-empty").isVisible(), "при пустом поиске нет «Ничего не найдено»");
+    await d.fill("#dua-search", ""); await d.click("#tab-home"); await W(d, 400);
+    await d.click("#go-morning"); await W(d, 500); await d.click("#back"); await W(d, 400);
+    check(await d.locator("#home").isVisible(), "после дуа «Назад» из азкаров ведёт не на главную");
+    await ctx.close();
+  }
+
   section("Установка на телефон и работа без интернета");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });

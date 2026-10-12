@@ -418,6 +418,30 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .row .value { color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .row .value::after { content: "›"; font-size: 20px; line-height: 1; color: var(--inactive); }
 
+/* ---------- Дуа: список тем, как настройки iPhone ---------- */
+#duas { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 15px; }
+#duas h1 { font-size: 24px; }
+#dua-groups { display: grid; gap: 18px; }
+.search {
+  display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px;
+  background: var(--surface); border: 1px solid var(--edge); border-radius: 12px; box-shadow: var(--shadow);
+  color: var(--muted);
+}
+.search svg { width: 17px; height: 17px; flex: none; }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--fg); font: inherit; font-size: 16px; }
+.search input::placeholder { color: var(--inactive); }
+.dua-row .value { font-variant-numeric: tabular-nums; }
+.dua-row.soon { pointer-events: none; }
+.dua-row.soon .lbl { opacity: .45; }
+.dua-row.soon .value::after { content: none; }
+.tile-indigo { background: #5856d6; }
+.tile-teal { background: #30b0c7; }
+.tile-red { background: #ff3b30; }
+.tile-brown { background: #a2845e; }
+.dua-empty { text-align: center; color: var(--muted); padding: 24px 0; }
+/* Пометка над дуа: когда его говорят («Если забыл сказать в начале») */
+.content .note { margin: 0 0 6px; text-align: center; font-size: calc(13.5px * var(--tx-k, 1)); color: var(--accent-ink); font-weight: 700; }
+
 /* Переключатель: дорожка и кружок */
 .switch {
   flex: none; position: relative; width: 46px; height: 28px; border-radius: 999px;
@@ -482,8 +506,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .tabbar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  width: min(330px, calc(100% - 32px));
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;
+  width: min(360px, calc(100% - 32px));
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
   background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
   box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 10px 28px rgba(var(--sh), .12);
   padding: 4px; z-index: 10;
@@ -491,12 +515,13 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 .tabbar.away { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
 .tabbar::before {
-  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3);
+  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 20px) / 4);
   border-radius: 999px; background: var(--press); transition: transform .38s var(--ease);
 }
-/* Подложка переезжает под выбранную вкладку: на одну или две своих ширины + промежуток */
-.tabbar[data-active="tasbih"]::before { transform: translateX(calc(100% + 4px)); }
-.tabbar[data-active="settings"]::before { transform: translateX(calc(200% + 8px)); }
+/* Подложка переезжает под выбранную вкладку: на одну, две или три своих ширины + промежутки */
+.tabbar[data-active="duas"]::before { transform: translateX(calc(100% + 4px)); }
+.tabbar[data-active="tasbih"]::before { transform: translateX(calc(200% + 8px)); }
+.tabbar[data-active="settings"]::before { transform: translateX(calc(300% + 12px)); }
 .tab-item {
   display: grid; justify-items: center; gap: 2px; border: 0; background: none;
   border-radius: 999px; padding: 6px 6px 5px; color: var(--inactive); font-size: 12px; position: relative;
@@ -519,7 +544,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #home.enter .choice:nth-child(1) { animation-delay: .06s; }
 #home.enter .choice:nth-child(2) { animation-delay: .12s; }
 /* Хадисы и строки настроек — тоже по очереди, задержку задаёт --i */
-#settings.enter .group { animation: rise .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
+#settings.enter .group, #duas.enter .group { animation: rise .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 
 /* Нажатие: кнопка чуть «проседает» */
@@ -613,6 +638,17 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
     <span class="tb-hint" id="tb-hint">Нажимайте в любом месте</span>
   </button>
+</main>
+
+<!-- ===== ДУА ===== -->
+<!-- Темы дуа по ситуациям. Нажал на тему — открываются карточки, как у азкаров -->
+<main class="screen" id="duas" hidden>
+  <h1>Дуа</h1>
+  <label class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="search" id="dua-search" placeholder="Поиск: сон, еда, дорога…" autocomplete="off" enterkeyhint="search">
+  </label>
+  <div id="dua-groups"></div>
 </main>
 
 <!-- ===== НАСТРОЙКИ ===== -->
@@ -710,6 +746,11 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   <button class="tab-item" role="tab" id="tab-home" data-screen="home">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 2.6a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a3 3 0 0 1-3 3h-3v-5.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V22H6a3 3 0 0 1-3-3V9.8c0-.5.2-1 .6-1.3z"/></svg>
     Главная
+  </button>
+  <button class="tab-item" role="tab" id="tab-duas" data-screen="duas">
+    <!-- две раскрытые ладони, поднятые в дуа (правая — зеркало левой) -->
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.2 9a1.1 1.1 0 0 1 2.2 0v2h.6V6.5a1.1 1.1 0 0 1 2.2 0v4.5h.6V5a1.1 1.1 0 0 1 2.2 0v15.6C6.5 20.3 3.2 17.2 3.2 13z"/><path d="M3.2 9a1.1 1.1 0 0 1 2.2 0v2h.6V6.5a1.1 1.1 0 0 1 2.2 0v4.5h.6V5a1.1 1.1 0 0 1 2.2 0v15.6C6.5 20.3 3.2 17.2 3.2 13z" transform="matrix(-1 0 0 1 24 0)"/></svg>
+    Дуа
   </button>
   <button class="tab-item" role="tab" id="tab-tasbih" data-screen="tasbih">
     <!-- палец, который нажимает; дуга над ним — касание -->
@@ -1121,6 +1162,78 @@ const AYAT = [
 ];
 
 
+/* ДУА по ситуациям (в духе «Крепости мусульманина»).
+   ПРОБНЫЙ ВАРИАНТ: тексты пока только в четырёх темах, остальные — «скоро».
+   Арабский — из хадиса на sunnah.com (по кодам символов), перевод и транскрипция — islamicazkar.com.
+   Каждая тема — как утренние азкары: карточки со счётчиком, прогресс за день */
+const ICONS = {
+  moon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.6A8.3 8.3 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
+  fork: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.3 3.6-3.3 7v3H17"/></svg>',
+  plate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8"/></svg>',
+  house: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 3a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a2.5 2.5 0 0 1-2.5 2.5H14v-5a2 2 0 0 0-4 0v5H5.5A2.5 2.5 0 0 1 3 19v-8.8c0-.5.2-1 .6-1.3z"/></svg>',
+  door: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H6v16h8M10 12h10M17 9l3 3-3 3"/></svg>',
+  road: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3L4 21M16 3l4 18M12 4v2.5M12 10.5v3M12 17.5V20"/></svg>',
+  dome: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c.4 1.4 1.6 2.3 3 3.2 2.6 1.6 4.5 3.7 4.5 6.8V14h-15v-1.5c0-3.1 1.9-5.2 4.5-6.8 1.4-.9 2.6-1.8 3-3.2zM4 15.5h16V21H14v-3a2 2 0 0 0-4 0v3H4z"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 17.8 8a4.3 4.3 0 0 1-.3 10.5z"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.5S3.5 15.4 3.5 9.4A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.5 2.2c0 6-8.5 11.1-8.5 11.1z"/></svg>',
+};
+const DUA_GROUPS = [
+  { title: "Сон", cats: [
+    { id: "sleep", name: "Перед сном", tile: "indigo", icon: "moon", items: [
+      { id: "d-sleep", times: 1,
+        ar: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا",
+        ru: "О Аллах, с именем Твоим я умру и с ним оживу.",
+        tr: "Би-сми-кя, Аллахумма, амуту ва ахйа.",
+        src: "аль-Бухари 6324" },
+    ] },
+    { id: "wake", name: "При пробуждении", tile: "orange", icon: "sun", items: [
+      { id: "d-wake", times: 1,
+        ar: "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا، وَإِلَيْهِ النُّشُورُ",
+        ru: "Хвала Аллаху, воскресившему нас после того, как Он умертвил нас (то есть, послал нам сон, являющийся братом смерти), и к Нему воскресение.",
+        tr: "Аль-хамду ли-Лляхи аллязи ахйа-на ба'да ма амата-на ва иляй-хи-н-нушуру.",
+        src: "аль-Бухари 6324" },
+    ] },
+  ] },
+  { title: "Еда", cats: [
+    { id: "eat-before", name: "Перед едой", tile: "green", icon: "fork", items: [
+      { id: "d-eat1", times: 1,
+        ar: "بِسْمِ اللَّهِ",
+        ru: "С именем Аллаха.",
+        tr: "Би-сми-Лляхи.",
+        src: "ат-Тирмизи 1858" },
+      { id: "d-eat2", times: 1, note: "Если забыл сказать в начале",
+        ar: "بِسْمِ اللَّهِ فِي أَوَّلِهِ وَآخِرِهِ",
+        ru: "С именем Аллаха в начале и конце еды.",
+        tr: "Би-сми-Лляхи фи аввали-хи ва ахыри-хи.",
+        src: "ат-Тирмизи 1858" },
+    ] },
+    { id: "eat-after", name: "После еды", tile: "teal", icon: "plate", items: [
+      { id: "d-after", times: 1,
+        ar: "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ",
+        ru: "Хвала Аллаху, который накормил меня этим и наделил меня этим, тогда как сам я ни силой, ни мощью не обладаю.",
+        tr: "Аль-хамду ли-Лляхи ллязи ат'ама-ни хаза ва разака-ни-хи мин гайри хаулин мин-ни ва ля кувватин.",
+        src: "ат-Тирмизи 3458" },
+    ] },
+  ] },
+  // темы ниже — пока без текстов: покажем, как будет выглядеть раздел
+  { title: "Дом и дорога", cats: [
+    { id: "home-out", name: "Выход из дома", tile: "blue", icon: "door", items: [] },
+    { id: "home-in", name: "Вход в дом", tile: "brown", icon: "house", items: [] },
+    { id: "travel", name: "В дорогу", tile: "purple", icon: "road", items: [] },
+  ] },
+  { title: "Мечеть", cats: [
+    { id: "mosque-in", name: "Вход в мечеть", tile: "green", icon: "dome", items: [] },
+    { id: "mosque-out", name: "Выход из мечети", tile: "teal", icon: "dome", items: [] },
+  ] },
+  { title: "Трудности", cats: [
+    { id: "worry", name: "Беда и тревога", tile: "indigo", icon: "cloud", items: [] },
+    { id: "sick", name: "Посещение больного", tile: "red", icon: "heart", items: [] },
+  ] },
+];
+const DUA_CATS = DUA_GROUPS.flatMap(g => g.cats);
+const duaCat = t => DUA_CATS.find(c => "dua:" + c.id === t);
+
 /* ================================================================
    2. СОСТОЯНИЕ
    ================================================================ */
@@ -1157,7 +1270,8 @@ function cleanOldDays() {
   } catch (e) {}
 }
 cleanOldDays();
-let time = "morning";              // какие азкары открыты сейчас
+let time = "morning";              // что открыто сейчас: "morning", "evening" или тема дуа "dua:sleep"
+let readerFrom = "home";           // откуда открыли чтение — туда и вернёт «Назад»
 let index = 0;                     // номер текущей карточки
 let items = [];                    // азкары выбранного времени
 const ckey = z => time + ":" + z.id;
@@ -1254,7 +1368,8 @@ function showScreen(id) {
   tabbar.classList.toggle("away", id === "reader");
   document.getElementById("tab-veil").classList.toggle("away", id === "reader");
   if (id === "home") updateHome();
-  const tab = id === "reader" ? "home" : id;   // чтение азкаров относится к «Главной»
+  if (id === "duas") renderDuas();
+  const tab = id === "reader" ? readerFrom : id;   // чтение относится к той вкладке, откуда его открыли
   tabbar.dataset.active = tab;   // по этому атрибуту подложка переезжает на нужную вкладку
   document.querySelectorAll(".tab-item").forEach(t =>
     t.setAttribute("aria-selected", t.dataset.screen === tab ? "true" : "false"));
@@ -1405,7 +1520,9 @@ document.getElementById("size-reset").addEventListener("click", () => {
 function openTime(t) {
   checkNewDay();
   time = t;
-  items = setItems(time);
+  const cat = duaCat(t);
+  items = cat ? cat.items : setItems(time);
+  readerFrom = cat ? "duas" : "home";
   // начинаем с первого непрочитанного зикра
   index = items.findIndex(z => (counts[ckey(z)] || 0) < z.times);
   if (index === -1) index = items.length;          // всё прочитано → сразу финальная карточка
@@ -1421,7 +1538,36 @@ function openTime(t) {
 }
 document.getElementById("go-morning").addEventListener("click", () => openTime("morning"));
 document.getElementById("go-evening").addEventListener("click", () => openTime("evening"));
-document.getElementById("back").addEventListener("click", () => showScreen("home"));
+document.getElementById("back").addEventListener("click", () => showScreen(readerFrom));
+
+/* Экран «Дуа»: группы тем, как настройки iPhone. Поиск — по названию темы и по тексту дуа */
+const low = x => (x || "").toLowerCase().replace(/ё/g, "е");
+function renderDuas() {
+  const q = low(document.getElementById("dua-search").value.trim());
+  const match = c => !q || low(c.name).includes(q) ||
+    c.items.some(z => low(z.ru).includes(q) || low(z.tr).includes(q) || low(z.note).includes(q));
+  let html = "", k = 0;
+  for (const g of DUA_GROUPS) {
+    const cats = g.cats.filter(c => match(c) || (q && low(g.title).includes(q)));
+    if (!cats.length) continue;
+    html += `<div class="group" style="--i:${k++}"><span class="group-title">${g.title}</span><div class="rows">` +
+      cats.map(c => {
+        const n = c.items.length;
+        const done = n && c.items.every(z => (counts["dua:" + c.id + ":" + z.id] || 0) >= z.times);
+        const value = !n ? "скоро" : done ? "✓ сегодня" : `${n} дуа`;
+        return `<button class="row dua-row${n ? "" : " soon"}" data-cat="${c.id}"${n ? "" : ' disabled aria-disabled="true"'}>
+          <span class="lbl"><span class="tile tile-${c.tile}" aria-hidden="true">${ICONS[c.icon]}</span><span>${c.name}</span></span>
+          <span class="value">${value}</span></button>`;
+      }).join("") + `</div></div>`;
+  }
+  const box = document.getElementById("dua-groups");
+  box.innerHTML = html || `<p class="dua-empty">Ничего не найдено</p>`;
+  box.querySelectorAll(".dua-row:not(.soon)").forEach(r =>
+    r.addEventListener("click", () => openTime("dua:" + r.dataset.cat)));
+}
+document.getElementById("dua-search").addEventListener("input", renderDuas);
+// «Найти» на клавиатуре телефона — просто прячем клавиатуру
+document.getElementById("dua-search").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
 
 // Вернулись в приложение (например, утром, а открыто оно было с вечера):
 // если день сменился и азкары открыты — показываем их уже с обнулёнными счётчиками
@@ -1444,6 +1590,7 @@ function askReset(title, text, action) {
   resetSheet.hidden = false;
 }
 document.getElementById("reset-btn").addEventListener("click", () => askReset(
+  duaCat(time) ? `Сбросить «${duaCat(time).name}»?` :
   time === "morning" ? "Сбросить утренние азкары?" : "Сбросить вечерние азкары?",
   "Счётчики всех азкаров начнутся с нуля",
   () => {
@@ -1499,6 +1646,7 @@ function counterHTML(i) {
 }
 function contentHTML(z) {
   return `<div class="content">
+      ${z.note ? `<p class="note">${z.note}</p>` : ""}
       <p class="ar" lang="ar">${arabic(z.ar)}</p>
       <div class="divider"></div>
       <p class="ru">${z.ru}</p>
@@ -1508,9 +1656,9 @@ function contentHTML(z) {
 }
 function finalHTML() {
   return `<div class="final">
-      <h2>${time === "morning" ? "Утренние" : "Вечерние"} азкары прочитаны</h2>
+      <h2>${duaCat(time) ? `«${duaCat(time).name}» прочитано` : (time === "morning" ? "Утренние" : "Вечерние") + " азкары прочитаны"}</h2>
       <div class="actions">
-        <button class="btn to-home">На главную</button>
+        <button class="btn to-home">${duaCat(time) ? "К списку дуа" : "На главную"}</button>
       </div>
     </div>`;
 }
@@ -1527,7 +1675,7 @@ function buildList() {
     document.getElementById("counter-" + i).addEventListener("click", () => tap(i));
     updateCounter(i);
   });
-  box.querySelector(".to-home").addEventListener("click", () => showScreen("home"));
+  box.querySelector(".to-home").addEventListener("click", () => showScreen(readerFrom));
   // открываем на первом непрочитанном (если всё прочитано — в самом конце)
   box.scrollTop = 0;
   if (index >= items.length) box.scrollTop = box.scrollHeight;
@@ -1557,7 +1705,7 @@ function buildSlides() {
   const final = document.createElement("section");
   final.className = "slide";
   final.innerHTML = finalHTML();
-  final.querySelector(".to-home").addEventListener("click", () => showScreen("home"));
+  final.querySelector(".to-home").addEventListener("click", () => showScreen(readerFrom));
   track.appendChild(final);
 }
 
