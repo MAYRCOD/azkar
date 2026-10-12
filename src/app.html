@@ -1635,7 +1635,8 @@ const stage = document.getElementById("tb-tap");
 stage.addEventListener("click", () => {
   tb.values[tb.active]++;
   store("azkar-counter", tb);
-  haptic("tap");
+  // каждые 33 (33, 66, 99, …) — «тук» чуть сильнее: можно считать тасбих, не глядя на экран
+  haptic(tb.values[tb.active] % 33 === 0 ? "done" : "tap");
   renderTasbih();
   const num = document.getElementById("tb-num");
   num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump");

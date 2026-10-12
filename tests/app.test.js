@@ -517,7 +517,7 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
-  section("Вибрация в приложении: лёгкая на каждое нажатие, чуть заметнее на последнем");
+  section("Вибрация в приложении: лёгкая на каждое нажатие, чуть заметнее на последнем; в тасбихе — на 33, 66, 99…");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
@@ -530,8 +530,12 @@ const section = name => console.log("•", name);
     const hap = await g.evaluate(() => window.__hap.slice());
     check(hap.length === need && hap.slice(0, -1).every(x => x === "LIGHT") && hap[need - 1] === "MEDIUM", "вибрация счётчика не та: " + JSON.stringify(hap));
     await g.click("#back"); await W(g, 300); await g.click("#tab-tasbih"); await W(g, 300);
-    await g.evaluate(() => { window.__hap = []; }); await g.click("#tb-tap"); await W(g, 100);
-    check(JSON.stringify(await g.evaluate(() => window.__hap)) === '["LIGHT"]', "в тасбихе нет лёгкой вибрации");
+    await g.evaluate(() => { window.__hap = []; });
+    for (let k = 0; k < 67; k++) await g.click("#tb-tap");
+    await W(g, 100);
+    const th = await g.evaluate(() => window.__hap.slice());
+    const strong = th.map((x, i) => x === "MEDIUM" ? i + 1 : 0).filter(Boolean);
+    check(th.length === 67 && JSON.stringify(strong) === "[33,66]", "в тасбихе сильный «тук» не на 33 и 66: " + JSON.stringify(strong) + " из " + th.length);
     await ctx.close();
   }
 
