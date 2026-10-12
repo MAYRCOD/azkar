@@ -447,6 +447,32 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .dua-act:active { background: var(--press); }
 .dua-act.fav.on { color: #ff9500; }
 .dua-act.fav.on svg { fill: currentColor; }
+/* Звезда «в избранное»: добавил — звезда «выпрыгивает» с поворотом, от неё расходится кольцо
+   и разлетаются искорки; убрал — звезда коротко сжимается */
+.dua-act.fav { position: relative; }
+.dua-act.fav.pop svg { animation: star-pop .55s cubic-bezier(.2, .9, .3, 1.3); }
+.dua-act.fav.unpop svg { animation: star-unpop .3s ease; }
+@keyframes star-pop {
+  0% { transform: scale(.2) rotate(-40deg); }
+  55% { transform: scale(1.35) rotate(12deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes star-unpop { 40% { transform: scale(.7); } }
+.fav-ring {
+  position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border-radius: 50%; border: 2px solid #ff9500; pointer-events: none;
+  animation: fav-ring .5s ease-out forwards;
+}
+@keyframes fav-ring { from { transform: scale(.3); opacity: .9; } to { transform: scale(1.25); opacity: 0; border-width: .5px; } }
+.fav-spark {
+  position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; background: var(--c, #ff9500); pointer-events: none;
+  animation: fav-spark .6s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+@keyframes fav-spark {
+  0% { transform: rotate(var(--a)) translateY(-6px) scale(1); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateY(-24px) scale(.2); opacity: 0; }
+}
 /* Короткая подсказка внизу экрана: «Скопировано» */
 .toast {
   position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 30;
@@ -1657,12 +1683,32 @@ document.getElementById("dua-cards").addEventListener("click", async e => {
     favs = on ? [...favs, z.id] : favs.filter(id => id !== z.id);
     store("azkar-dua-fav", favs);
     b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
-    haptic("tap");
+    favBurst(b, on);
+    haptic(on ? "done" : "tap");
     toast(on ? "Добавлено в избранное" : "Убрано из избранного");
     if (duaOpen === "fav" && !on) openDua("fav");   // в «Избранном» убранное дуа сразу исчезает
   }
 });
 document.getElementById("dua-back").addEventListener("click", () => showScreen("duas"));
+
+// Анимация звезды: класс перезапускаем (убрали → браузер «забыл» → добавили), кольцо и 8 искорок
+// создаём на время анимации и потом удаляем
+function favBurst(b, on) {
+  b.classList.remove("pop", "unpop"); void b.offsetWidth;
+  b.classList.add(on ? "pop" : "unpop");
+  if (!on) return;
+  const parts = [Object.assign(document.createElement("i"), { className: "fav-ring" })];
+  const colors = ["#ff9500", "#ffcc00", "#34c759", "#ff9500"];
+  for (let k = 0; k < 8; k++) {
+    const sp = document.createElement("i");
+    sp.className = "fav-spark";
+    sp.style.setProperty("--a", k * 45 + 22 + "deg");   // восемь лучей по кругу
+    sp.style.setProperty("--c", colors[k % colors.length]);
+    parts.push(sp);
+  }
+  parts.forEach(x => b.appendChild(x));
+  setTimeout(() => parts.forEach(x => x.remove()), 700);
+}
 
 // Вернулись в приложение (например, утром, а открыто оно было с вечера):
 // если день сменился и азкары открыты — показываем их уже с обнулёнными счётчиками
