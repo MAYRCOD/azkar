@@ -127,6 +127,12 @@ const section = name => console.log("•", name);
     check(info.cycle === 52, "за 52 дня показываются не все аяты: " + info.cycle);
     check(info.shown === info.today, "на главной не сегодняшний аят: " + info.shown);
     check(!info.blob, "знак немого алифа не заменён — будет клякса");
+    // сукун — мусхафный (головка «х», U+06E1), а немой алиф — пустой кружок (U+0652)
+    const suk = await p.evaluate(() => { const t = arabic("\u062E\u0652\u0641\u0650\u0636\u0652 \u0648\u0627\u06DF");
+      return { head: (t.match(/\u06E1/g) || []).length, ring: (t.match(/\u0652/g) || []).length }; });
+    check(suk.head === 2 && suk.ring === 1, "сукун/немой алиф показаны не по мусхафу: " + JSON.stringify(suk));
+    check(await p.evaluate(() => !document.getElementById("ayah-ar").innerHTML.includes("\u0652") ||
+      AYAT.some(a => a.ar.includes("\u06DF"))), "на главной остался сукун-кружок");
     check(!(await p.locator("#ayah-ar").isVisible()), "арабский аята виден в свёрнутом виде");
     await p.click("#ayah-day"); await W(p, 250);
     check(await p.locator("#ayah-ar").isVisible() && (await p.getAttribute("#ayah-day", "aria-expanded")) === "true", "аят дня не раскрылся по нажатию");
