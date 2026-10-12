@@ -1297,6 +1297,9 @@ function placeDay(shift = 0, now = Date.now()) {
    Хранится сжатой: первый день целиком, дальше — изменение к вчерашнему дню одной буквой (a = −12 … m = 0 … y = +12).
    Для Чечни одно расписание на всю республику (так в мечетях), для остальных городов — если место ближе 40 км */
 const SCHEDULES = __SCHEDULES_JSON__;
+function SCHEDULES_OFF() { return SCHEDULES.filter(s => s.cover === "off").map(s => s.id); }
+// место, сохранённое с таблицей, которую мы больше не включаем (Москва и др. в v29), — переводим на расчёт
+if (place && place.sched && (SCHEDULES_OFF().includes(place.sched))) { place.sched = null; place.avail = null; store("azkar-place", place); }
 const NEAR_KM = 40;
 function distKm(lat1, lng1, lat2, lng2) {
   const r = Math.PI / 180, a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
@@ -1309,6 +1312,7 @@ function scheduleFor(lat, lng, region = "") {
   if (byRegion) return byRegion.id;
   let best = null, bestKm = NEAR_KM;
   for (const s of SCHEDULES) {
+    if (s.cover === "off") continue;                          // таблица не местного муфтията — считаем сами
     if (s.cover.startsWith("region:") && region) continue;   // регион известен и это не он — таблица республики не подходит
     const d = distKm(lat, lng, s.lat, s.lng);
     if (d <= bestKm) { bestKm = d; best = s.id; }
@@ -1344,8 +1348,10 @@ function prayerTimes(shift = 0, now = Date.now()) {
     const c = new adhan.Coordinates(place.lat, place.lng);
     const params = METHODS[method][2] ? METHODS[method][2]() : adhan.CalculationMethod[method]();
     params.madhab = adhan.Madhab[asrSchool];
-    // на севере летом ночь бывает такой светлой, что фаджр «не наступает» — библиотека подбирает правило сама
-    params.highLatitudeRule = adhan.HighLatitudeRule.recommended(c);
+    // на севере летом ночь бывает такой светлой, что фаджр «не наступает» — тогда фаджр и иша берём
+    // по доле ночи, пропорциональной углу (TwilightAngle). Правило «седьмая часть ночи», которое библиотека
+    // советует для широт выше 48°, сдвигало фаджр в Москве на 17 минут позже официального (umma.ru, октябрь 2026)
+    params.highLatitudeRule = adhan.HighLatitudeRule.TwilightAngle;
     const r = new adhan.PrayerTimes(c, placeDay(shift, now), params);
     t = Object.fromEntries(PRAYERS.map(([k]) => [k, r[k]]));
   }

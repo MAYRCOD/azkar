@@ -22,19 +22,21 @@ raw = json.load(open(sys.argv[1], encoding="utf-8"))
 # id, город, широта, долгота, часовой пояс места, постоянный сдвиг таблицы (мин), кого покрывает
 META = [
     ("grozny", "Грозный", 43.3178, 45.6949, "Europe/Moscow", 180, "region:Чеч"),   # одно расписание на всю Чечню
-    ("makhachkala", "Махачкала", 42.9849, 47.5047, "Europe/Moscow", 180, "near"),
-    ("moscow", "Москва", 55.7558, 37.6173, "Europe/Moscow", 180, "near"),
+    # "off" — таблица есть, но в приложении не включается: это не местное расписание муфтията, а расчёт сайта.
+    # Для Москвы сверено с umma.ru (октябрь 2026): точнее наш расчёт «ДУМ России» (±1 мин), а таблица Govzalla расходится на 4–14 мин
+    ("makhachkala", "Махачкала", 42.9849, 47.5047, "Europe/Moscow", 180, "off"),
+    ("moscow", "Москва", 55.7558, 37.6173, "Europe/Moscow", 180, "off"),
     ("kazan", "Казань", 55.7963, 49.1088, "Europe/Moscow", 180, "near"),
-    ("volgograd", "Волгоград", 48.708, 44.5133, "Europe/Volgograd", 180, "near"),
-    ("krasnodar", "Краснодар", 45.0355, 38.9753, "Europe/Moscow", 180, "near"),
-    ("rostov", "Ростов-на-Дону", 47.2357, 39.7015, "Europe/Moscow", 180, "near"),
-    ("stavropol", "Ставрополь", 45.0428, 41.9734, "Europe/Moscow", 180, "near"),
-    ("sochi", "Сочи", 43.6028, 39.7342, "Europe/Moscow", 180, "near"),
-    ("samara", "Самара", 53.1959, 50.1002, "Europe/Samara", 240, "near"),
-    ("yekaterinburg", "Екатеринбург", 56.8389, 60.6057, "Asia/Yekaterinburg", 300, "near"),
-    ("almaty", "Алматы", 43.2389, 76.8897, "Asia/Almaty", 360, "near"),
-    ("karaganda", "Караганда", 49.8047, 73.1094, "Asia/Almaty", 360, "near"),
-    ("prague", "Прага", 50.0755, 14.4378, "Europe/Prague", 60, "near"),
+    ("volgograd", "Волгоград", 48.708, 44.5133, "Europe/Volgograd", 180, "off"),
+    ("krasnodar", "Краснодар", 45.0355, 38.9753, "Europe/Moscow", 180, "off"),
+    ("rostov", "Ростов-на-Дону", 47.2357, 39.7015, "Europe/Moscow", 180, "off"),
+    ("stavropol", "Ставрополь", 45.0428, 41.9734, "Europe/Moscow", 180, "off"),
+    ("sochi", "Сочи", 43.6028, 39.7342, "Europe/Moscow", 180, "off"),
+    ("samara", "Самара", 53.1959, 50.1002, "Europe/Samara", 240, "off"),
+    ("yekaterinburg", "Екатеринбург", 56.8389, 60.6057, "Asia/Yekaterinburg", 300, "off"),
+    ("almaty", "Алматы", 43.2389, 76.8897, "Asia/Almaty", 360, "off"),
+    ("karaganda", "Караганда", 49.8047, 73.1094, "Asia/Almaty", 360, "off"),
+    ("prague", "Прага", 50.0755, 14.4378, "Europe/Prague", 60, "off"),
 ]
 
 def pack(m):

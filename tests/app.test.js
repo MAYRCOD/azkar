@@ -633,6 +633,27 @@ const section = name => console.log("•", name);
       return bad.slice(0, 10);
     });
     check(audit.length === 0, "готовые расписания: " + audit.join("; "));
+    // Москва: таблица umma.ru (портал ДУМ РФ) на октябрь 2026 — наш расчёт «ДУМ России» совпадает ±1 минута каждый день.
+    // (Таблица Govzalla для Москвы расходилась на 4–14 мин — она выключена; правило высоких широт — TwilightAngle)
+    const UMMA = "1 4:28 6:27 12:24 15:18 18:10 19:46|2 4:30 6:29 12:24 15:16 18:07 19:44|3 4:32 6:31 12:23 15:14 18:04 19:41|4 4:34 6:33 12:23 15:12 18:02 19:38|5 4:37 6:35 12:23 15:10 17:59 19:36|6 4:39 6:37 12:23 15:08 17:57 19:33|7 4:41 6:39 12:22 15:06 17:54 19:30|8 4:43 6:41 12:22 15:04 17:52 19:28|9 4:45 6:43 12:22 15:03 17:49 19:25|10 4:47 6:45 12:21 15:01 17:46 19:23|11 4:49 6:47 12:21 14:59 17:44 19:20|12 4:51 6:49 12:21 14:57 17:41 19:18|13 4:53 6:51 12:21 14:55 17:39 19:15|14 4:55 6:53 12:20 14:53 17:36 19:13|15 4:57 6:55 12:20 14:51 17:34 19:10|16 4:59 6:57 12:20 14:49 17:32 19:08|17 5:01 7:00 12:20 14:47 17:29 19:06|18 5:03 7:02 12:20 14:45 17:27 19:03|19 5:05 7:04 12:19 14:43 17:24 19:01|20 5:07 7:06 12:19 14:42 17:22 18:59|21 5:09 7:08 12:19 14:40 17:19 18:57|22 5:11 7:10 12:19 14:38 17:17 18:54|23 5:13 7:12 12:19 14:36 17:15 18:52|24 5:15 7:14 12:19 14:34 17:12 18:50|25 5:17 7:16 12:19 14:32 17:10 18:48|26 5:19 7:18 12:18 14:31 17:08 18:46|27 5:20 7:20 12:18 14:29 17:05 18:44|28 5:22 7:22 12:18 14:27 17:03 18:42|29 5:24 7:24 12:18 14:25 17:01 18:40|30 5:26 7:27 12:18 14:24 16:59 18:38|31 5:28 7:29 12:18 14:22 16:57 18:36";
+    const msk = await q.evaluate(umma => {
+      const keep = [place, method, asrSchool, adjust];
+      place = { name: "Москва", lat: 55.76, lng: 37.62, tz: "Europe/Moscow", avail: scheduleFor(55.76, 37.62, "Москва"), sched: null }; method = "DumRussia"; asrSchool = "Shafi"; adjust = {};
+      const K = ["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"], m = x => { const [h, y] = x.split(":"); return h * 60 + +y; };
+      const bad = [];
+      for (const row of umma.split("|")) { const [d, ...u] = row.split(" ");
+        const t = prayerTimes(0, Date.UTC(2026, 9, +d, 9));
+        K.forEach((k, i) => { const diff = m(hm(t[k])) - m(u[i]); if (Math.abs(diff) > 1) bad.push(`${d}.10 ${k}: ${hm(t[k])} вместо ${u[i]}`); }); }
+      const avail = place.avail;
+      [place, method, asrSchool, adjust] = keep;
+      return { bad: bad.slice(0, 8), avail };
+    }, UMMA);
+    check(msk.avail === null, "для Москвы снова включилась таблица Govzalla: " + msk.avail);
+    check(msk.bad.length === 0, "Москва не совпала с umma.ru: " + msk.bad.join("; "));
+    // место, сохранённое в v29 с таблицей Москвы, переводится на расчёт
+    await q.evaluate(() => localStorage.setItem("azkar-place", JSON.stringify({ name: "Москва", lat: 55.76, lng: 37.62, tz: "Europe/Moscow", avail: "moscow", sched: "moscow", checked: true })));
+    await q.reload(); await W(q, 300);
+    check(await q.evaluate(() => place.sched === null && JSON.parse(localStorage.getItem("azkar-place")).sched === null), "сохранённая Москва осталась на таблице Govzalla");
     // далёкий часовой пояс: время по месту, а не по телефону
     await q.evaluate(() => { localStorage.setItem("azkar-place", JSON.stringify({ name: "Уфа", lat: 54.74, lng: 55.97, tz: "Asia/Yekaterinburg", checked: true })); });
     await q.reload(); await W(q, 300);
