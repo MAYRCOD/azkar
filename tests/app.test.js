@@ -105,7 +105,7 @@ const section = name => console.log("•", name);
     await p.setViewportSize({ width: 390, height: 780 }); await p.click('.set-opt[data-set="main"]'); await W(p, 300);
   }
 
-  section("Аят дня: 30 аятов, меняется по дате, раскрывается по нажатию");
+  section("Аят дня: 53 аята, меняется по дате, раскрывается по нажатию");
   {
     const info = await p.evaluate(() => ({
       n: AYAT.length, refs: new Set(AYAT.map(a => a.ref)).size,
@@ -113,18 +113,18 @@ const section = name => console.log("•", name);
       // номер аята в конце каждого аята — «[١٥٢]»
       nums: AYAT.every(a => /\[[\u0660-\u0669]+\]$/.test(a.ar)),
       // соседние дни — разные аяты, через 30 дней — тот же
-      d1: ayahOfDay(new Date(2026, 9, 11)).ref, d2: ayahOfDay(new Date(2026, 9, 12)).ref, d31: ayahOfDay(new Date(2026, 10, 10)).ref,
+      d1: ayahOfDay(new Date(2026, 9, 11)).ref, d2: ayahOfDay(new Date(2026, 9, 12)).ref, dN: ayahOfDay(new Date(2026, 9, 11 + AYAT.length)).ref,
       // ночь и вечер одного дня — один аят (считаем по местной дате, не по Гринвичу)
       early: ayahOfDay(new Date(2026, 9, 11, 0, 5)).ref, late: ayahOfDay(new Date(2026, 9, 11, 23, 55)).ref,
-      // все 30 встречаются за 30 дней подряд
-      cycle: new Set([...Array(30)].map((_, i) => ayahOfDay(new Date(2026, 9, 11 + i)).ref)).size,
+      // все аяты встречаются за AYAT.length дней подряд
+      cycle: new Set([...Array(AYAT.length)].map((_, i) => ayahOfDay(new Date(2026, 9, 11 + i)).ref)).size,
       shown: document.getElementById("ayah-ref").textContent, today: "Сура " + ayahOfDay().ref,
       blob: document.getElementById("ayah-ar").innerHTML.includes("\u06DF") }));
-    check(info.n === 30 && info.refs === 30 && info.empty === 0, "аятов дня не 30 или есть пустые/повторы: " + JSON.stringify(info));
+    check(info.n === 53 && info.refs === 53 && info.empty === 0, "аятов дня не 53 или есть пустые/повторы: " + JSON.stringify(info));
     check(info.nums, "не у всех аятов дня есть номер в конце");
-    check(info.d1 !== info.d2 && info.d1 === info.d31, "аят не меняется по дням или цикл не 30 дней");
+    check(info.d1 !== info.d2 && info.d1 === info.dN, "аят не меняется по дням или цикл не 53 дня");
     check(info.early === info.late, "в течение одного дня аят меняется");
-    check(info.cycle === 30, "за 30 дней показываются не все аяты: " + info.cycle);
+    check(info.cycle === 53, "за 53 дня показываются не все аяты: " + info.cycle);
     check(info.shown === info.today, "на главной не сегодняшний аят: " + info.shown);
     check(!info.blob, "знак немого алифа не заменён — будет клякса");
     check(!(await p.locator("#ayah-ar").isVisible()), "арабский аята виден в свёрнутом виде");
