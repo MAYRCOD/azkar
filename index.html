@@ -135,8 +135,11 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 /* Центрируем «пружинами» сверху и снизу, а не justify-content: center: если блок не влезает
    по высоте (iPhone SE), center обрезал бы верх так, что до него не долистать.
    Нижняя пружина — отдельный пустой элемент, поэтому из отступа снизу вычли один --gap */
-#home > .pt-card { margin-top: auto; }
+#home > .home-title { margin-top: auto; }
 #home::after { content: ""; margin-top: auto; }
+.home-title { display: grid; gap: 2px; text-align: center; }
+.home-title h1 { font-size: clamp(28px, 4.4vh, 38px); }
+.home-title .ar-title { font-family: var(--f-arabic); font-size: clamp(44px, 7vh, 60px); line-height: 1.5; color: var(--gold); }
 h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-height: 1.1; margin: 0; text-wrap: balance; }
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .choice {
@@ -203,42 +206,6 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 .ayah-ref { font-size: 12.5px; color: var(--muted); }
 .ayah-day[aria-expanded="true"] .ayah-ar { display: block; }
 .ayah-day[aria-expanded="true"] .ayah-ru { -webkit-line-clamp: unset; display: block; }
-
-/* Время намазов на главной: место, «Аср через 1:08» и шесть времён в ряд; текущий намаз выделен */
-.pt-card { background: var(--surface); border: 1px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow); padding: 12px 8px 10px; display: grid; gap: 8px; }
-.pt-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-inline: 6px; font-size: 13.5px; min-height: 24px; }
-.pt-place { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; border: 0; background: none; padding: 2px 0; min-width: 0; }
-.pt-place span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pt-place svg { flex: none; width: 14px; height: 14px; color: var(--gold); }
-.pt-next { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; } .pt-next b { color: var(--fg); }
-.pt-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
-.pt { display: grid; justify-items: center; gap: 1px; padding: 7px 0 6px; border-radius: 12px; }
-.pt small { font-size: clamp(10px, 2.9vw, 11.5px); color: var(--muted); }
-.pt b { font-size: clamp(13px, 3.9vw, 15.5px); font-variant-numeric: tabular-nums; }
-.pt.now { background: var(--press); } .pt.now small, .pt.now b { color: var(--accent-ink); }
-.set-city { border: 0; background: none; color: var(--accent-ink); font-size: 14.5px; font-weight: 700; padding: 10px 8px 6px; text-wrap: balance; }
-.pt-card.empty .pt-head, .pt-card.empty .pt-row { display: none; }
-.set-switch { margin-top: calc(24px - var(--gap)); }
-
-/* Настройки времени намазов */
-.group-note { margin: 2px 0 0; padding-inline: 14px; font-size: 12px; line-height: 1.4; color: var(--muted); }
-.sheet-list { display: grid; max-height: 55vh; overflow-y: auto; }
-#city-list { max-height: 40vh; }
-.search {
-  width: 100%; border: 0; border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 16px;   /* 16px — иначе iPhone приближает экран при вводе */
-  background: var(--sheet-btn); color: var(--fg); -webkit-appearance: none; appearance: none;
-}
-.search::placeholder { color: var(--muted); }
-.search:focus { outline: 2px solid var(--accent); outline-offset: 0; }
-.sheet p.search-note { margin: 0; font-size: 12.5px; }
-/* Поправки: строка «Магриб  − +2 мин +» */
-.adj-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; }
-.adj-row + .adj-row { border-top: 1px solid var(--line); }
-.adj-row .name { flex: 1; font-weight: 700; }
-.adj-row .val { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
-.adj-row .val.on { color: var(--accent-ink); font-weight: 700; }
-.adj-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--sheet-btn); font-size: 20px; line-height: 1; }
-.adj-btn:active { transform: scale(.94); }
 
 /* ---------- Чтение ---------- */
 /* Чтение — на всю ширину экрана: карточки при свайпе уезжают прямо за край телефона,
@@ -548,7 +515,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 @keyframes screen-in { from { opacity: 0; transform: translateY(10px); } }
 
 /* На главной элементы появляются по очереди */
-#home.enter .pt-card, #home.enter .choice { animation: rise .5s var(--ease) backwards; }
+#home.enter .home-title, #home.enter .choice { animation: rise .5s var(--ease) backwards; }
 #home.enter .choice:nth-child(1) { animation-delay: .06s; }
 #home.enter .choice:nth-child(2) { animation-delay: .12s; }
 /* Хадисы и строки настроек — тоже по очереди, задержку задаёт --i */
@@ -580,16 +547,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== ГЛАВНАЯ ===== -->
 <main class="screen" id="home">
-  <!-- Время намазов на сегодня. Нажатие на место — выбор города или села.
-       Пока место не выбрано — вместо времени кнопка «Укажите город или село» -->
-  <section class="pt-card" id="ptimes" aria-label="Время намазов">
-    <div class="pt-head">
-      <button class="pt-place" id="pt-place"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="pt-city"></span></button>
-      <span class="pt-next" id="pt-next"></span>
-    </div>
-    <div class="pt-row" id="pt-row"></div>
-    <button class="set-city" id="set-city" hidden>Укажите город или село — покажем время намазов</button>
-  </section>
+  <div class="home-title">
+    <span class="ar-title" lang="ar">أَذْكَار</span>
+    <h1>Азкары</h1>
+  </div>
   <!-- Набор азкаров: «Основные» — самые известные, «Полные» — вся глава из «Крепости мусульманина» -->
   <div class="set-switch" id="set-switch" role="radiogroup" aria-label="Набор азкаров">
     <button class="set-opt" role="radio" data-set="main">Основные</button>
@@ -669,28 +630,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
   </div>
   <div class="group" style="--i:1">
-    <span class="group-title">Время намазов</span>
-    <div class="rows">
-      <button class="row" id="open-city"><span>Город или село</span><span class="value" id="city-value"></span></button>
-      <button class="row" id="open-source" hidden><span>Расписание</span><span class="value" id="source-value"></span></button>
-      <button class="row" id="open-method"><span>Способ расчёта</span><span class="value" id="method-value"></span></button>
-      <button class="row" id="open-asr"><span>Время аср</span><span class="value" id="asr-value"></span></button>
-      <button class="row" id="open-adjust"><span>Поправки по минутам</span><span class="value" id="adjust-value"></span></button>
-    </div>
-    <p class="group-note" id="prayer-note"></p>
-  </div>
-  <!-- Напоминания есть только в приложении для iPhone: сайт в Safari не умеет присылать уведомления -->
-  <div class="group" style="--i:1" id="notify-group" hidden>
-    <span class="group-title">Напоминания</span>
-    <div class="rows">
-      <div class="row"><span id="lbl-nm">Утренние азкары — после фаджра</span>
-        <button class="switch" role="switch" id="sw-nm" data-notify="morning" aria-labelledby="lbl-nm"></button></div>
-      <div class="row"><span id="lbl-ne">Вечерние азкары — после аср</span>
-        <button class="switch" role="switch" id="sw-ne" data-notify="evening" aria-labelledby="lbl-ne"></button></div>
-    </div>
-    <p class="group-note" id="notify-note"></p>
-  </div>
-  <div class="group" style="--i:2">
     <span class="group-title">Оформление</span>
     <div class="rows">
       <button class="row" id="open-theme"><span>Тема</span><span class="value" id="theme-value"></span></button>
@@ -704,64 +643,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
   </div>
 </main>
-
-<!-- Окно выбора места: геопозиция или поиск города и села (результаты строятся в скрипте) -->
-<div class="sheet-back" id="city-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="city-title">
-    <h2 id="city-title">Где вы находитесь</h2>
-    <button class="choice-row" role="radio" id="city-geo">
-      <span class="txt">Моё местоположение<small id="geo-note">Определить по геопозиции телефона</small></span><span class="check">✓</span>
-    </button>
-    <input class="search" id="city-search" type="search" placeholder="Город или село" autocomplete="off" enterkeyhint="search">
-    <p class="search-note" id="search-note">Начните писать название, например «Курчалой»</p>
-    <div class="sheet-list" id="city-list"></div>
-  </div>
-</div>
-
-<!-- Окно: готовое расписание этого места или расчёт по солнцу -->
-<div class="sheet-back" id="source-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="source-title">
-    <h2 id="source-title">Расписание</h2>
-    <button class="choice-row" role="radio" data-source="preset">
-      <span class="txt">Предустановленное<small>Готовое расписание на каждый день года, как в мечетях</small></span><span class="check">✓</span>
-    </button>
-    <button class="choice-row" role="radio" data-source="auto">
-      <span class="txt">Автоматическое вычисление<small>Расчёт по солнцу, способ и аср выбираются ниже</small></span><span class="check">✓</span>
-    </button>
-  </div>
-</div>
-
-<!-- Окно выбора способа расчёта. Строки строятся в скрипте (METHODS) -->
-<div class="sheet-back" id="method-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="method-title">
-    <h2 id="method-title">Способ расчёта</h2>
-    <p>Под каким углом солнца под горизонтом начинается фаджр и иша. У разных муфтиятов он разный, отсюда разница в несколько минут.</p>
-    <div class="sheet-list" id="method-list"></div>
-  </div>
-</div>
-
-<!-- Окно выбора времени аср -->
-<div class="sheet-back" id="asr-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="asr-title">
-    <h2 id="asr-title">Время аср</h2>
-    <button class="choice-row" role="radio" data-asr="Shafi">
-      <span class="txt">Шафиитский<small>Когда тень равна высоте предмета. Так же у маликитов и ханбалитов</small></span><span class="check">✓</span>
-    </button>
-    <button class="choice-row" role="radio" data-asr="Hanafi">
-      <span class="txt">Ханафитский<small>Когда тень вдвое длиннее предмета. Аср позже</small></span><span class="check">✓</span>
-    </button>
-  </div>
-</div>
-
-<!-- Окно поправок: сдвинуть любой намаз на несколько минут, чтобы совпало с мечетью -->
-<div class="sheet-back" id="adjust-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="adjust-title">
-    <h2 id="adjust-title">Поправки по минутам</h2>
-    <p>Если время в вашей мечети отличается, сдвиньте нужный намаз на несколько минут.</p>
-    <div id="adjust-list"></div>
-    <button class="sheet-btn" id="adjust-reset">Сбросить поправки</button>
-  </div>
-</div>
 
 <!-- Окно подтверждения сброса -->
 <div class="sheet-back" id="reset-sheet" hidden>
@@ -842,9 +723,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   </button>
 </nav>
 
-<script>!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t="undefined"!=typeof globalThis?globalThis:t||self).adhan={})}(this,function(t){"use strict";function e(t,e,n){return(e=function(t){var e=function(t,e){if("object"!=typeof t||!t)return t;var n=t[Symbol.toPrimitive];if(void 0!==n){var r=n.call(t,e);if("object"!=typeof r)return r;throw new TypeError("@@toPrimitive must return a primitive value.")}return("string"===e?String:Number)(t)}(t,"string");return"symbol"==typeof e?e:e+""}(e))in t?Object.defineProperty(t,e,{value:n,enumerable:!0,configurable:!0,writable:!0}):t[e]=n,t}function n(t,e){var n=Object.keys(t);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(t);e&&(r=r.filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable})),n.push.apply(n,r)}return n}function r(t){for(var r=1;r<arguments.length;r++){var i=null!=arguments[r]?arguments[r]:{};r%2?n(Object(i),!0).forEach(function(n){e(t,n,i[n])}):Object.getOwnPropertyDescriptors?Object.defineProperties(t,Object.getOwnPropertyDescriptors(i)):n(Object(i)).forEach(function(e){Object.defineProperty(t,e,Object.getOwnPropertyDescriptor(i,e))})}return t}const i={Shafi:"shafi",Hanafi:"hanafi"};const a={MiddleOfTheNight:"middleofthenight",SeventhOfTheNight:"seventhofthenight",TwilightAngle:"twilightangle",recommended:t=>t.latitude>48?a.SeventhOfTheNight:a.MiddleOfTheNight};class s{constructor(t,e){this.latitude=t,this.longitude=e}}const o={Nearest:"nearest",Up:"up",None:"none"};function h(t,e){const n=t.getFullYear(),r=t.getMonth(),i=t.getDate()+e,a=t.getHours(),s=t.getMinutes(),o=t.getSeconds();return new Date(n,r,i,a,s,o)}function u(t,e){return l(t,60*e)}function l(t,e){return new Date(t.getTime()+1e3*e)}function c(t){let e=arguments.length>1&&void 0!==arguments[1]?arguments[1]:o.Nearest;const n=t.getUTCSeconds();let r=n>=30?60-n:-1*n;return e===o.Up?r=60-n:e===o.None&&(r=0),l(t,r)}function d(t){return t%4==0&&(t%100!=0||t%400==0)}function g(t){let e=0;const n=[31,d(t.getFullYear())?29:28,31,30,31,30,31,31,30,31,30,31];for(let r=0;r<t.getMonth();r++)e+=n[r];return e+=t.getDate(),e}function m(t){return t instanceof Date&&!isNaN(t.valueOf())}function f(t){return t*Math.PI/180}function M(t){return 180*t/Math.PI}function p(t,e){return t-e*Math.floor(t/e)}function b(t){return p(t,360)}const w={General:"general",Ahmer:"ahmer",Abyad:"abyad"},A={meanSolarLongitude(t){const e=t;return b(280.4664567+36000.76983*e+3032e-7*Math.pow(e,2))},meanLunarLongitude:t=>b(218.3165+481267.8813*t),ascendingLunarNodeLongitude(t){const e=t;return b(125.04452-1934.136261*e+.0020708*Math.pow(e,2)+Math.pow(e,3)/45e4)},meanSolarAnomaly(t){const e=t;return b(357.52911+35999.05029*e-1537e-7*Math.pow(e,2))},solarEquationOfTheCenter(t,e){const n=t,r=f(e);return(1.914602-.004817*n-14e-6*Math.pow(n,2))*Math.sin(r)+(.019993-101e-6*n)*Math.sin(2*r)+289e-6*Math.sin(3*r)},apparentSolarLongitude(t,e){const n=t,r=125.04-1934.136*n;return b(e+A.solarEquationOfTheCenter(n,A.meanSolarAnomaly(n))-.00569-.00478*Math.sin(f(r)))},meanObliquityOfTheEcliptic(t){const e=t;return 23.439291-.013004167*e-1.639e-7*Math.pow(e,2)+5.036e-7*Math.pow(e,3)},apparentObliquityOfTheEcliptic(t,e){const n=125.04-1934.136*t;return e+.00256*Math.cos(f(n))},meanSiderealTime(t){const e=t;return b(280.46061837+360.98564736629*(36525*e+2451545-2451545)+387933e-9*Math.pow(e,2)-Math.pow(e,3)/3871e4)},nutationInLongitude(t,e,n,r){const i=e,a=n,s=r;return-17.2/3600*Math.sin(f(s))-1.32/3600*Math.sin(2*f(i))-.23/3600*Math.sin(2*f(a))+.21/3600*Math.sin(2*f(s))},nutationInObliquity(t,e,n,r){const i=e,a=n,s=r;return 9.2/3600*Math.cos(f(s))+.57/3600*Math.cos(2*f(i))+.1/3600*Math.cos(2*f(a))-.09/3600*Math.cos(2*f(s))},altitudeOfCelestialBody(t,e,n){const r=t,i=e,a=n,s=Math.sin(f(r))*Math.sin(f(i)),o=Math.cos(f(r))*Math.cos(f(i))*Math.cos(f(a));return M(Math.asin(s+o))},approximateTransit(t,e,n){const r=t,i=p((n+-1*r-e)/360,1),a=p((12-r/15)/24,1);return i-a>.5?i-1:a-i>.5?i+1:i},correctedTransit(t,e,n,r,i,a){const s=t,o=r,h=i,u=a,l=-1*e,c=b(n+360.985647*s),d=b(A.interpolateAngles(o,h,u,s));var g;return 24*(s+((g=c-l-d)>=-180&&g<=180?g:g-360*Math.round(g/360))/-360)},correctedHourAngle(t,e,n,r,i,a,s,o,h,u,l){const c=t,d=e,g=i,m=a,p=s,w=o,j=h,T=u,S=l,v=-1*n.longitude,y=Math.sin(f(d))-Math.sin(f(n.latitude))*Math.sin(f(j)),D=Math.cos(f(n.latitude))*Math.cos(f(j)),O=M(Math.acos(y/D)),N=r?c+O/360:c-O/360,P=b(g+360.985647*N),C=b(A.interpolateAngles(m,p,w,N)),L=A.interpolate(j,T,S,N),F=P-v-C;return 24*(N+(A.altitudeOfCelestialBody(n.latitude,L,F)-d)/(360*Math.cos(f(L))*Math.cos(f(n.latitude))*Math.sin(f(F))))},interpolate(t,e,n,r){const i=t-e,a=n-t;return t+r/2*(i+a+r*(a-i))},interpolateAngles(t,e,n,r){const i=b(t-e),a=b(n-t);return t+r/2*(i+a+r*(a-i))},julianDay(t,e,n){let r=arguments.length>3&&void 0!==arguments[3]?arguments[3]:0;const i=Math.trunc,a=i(e>2?t:t-1),s=i(e>2?e:e+12),o=n+r/24,h=i(a/100),u=i(2-h+i(h/4));return i(365.25*(a+4716))+i(30.6001*(s+1))+o+u-1524.5},julianCentury:t=>(t-2451545)/36525,seasonAdjustedMorningTwilight(t,e,n,r){const i=75+28.65/55*Math.abs(t),a=75+19.44/55*Math.abs(t),s=75+32.74/55*Math.abs(t),o=75+48.1/55*Math.abs(t),h=function(){const r=A.daysSinceSolstice(e,n,t);return r<91?i+(a-i)/91*r:r<137?a+(s-a)/46*(r-91):r<183?s+(o-s)/46*(r-137):r<229?o+(s-o)/46*(r-183):r<275?s+(a-s)/46*(r-229):a+(i-a)/91*(r-275)}();return l(r,Math.round(-60*h))},seasonAdjustedEveningTwilight(t,e,n,r,i){let a,s,o,h;i===w.Ahmer?(a=62+17.4/55*Math.abs(t),s=62-7.16/55*Math.abs(t),o=62+5.12/55*Math.abs(t),h=62+19.44/55*Math.abs(t)):i===w.Abyad?(a=75+25.6/55*Math.abs(t),s=75+7.16/55*Math.abs(t),o=75+36.84/55*Math.abs(t),h=75+1.488*Math.abs(t)):(a=75+25.6/55*Math.abs(t),s=75+2.05/55*Math.abs(t),o=75-9.21/55*Math.abs(t),h=75+6.14/55*Math.abs(t));const u=function(){const r=A.daysSinceSolstice(e,n,t);return r<91?a+(s-a)/91*r:r<137?s+(o-s)/46*(r-91):r<183?o+(h-o)/46*(r-137):r<229?h+(o-h)/46*(r-183):r<275?o+(s-o)/46*(r-229):s+(a-s)/91*(r-275)}();return l(r,Math.round(60*u))},daysSinceSolstice(t,e,n){let r;const i=d(e)?173:172,a=d(e)?366:365;return n>=0?(r=t+10,r>=a&&(r-=a)):(r=t-i,r<0&&(r+=a)),r}};class j{constructor(t){const e=A.julianCentury(t),n=A.meanSolarLongitude(e),r=A.meanLunarLongitude(e),i=A.ascendingLunarNodeLongitude(e),a=f(A.apparentSolarLongitude(e,n)),s=A.meanSiderealTime(e),o=A.nutationInLongitude(e,n,r,i),h=A.nutationInObliquity(e,n,r,i),u=A.meanObliquityOfTheEcliptic(e),l=f(A.apparentObliquityOfTheEcliptic(e,u));this.declination=M(Math.asin(Math.sin(l)*Math.sin(a))),this.rightAscension=b(M(Math.atan2(Math.cos(l)*Math.sin(a),Math.cos(a)))),this.apparentSiderealTime=s+3600*o*Math.cos(f(u+h))/3600}}class T{constructor(t,e){const n=A.julianDay(t.getFullYear(),t.getMonth()+1,t.getDate(),0);this.observer=e,this.solar=new j(n),this.prevSolar=new j(n-1),this.nextSolar=new j(n+1);const r=A.approximateTransit(e.longitude,this.solar.apparentSiderealTime,this.solar.rightAscension),i=-50/60;this.approxTransit=r,this.transit=A.correctedTransit(r,e.longitude,this.solar.apparentSiderealTime,this.solar.rightAscension,this.prevSolar.rightAscension,this.nextSolar.rightAscension),this.sunrise=A.correctedHourAngle(r,i,e,!1,this.solar.apparentSiderealTime,this.solar.rightAscension,this.prevSolar.rightAscension,this.nextSolar.rightAscension,this.solar.declination,this.prevSolar.declination,this.nextSolar.declination),this.sunset=A.correctedHourAngle(r,i,e,!0,this.solar.apparentSiderealTime,this.solar.rightAscension,this.prevSolar.rightAscension,this.nextSolar.rightAscension,this.solar.declination,this.prevSolar.declination,this.nextSolar.declination)}hourAngle(t,e){return A.correctedHourAngle(this.approxTransit,t,this.observer,e,this.solar.apparentSiderealTime,this.solar.rightAscension,this.prevSolar.rightAscension,this.nextSolar.rightAscension,this.solar.declination,this.prevSolar.declination,this.nextSolar.declination)}afternoon(t){const e=Math.abs(this.observer.latitude-this.solar.declination),n=t+Math.tan(f(e)),r=M(Math.atan(1/n));return this.hourAngle(r,!0)}}const S={AqrabBalad:"AqrabBalad",AqrabYaum:"AqrabYaum",Unresolved:"Unresolved"},v=t=>!isNaN(t.sunrise)&&!isNaN(t.sunset),y=function(t,e){let n=arguments.length>2&&void 0!==arguments[2]?arguments[2]:1,r=arguments.length>3&&void 0!==arguments[3]?arguments[3]:1;if(n>Math.ceil(182.5))return null;const i=new Date(e.getTime());i.setDate(i.getDate()+r*n);const a=h(i,1),s=new T(i,t),o=new T(a,t);return v(s)&&v(o)?{date:e,tomorrow:a,coordinates:t,solarTime:s,tomorrowSolarTime:o}:y(t,e,n+(r>0?0:1),-r)},D=(t,e,n)=>{const i=new T(e,r(r({},t),{},{latitude:n})),a=h(e,1),o=new T(a,r(r({},t),{},{latitude:n}));return v(i)&&v(o)?{date:e,tomorrow:a,coordinates:new s(n,t.longitude),solarTime:i,tomorrowSolarTime:o}:Math.abs(n)>=65?D(t,e,n-.5*Math.sign(n)):null};class O{constructor(t){let n=arguments.length>1&&void 0!==arguments[1]?arguments[1]:0,r=arguments.length>2&&void 0!==arguments[2]?arguments[2]:0,s=arguments.length>3&&void 0!==arguments[3]?arguments[3]:0,h=arguments.length>4&&void 0!==arguments[4]?arguments[4]:0;e(this,"madhab",i.Shafi),e(this,"highLatitudeRule",a.MiddleOfTheNight),e(this,"adjustments",{fajr:0,sunrise:0,dhuhr:0,asr:0,maghrib:0,isha:0}),e(this,"methodAdjustments",{fajr:0,sunrise:0,dhuhr:0,asr:0,maghrib:0,isha:0}),e(this,"polarCircleResolution",S.Unresolved),e(this,"rounding",o.Nearest),e(this,"shafaq",w.General),this.method=t,this.fajrAngle=n,this.ishaAngle=r,this.ishaInterval=s,this.maghribAngle=h,null===this.method&&(this.method="Other")}nightPortions(){switch(this.highLatitudeRule){case a.MiddleOfTheNight:return{fajr:.5,isha:.5};case a.SeventhOfTheNight:return{fajr:1/7,isha:1/7};case a.TwilightAngle:return{fajr:this.fajrAngle/60,isha:this.ishaAngle/60};default:throw"Invalid high latitude rule found when attempting to compute night portions: ".concat(this.highLatitudeRule)}}}const N={MuslimWorldLeague(){const t=new O("MuslimWorldLeague",18,17);return t.methodAdjustments.dhuhr=1,t},Egyptian(){const t=new O("Egyptian",19.5,17.5);return t.methodAdjustments.dhuhr=1,t},Karachi(){const t=new O("Karachi",18,18);return t.methodAdjustments.dhuhr=1,t},UmmAlQura:()=>new O("UmmAlQura",18.5,0,90),Dubai(){const t=new O("Dubai",18.2,18.2);return t.methodAdjustments=r(r({},t.methodAdjustments),{},{sunrise:-3,dhuhr:3,asr:3,maghrib:3}),t},MoonsightingCommittee(){const t=new O("MoonsightingCommittee",18,18);return t.methodAdjustments=r(r({},t.methodAdjustments),{},{dhuhr:5,maghrib:3}),t},NorthAmerica(){const t=new O("NorthAmerica",15,15);return t.methodAdjustments.dhuhr=1,t},Kuwait:()=>new O("Kuwait",18,17.5),Qatar:()=>new O("Qatar",18,0,90),Singapore(){const t=new O("Singapore",20,18);return t.methodAdjustments.dhuhr=1,t.rounding=o.Up,t},Tehran:()=>new O("Tehran",17.7,14,0,4.5),Turkey(){const t=new O("Turkey",18,17);return t.methodAdjustments=r(r({},t.methodAdjustments),{},{sunrise:-7,dhuhr:5,asr:4,maghrib:7}),t},Other:()=>new O("Other",0,0)},P={Fajr:"fajr",Sunrise:"sunrise",Dhuhr:"dhuhr",Asr:"asr",Maghrib:"maghrib",Isha:"isha",None:"none"};class C{constructor(t){return this.hours=Math.floor(t),this.minutes=Math.floor(60*(t-this.hours)),this.seconds=Math.floor(60*(t-(this.hours+this.minutes/60))*60),this}utcDate(t,e,n){return new Date(Date.UTC(t,e,n,this.hours,this.minutes,this.seconds))}}class L{constructor(t,e,n){this.coordinates=t,this.date=e,this.calculationParameters=n;let r,a,s,o,d,f,M,p,b=new T(e,t);s=new C(b.transit).utcDate(e.getFullYear(),e.getMonth(),e.getDate()),a=new C(b.sunrise).utcDate(e.getFullYear(),e.getMonth(),e.getDate()),d=new C(b.sunset).utcDate(e.getFullYear(),e.getMonth(),e.getDate());const w=h(e,1);let j=new T(w,t);const v=n.polarCircleResolution;if((!m(a)||!m(d)||isNaN(j.sunrise))&&v!==S.Unresolved){const n=((t,e,n)=>{const r={date:e,tomorrow:h(e,1),coordinates:n,solarTime:new T(e,n),tomorrowSolarTime:new T(h(e,1),n)};switch(t){case S.AqrabYaum:return y(n,e)||r;case S.AqrabBalad:{const t=n.latitude;return D(n,e,t-.5*Math.sign(t))||r}default:return r}})(v,e,t);b=n.solarTime,j=n.tomorrowSolarTime;const r=[e.getFullYear(),e.getMonth(),e.getDate()];s=new C(b.transit).utcDate(...r),a=new C(b.sunrise).utcDate(...r),d=new C(b.sunset).utcDate(...r)}o=new C(b.afternoon(function(t){switch(t){case i.Shafi:return 1;case i.Hanafi:return 2;default:throw"Invalid Madhab"}}(n.madhab))).utcDate(e.getFullYear(),e.getMonth(),e.getDate());const O=new C(j.sunrise).utcDate(w.getFullYear(),w.getMonth(),w.getDate()),N=(Number(O)-Number(d))/1e3;r=new C(b.hourAngle(-1*n.fajrAngle,!1)).utcDate(e.getFullYear(),e.getMonth(),e.getDate()),"MoonsightingCommittee"===n.method&&t.latitude>=55&&(p=N/7,r=l(a,-p));const P=function(){if("MoonsightingCommittee"===n.method)return A.seasonAdjustedMorningTwilight(t.latitude,g(e),e.getFullYear(),a);{const t=n.nightPortions().fajr;return p=t*N,l(a,-p)}}();if((isNaN(r.getTime())||P>r)&&(r=P),n.ishaInterval>0)M=u(d,n.ishaInterval);else{M=new C(b.hourAngle(-1*n.ishaAngle,!0)).utcDate(e.getFullYear(),e.getMonth(),e.getDate()),"MoonsightingCommittee"===n.method&&t.latitude>=55&&(p=N/7,M=l(d,p));const r=function(){if("MoonsightingCommittee"===n.method)return A.seasonAdjustedEveningTwilight(t.latitude,g(e),e.getFullYear(),d,n.shafaq);{const t=n.nightPortions().isha;return p=t*N,l(d,p)}}();(isNaN(M.getTime())||r<M)&&(M=r)}if(f=d,n.maghribAngle){const t=new C(b.hourAngle(-1*n.maghribAngle,!0)).utcDate(e.getFullYear(),e.getMonth(),e.getDate());d<t&&M>t&&(f=t)}const L=(n.adjustments.fajr||0)+(n.methodAdjustments.fajr||0),F=(n.adjustments.sunrise||0)+(n.methodAdjustments.sunrise||0),q=(n.adjustments.dhuhr||0)+(n.methodAdjustments.dhuhr||0),Y=(n.adjustments.asr||0)+(n.methodAdjustments.asr||0),x=(n.adjustments.maghrib||0)+(n.methodAdjustments.maghrib||0),I=(n.adjustments.isha||0)+(n.methodAdjustments.isha||0);this.fajr=c(u(r,L),n.rounding),this.sunrise=c(u(a,F),n.rounding),this.dhuhr=c(u(s,q),n.rounding),this.asr=c(u(o,Y),n.rounding),this.sunset=c(d,n.rounding),this.maghrib=c(u(f,x),n.rounding),this.isha=c(u(M,I),n.rounding)}timeForPrayer(t){return t===P.Fajr?this.fajr:t===P.Sunrise?this.sunrise:t===P.Dhuhr?this.dhuhr:t===P.Asr?this.asr:t===P.Maghrib?this.maghrib:t===P.Isha?this.isha:null}currentPrayer(){let t=arguments.length>0&&void 0!==arguments[0]?arguments[0]:new Date;return t>=this.isha?P.Isha:t>=this.maghrib?P.Maghrib:t>=this.asr?P.Asr:t>=this.dhuhr?P.Dhuhr:t>=this.sunrise?P.Sunrise:t>=this.fajr?P.Fajr:P.None}nextPrayer(){let t=arguments.length>0&&void 0!==arguments[0]?arguments[0]:new Date;return t>=this.isha?P.None:t>=this.maghrib?P.Isha:t>=this.asr?P.Maghrib:t>=this.dhuhr?P.Asr:t>=this.sunrise?P.Dhuhr:t>=this.fajr?P.Sunrise:P.Fajr}}t.CalculationMethod=N,t.CalculationParameters=O,t.Coordinates=s,t.HighLatitudeRule=a,t.Madhab=i,t.PolarCircleResolution=S,t.Prayer=P,t.PrayerTimes=L,t.Qibla=function(t){const e=new s(21.4225241,39.8261818),n=Math.sin(f(e.longitude)-f(t.longitude)),r=Math.cos(f(t.latitude))*Math.tan(f(e.latitude)),i=Math.sin(f(t.latitude))*Math.cos(f(e.longitude)-f(t.longitude));return b(M(Math.atan2(n,r-i)))},t.Rounding=o,t.Shafaq=w,t.SunnahTimes=class{constructor(t){const e=h(t.date,1),n=(new L(t.coordinates,e,t.calculationParameters).fajr.getTime()-t.maghrib.getTime())/1e3;this.middleOfTheNight=c(l(t.maghrib,n/2)),this.lastThirdOfTheNight=c(l(t.maghrib,n*(2/3)))}}});
-//# sourceMappingURL=adhan.umd.min.js.map
-</script>
 <script>
 /* ================================================================
    1. ДАННЫЕ. Сюда будем добавлять азкары по одному.
@@ -1248,7 +1126,6 @@ let show = Object.assign({ ar: true, ru: true, tr: true }, load("azkar-show", {}
 function updateHome() {
   checkNewDay();   // если день сменился — отметки должны пропасть
   renderAyah();   // в полночь — новый аят
-  renderPrayer();
   for (const t of ["morning", "evening"]) {
     const all = setItems(t);
     const done = all.every(z => (counts[t + ":" + z.id] || 0) >= z.times);
@@ -1274,395 +1151,6 @@ function renderAyah() {
 document.getElementById("ayah-day").addEventListener("click", e => {
   const box = e.currentTarget;
   box.setAttribute("aria-expanded", box.getAttribute("aria-expanded") === "true" ? "false" : "true");
-});
-
-
-/* ================================================================
-   ВРЕМЯ НАМАЗОВ
-   Где готовое расписание (Чечня — одно на всю республику, Казань и ещё 12 городов) — берём его,
-   иначе считает библиотека adhan по координатам и дате (способ «ДУМ России» по умолчанию).
-   Поверх любого — поправки по минутам, чтобы человек подогнал время под свою мечеть.
-   Всё считается в телефоне, интернет нужен только для поиска места.
-   ================================================================ */
-// Способы расчёта: название, подпись и настройки для библиотеки adhan.
-// «ДУМ России» — угол 18°/15° плюс поправки муфтията (восход −5 мин, зухр и магриб +5 мин),
-// так считает, например, moynamaz.org. Сверено по Грозному на 11.10.2026: всё совпало до минуты
-const METHODS = {
-  DumRussia: ["ДУМ России", "Фаджр 18°, иша 15°, с поправками на восход, зухр и магриб", () => {
-    const p = adhan.CalculationMethod.Other();
-    p.fajrAngle = 18; p.ishaAngle = 15;
-    p.methodAdjustments = { fajr: 0, sunrise: -5, dhuhr: 5, asr: 0, maghrib: 5, isha: 0 };
-    return p;
-  }],
-  MuslimWorldLeague: ["Всемирная исламская лига", "Фаджр 18°, иша 17°"],
-  Egyptian: ["Египетское управление", "Фаджр 19,5°, иша 17,5°: фаджр раньше"],
-  UmmAlQura: ["Умм аль-Кура (Мекка)", "Фаджр 18,5°, иша через 90 минут после магриба"],
-  Turkey: ["Диянет (Турция)", "Фаджр 18°, иша 17°, с поправками в несколько минут"],
-  MoonsightingCommittee: ["Комитет наблюдения луны", "Фаджр и иша 18°, с поправкой на время года"],
-};
-const PRAYERS = [["fajr", "Фаджр"], ["sunrise", "Восход"], ["dhuhr", "Зухр"], ["asr", "Аср"], ["maghrib", "Магриб"], ["isha", "Иша"]];
-const PRAYER_NAME = Object.fromEntries(PRAYERS);
-const ASR_NAMES = { Shafi: "Шафиитский", Hanafi: "Ханафитский" };
-
-let place = load("azkar-place", null);   // { name, region, lat, lng, tz, geo, avail, sched } или null — место не выбрано
-let method = load("azkar-method", "DumRussia");
-let asrSchool = load("azkar-asr", "Shafi");
-let adjust = load("azkar-adjust", {});   // поправки в минутах: { maghrib: 2, ... }
-if (!METHODS[method]) method = "DumRussia";
-
-// Дата «сегодня» (или соседняя) в часовом поясе выбранного места. adhan берёт из даты только год, месяц и число
-function placeDay(shift = 0, now = Date.now()) {
-  const d = new Date(now + shift * 864e5);
-  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: place.tz || undefined,
-    year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d).map(x => [x.type, x.value]));
-  return new Date(+parts.year, parts.month - 1, +parts.day);
-}
-/* --- Предустановленные расписания ---
-   Готовая таблица на каждый день года: 6 времён в минутах от полуночи, в постоянном сдвиге от Гринвича (off).
-   Хранится сжатой: первый день целиком, дальше — изменение к вчерашнему дню одной буквой (a = −12 … m = 0 … y = +12).
-   Для Чечни одно расписание на всю республику (так в мечетях), для остальных городов — если место ближе 40 км */
-const SCHEDULES = [{"id":"grozny","name":"Грозный","lat":43.3178,"lng":45.6949,"tz":"Europe/Moscow","off":180,"cover":"region:Чеч","p":"060807271230142016341803mmmmnnmmmmnnmmmnnnmmmmnnmmmnnnmmmmnnmmmnnnmmmnnnmlmnonmmmnnnmmmnnnmmmnnnllmnnnmlmnnnlmmnoomlmonnlmmnnnmlmnnnllmnnnmmmnoollmnnnmlmnnnllmnoollmnnnmlmonnlmmnonllmnnomlmnnnllmnonllmnnolkmnnnllmoonllmnnollmnnnllmnonlkmnnollmnnnllmnoollmnnnlkmnonklmmnollmonnlkmoonllmnnoklmnnnlkmnonllmnnokkmnnnllmnonkkmnnnllmnnokkmnonllmnnnkkmnnollmnonkkmmnnlkmnnnkkmnoollmnnnklmnnnkkmnnolkmnonklmnnnkkmmnnkkmnnolkmnonklmnnnkkmnnnkkmmnnllmnookkmmnnkjmonnkkmmnnklmnookjmnnnllmmnnkkmnnnkkmnnnkkmmonkkmnnoklmnnnkkmmnnkkmnonkkmmnnkkmnnokkmnnnklmmnnkkmnonkkmmnnkkmnnnkkmmnoklmnnnkkmmonkkmnnnkkmmnnklmnnnkkmmnokkmnonkkmmnnkmmmnnkjmnnnkkmnnnkkmmnoklmnonkkmmnnkkmmnnklmnnokkmmnoklmnonkkmnnokkmmnnklmnnokkmmnnllmnnokmmmomkjmnnpkkmonoklmonnkkmonoklmpnokkmnonklmnnollmonokkmonnklmmnoklmmnnkkmmoollmmnoklmmnnklmmnokkmmnollmmnnklmmnollmnonklmmnoklmmnollmmnnklmmnollmmnnllmmnoklmmnnllmmnollmmnnkmmnnmllmmnpllmmnnlmmmnollmmnnklmmmnlmmmnollmmnnlmmmnnllmmnnmmmmmnllmmnnlmmmnnmmmmnnllmnmnmmmmnmlmmnmommmmnnllmmmnmmmnnmmmmnmnmmmnnmmmmmmnmmmmnmmmmmmnmnmmmmmmmmnmmmmmmnmmmmmmnmmmmmmmmmmmmnmmmmnmmmmmnnmmmmmmmmmmnnmmmlnmmmmmmnmmmmnmmmmlnnmmmmnmmmmlnnmmllnnmmmmnmmmmlnnmmllnnmmmlnnmmlmommmmlnnmmllnnmmmlnnmmllonmmlknmmmmlnnmmllonmlllnnmlllonmmmknnmmllonmmlknmmllmoomllknnmmlkonmlllnnmllkonmllknnmmllonmmlknnmmllonmmkkoomllknnmllkonmlllnnmmkkonmllkmmmmlmoomlkionmlllonmlkkonmmlknomllkonmlkknnmmlkonmlkkonmllknnmmkkonmlklnnmllkoomlkknnmlllonmlkknnmmklonmllknnmlkkonmlllnomlkknnmlkkonmlklnnmllknnmlkkonmnklonmllknnmmkknomlkknmmlkloomlkknnmmlkonmlkknnmlklnnmlkkonmlkknommlknnmlkkonmlklnnmlkknnmlkknnmlkkonmmkknommllmmmlkkoomlkkonmlkknnmlkknnmlkknnmkllnomlkknnmkkknnmlkknnmlkknnmlllonmlkknnmmkknomlkknnmlklnmmklknomlkknnmlkknomlklnnmlkkonmllknnmlkknnmlklnomlkknnmllkonmmklnnmlkknomllknnmlklonmlkknnmlllnomkkknnmllknnmlklonmlkknomlllnnmlkknnmlllnomklknnmlklonmlllnnmllknomlklnnmllknmmlklopmmllnnmmllonmllknommklnnmlllnnmmllnomlllnnmmllnnmlllnommllnnmlllnnmmllonmlllnommllnmmlllnommlloomlmlmnmmllnnmllmnnmmmlnomlllnnmmlmnnmlmlnnmmlmnnmlmlnomllmnnmlmlnnmllmnnmmmlnnmmmmnnmlmmnnmmlmnnmmmlnnmlmmnnmmmmnnmmmmmnmlmmnnmmmmnnmmmmnmmlmmmnmmmmnnmmmnnnmlnmmmmmmmnnmmmmmnmlnnnmmmmmnnmmnnmmmlmmmnmmnnnmmmmmmnmknnnmmmmmmmmmnnmnmmnnnmmmnmmmmmmnmmmmnn"},{"id":"makhachkala","name":"Махачкала","lat":42.9849,"lng":47.5047,"tz":"Europe/Moscow","off":180,"cover":"off","p":"052107211153140816261756mmnnnnmmmmmmmmnnnnmmmnnnmmnnnnmmmnnnmmmnnnmmnnnnllmnoommnnnnmmmnnnllmnnnmmnnnnmmmnnnllnnnnmmmnoollmnnnllnnnnmmmnnnllmnoollmnnnmmnnnnllmnnnllmooollmnnnllnnnnllmnoommmnnnllmnnnllmnoollmnnnkknnnnllmooollmnnnllmnnnllmnoollmnnnkkmnnnllmnoollmnnnllmnnnkkmnoollmnnnllmnnnkkmnoollmnnnkkmnnnllmnookkmnnnllmnnnkkmnnnlllnookkmnnnllmnnnkkmnoollmnnnkkmnnnkkmmnnlllnookkmnnnllmnnnkkmnnnkkmnoolllmnnkkmnnnkkmnnnkkmnnnlllnookkmmnnkkmnnnllmnnnkklmnnkkmnookkmnnnlllmnnkkmnnnkkmnnnkkmmookklnnnllmnnnkkmmnnkklnnnkkmmnnllmnookklnnnkkmmnnkkmnnnllmmnnkklnnnkkmmookkmnnnlllmnnkkmnnnkkmmnnkklnnnllmmookkmnnnkkmmnnkklmnnllmnnnkkmmnnkkmnnnlllmookkmnnnkkmmnnllmmnnkklnnnllmmnnkkmnookkmmnnllmmnnkklnnnllmmnnkkmnnnllmmnnkkmmoollmnnnkklmnnllmmnnllmnnnkkmmnnllmmoollmnnnkkmmnnllmmnnllmnnnkklmnnllmnnnllmmnnllmmnnllmnoollmmnnkkmmnnllmnnnllmmnnllmmnnllmnnnllmmnnllmmnnmmnnnnllmmnnllmmnnllmnnnllmmnnmmmmnnllmnnnllmmmmmmmmnnllmnnnllnmnnmmmmnnllmmnnmmmnmmmmmmnnllmmnnmmnnnnmmmmmmllmmnnmmmnmmmmmmnnmmnmnnmmmmmmllmnnnmmmmmmmmmmnnmmnnmmmmmmmmmmmmnnnnmmmmmmmmmmmmnnmmmmmmnnmmmmmmnnmmmmmmnnmmmmmmmmnnmmmmmmmmmmnnmmmmmmnmmmnnmmmmmmmnmmnnmmllmmmmmmnnmmmmmmnmmmnnmmllnnmmmmmmmmmmnnmmllnnmmmmnnnmllmmmmmmnnmmllnnmmllnnmmmmnnmlllnnmmllnnmmllnnmmmmmmmmllnnmmllnnmlllnnmmllnnmmllnnmmllnnmlllnnmmllnnmmllnnmlllnnmmllnnmlllnnmmllnnmmkkoomlllnnmmllnnmlllnnmmkknnmlllnnmlllnnlmkknnmlllnnmmkknnmlllnnmlllnnmmkknnlllloomlkknnmlllnnmmkknnllkknnmlllnnmlkknnmlllnnllkknnmmkknnmlllnnmlkknnllkkoomlllnnmlkknnllkknnmlllnnmlkknnllkknnmlkknnmlllnnllkknnmlkknnmlkknnlklloomlkknnmlkknnllkknnmlllnnmlkknnlkkknnmlkknnmlkknnllllnnmlkknnmkkkoollkknnmlkknnllkknnmkllnnmlkknnllkknnmlkknnmkllnnllkknnmlkkoomkkknnllkknnmlllnnmlkknnlkkknnmlkknnmllloomkkknnllkknnmlllnnmlkknnmkkknnllkkoomlllnnmkkknnmlllnnllkknnmlkkoomkllnnmlkknnmlllnnllkknnmllloomkkknnmlllnnmlkknnmllloomlkknnmlllnnmlkknnmklloomlllnnmlkknnmlllnnmllloomlllnnmlkknnmllloommllnnmlllnnmlllnnmllloomlllnnmlllnnmmlloomlllnnnlllnnmlllnnmmlloomlllnnmlmmnnnmllnnmlllnnmmmmoonlllnnmmllnnmlmmnnmmllnnnmmmnnmllloommmmnnnmmmnnmmllnnnmmmnnmlmmnnmmmmnnnmllnnmmmmnnnmmmnnmmmmnnnmmmmmmmmmnnmnmmnnnmnnnnmmmmnnnmmmmmmnmmnnnmmmnnmmnnmmnnmmnnmmnnnnnnmmmmmmnnnnnnmmmmmmnnmmnnmmnnmmnnmmnnnnmmmnmmnnnmnnmmmnnnmmnnnn"},{"id":"moscow","name":"Москва","lat":55.7558,"lng":37.6173,"tz":"Europe/Moscow","off":180,"cover":"off","p":"065908591233135316071737mmnnnnmmmnoollmnnnmmnonnllmnoommnnnnllmnoollnnoollmonnmmmnoollnnoollmonnllnnoollmooollmnookknooollmnoollmonnkknnoollmooollmnookkmooollnnookkmoppkkmooollmnookkmoookknooollmnookkmoookkmnookkmoookkmoppkkmnookknoookkmoookkmoookkmnookkmoppkkmoookkmnoojjmoookkmoookkmnppkkmooojjmnookkmoookklooojjmnookkmoookkmoppjjmnookkmoookkmnoojjmoookklnoojjmoookkmnppjjmoookkmnoojjloookkmnoojjmoookkmnoojjmoookklnoojjmooojjmnookkmnoojjloppkkmnoojjmnoojjloookkmnoojjmnookkmooojjlnoojjmnookkmooojjlnookkmnoojjmnoojjmnookklooojjmnoojjmnookklnoojjmnookkmooojjlnoojjmnookkmnoojjmnookklnoojjmnoojjmnookklnoojjmnookkmnoojjmnookklnoojjmnookkmnoojjmnookklnoojjmnookkmnoojjmnookklnoojjmnookkmnookkmnoojjmnookkmnoojjlnookkmnookkmnoojjmmookkmnookkmnookkmnookklnoojjmnookkmmookkmnookkmnookkmnookkmnookkmmookkmnookkmnookkmnookkmnookkmmnnkkmnoollmnookkmmookkmnoollmnnnkkmnookkmmoollmnnnkkmmoollmnoollnnnnkkmmoollmnnnllmnoollmmnnkkmnoollmmnnllnnnnllmmoollmnnnmmmmnnllmnnnllmmnnllnnnnmmmmnnllmnnnmmmmnnllmnnnmmnmmmmmmmnnllmnnnmmmmmmmmmmnnmmnnmmmmmmnnmmmmmmnnmmmmmmnmmmmmmnmmmmmmmmnnmmmmmmmmmmnnnmmmmmmmmmnnmmmmnnmmllnnmmmmmmnmllnnmmmmnnmmllnnmmllnnmmmmnnmmlloonmllnnmlllnnmmllnnmmlloommllnnmlllnnmmlloonmllnnmlkkoommllnnmlkkoommlloommllnnmlkkoomlkknnmmlloomlkkoommkkoomlllnnmlkkoommkkoomlkkoomlkkoomlkknnmlkkoomlkkoommkkoomlkkoomlkkoollkkoomlkkoomlkknnmlkkoomljjoomlkkoomkkkoollkkoomljjoomlkkoomlkkoomkjjoollkkoomlkkoomkjjoomlkkoolljjnnmkkkoomljjoomkkkoolljjoomlkkoomkjjoomkkkoolljjoomkkkoomljjoolkkkoomljjoomkjjoolkkkoomljjnnmkkkoolkjjoomkjjoomlkkoolkjjoomkkkoolkjjoomljjoomkkkoolkjjoomkjjoomkkkoolkjjnnmljjoomkkkoolkjjoomkjjoomkkkoolkjjoomkkkoomkjjoolkjjoomlkkoomkjjoolkjjoomkkkoomkjjoolkkkoomkjjoomkkkoolkjjoomkjjoomkkkoomkjjoolkkkoomkjjoomkkkoomljjoolkkkoomkjjoomkkkoomkjjoomkkkoolkkkoomkjjoomkkkoomljjoomkkkoomkkkppmkjjoollkkoomkkkoomkkkoomkjjoomlkkoomkkkoomkkkoomlkkoomkkkppmlkkoomkkkoomkkkoomlkkoomlkkoomkkkoonlkkoomkkkoomlkkoomllloomkkkoomlkkoomllloonlkkoomllloomlkkoomllloonlkkoomllloomllloomlkkoonlllnnmllloommlloonllloomlllnnmmlloonllloommllnnnlmmoommllnnmmlloonlmmnnmmllnnnmmmnnmmmmoonmllnnmmmmnnnmmmnnmmmmnnnmmmnnmmmmnnnnmmmmmmnnnnnmmmnnmnmmmmnmnnnnmnmmmmnmnnnnmnmmmmnmnnmmmnnnmmnnnnnnmnnnmmmmnnmmnnnnllmnnn"},{"id":"kazan","name":"Казань","lat":55.7963,"lng":49.1088,"tz":"Europe/Moscow","off":180,"cover":"near","p":"061408141200133215211651llmnnnmmmonnmmmnnnllmnoommmnnnllmooollmnnnmmmooollmnnnllmooollmnoollmooollmonnllmnoollmooollmooollmnookkmooollmooollmoookkmooollmoookkmnoollmoookkmoookkmooollmoookkmoookkmoookkmooollmoppkkmoookkmoookkmoookkmoookkmoookkmoppkkmoookkmoookkmooojjmoookkmoookkmoppkkmooojjmoookkmoookkmoookkmoppjjmoookkmoookkmooojjmoookkmooojjmoookkmoppjjmnookkmoookkmooojjmoookkmooojjmoookkmooojjmnoojjmoppkkmooojjmoookkmooojjmnookkmooojjmooojjmnookkmooojjmoookkmooojjmnoojjmoookkmooojjmnookkmooojjmnoojjmoookkmooojjmnoojjmoookkmnppjjmoookkmnoojjmooojjmnookkmooojjmnookkmooojjmnoojjmoookkmnoojjmoookkmnoojjmooojjmnookkmnoojjmoookkmnoojjmoookkmnoojjmnookkmooojjmnookkmnoojjmoookkmnoojjmnookkmoookkmnoojjmnookkmnookkmooojjmnookkmnookkmooojjmnookkmnookkmnookkmnookkmoookkmnoojjmnookkmnookkmnookkmnookkmnookkmoookkmnnnkkmnoollmnookkmnookkmnookkmnoollmnnnkkmnookkmnoollmnookkmnnnllmnookkmnoollmnnnkkmmoollmnnnllmnoollmnnnkkmnoollmnnnllmmnnllmnoollmnnnmmmmnnllmnnnllmnnnllmmnnmmmnnnllmmnnmmmnnnllmmnnmmmnnnmmmmmmllmnnnmmmmmmmmmnnnmmmmmmmmmmnnmmmmmmmmmnmmmmmmnnnnmmmmmmmmmmmmmmmmnnmmmmmmmnmmnnmmllnnmmmmmmmlmmnnmmllnnmmmmnnmmllnnmmmmnnmmllnnmlllnnmmmmnnmmllnnmlllnnmmlloommllnnmlllnnmmlloomlkknnmllloommllnnmllloomlkknnmmlloomlkknnmllloomlkkoomlllnnmmkkoomlkkoomlkkoomlllnnmlkkoomlkkoomlkkoomkkkoomlkkoomlkknnmlkkoomlkkoomkkkoomlkkoomlkkoomkkkoomljjoomkkkoomlkkoomkkknnmlkkoomkjjoomlkkoomkkkoomljjoomkkkoomkjjoomlkkoomkkkoomkjjoomkkkoomljjoomkkkoomkjjoomkkkoomkjjoomkkknnmkjjoomlkkoomkjjoomkjjoomkkkoomkjjoomkkkoomkjjoomjjjoomkkkoomkjjoomkkkoomkjjoomkjjnnmkkkoomkjjoomkjjoomjkkoomkjjoomkjjoomkkkoomkjjoomjkkoomkjjoomkjjoomkkkoomjjjoomkjjoomkkkoomkjjnnmjjjoomkkkoomkjjoomjkkoomkjjoomkjjoomkkkoomjjjoomkkkoomkjjoomkkkoomjjjoomkjjoomkkkoomjjjoomkkkoomkjjoomkkkoomjjjppmkkkoomkkkoomkjjoomkkkoomjjjoomkkkoomkkkoomkjjoomkkkoomkkkoomkjjoomkkkppmjkkoomkkkoomkkkoomkjjoomkkkoomlkkoomkkkoomkkkoomkkkoomkkkppmkkkoomlkkoomkkkoomklloomkkkoomlkkoomkkkoomllloomkkkoomlkkoomklloomlkkoomllloomkkkoomllloomllloomlkknnmllloomllloomllloomllloomlllnnmllloomlllnnmmlloomlmmoomlllnnmmllnnmlmmoommllnnmmmmnnmlmmoommllnnmmmmnnmmmmnnmmmmnnmmmmnnmmmmnnmmmmnnmmmmmmmnnnnnmmmmnnmnmmmmmmnnnnmnmmmmmmnnmmmnnnnnmnmmmmmmnnmmmnnnmmmnnnmmmnnnmmmnnn"},{"id":"volgograd","name":"Волгоград","lat":48.708,"lng":44.5133,"tz":"Europe/Volgograd","off":180,"cover":"off","p":"055507551206135916171747mmmnnnmmmnnnllnnnnmmmnnnmmnnnnmmmnnnllnnnnmmmnoollnnnnmmmnnnllmnoommnonnllmnnnmmmnoollnnnnllmnoollmonnllnnoollmnnnmmmnoollnonnllmnookkmnnnllmooollmnnnllnnoollmooollmnnnkkmnoollmonnllnnookkmnoollmnnnkkmooollmnookkmnnnllmoookkmnoollmnnnkkmooollmnookkmnnnkkmooollmnnnkkmnookkmnookkmonnllmnookkmnookkmnnnkkmnookklonnkkmnookkmnoollmnnnkkmnookkmnnnkkloookkmnookkmnnnkkmnookkmnnnkklnookkmnnnkkmnookkmnnnkklnookkmnookkmnnnkkmnoojjlnnnkkmnookkmnnnkkmnookklnnnkkmnookkmnnnkklnookkmnnnkkmmookklnnnkkmnoojjmnnnkkmnookklnnnkkmmookkmnnnkklnookkmnnnkkmnookklmnnkkmnookkmnnnjjmmookklnnnkkmnookkmnnnkklmookkmnnnkkmnnnkkmmookklnnnkkmnookkmmnnkkmnookklnnnllmmookkmnnnkkmnookkmmnnkklnookkmmnnkkmnookkmnnnllmmookkmnnnkklmookkmnnnllmmnnkkmnookkmnnnllmmookkmnnnkkmmoollmnnnkklmoollmnnnkkmmnnllmnookkmmnnllmnnnkkmmoollmnnnllmmookkmnnnllmmnnllmnnnllmmoollmnnnkknmnnllmnnnllmmoollmnnnllmmnnllmnnnmmmmnnllmnnnllmmnnllnmnnllmnnnmmmmnnllmnnnllmmnnmmmmnnllmnnnmmnmnnllmnnnmmmmmmmmmmnnllmnnnmmnmmmmmmmnnmmmnnnmmmmmmmmmmmmmmnnnnmmmmmmmmmmnnmmmmmmmmnnmmmmmmmmmmmmnnnnmmmmmmmmmmmmnmmmnnmnmmmmmmmmnnmmmmmmmmmmnnnmllmmmmmmnnmmmmnnmmmmmmmmllnnnmmmnnmmllnnmmmmnnmmllmmmmmmnnmmllnnmmllnnnmmmnnmlllnnmmllnnmmllnnmmllnnmmlloomlllnnmmllnnmmllnnmlllnnmmllnnmmlloomlllnnmmllnnmlkknnmmlloomlllnnmmkknnmllloommkknnmlllnnmmlloomlkknnmlkknnmmlloomlkknnmlllnnmlkkoolmkknnmlllnnmlkkoomlkknnmllloomlkknnllkknnmlkkoomlkknnmmkkoomlllnnlkkknnmlkkoomlkknnmlkkoollkknnmlkknnmlkkoollkknnmlkkoomkkknnmlkkoollkknnmlkknnmkkkoollkknnmlkkoomlkknnlkkknnmlkkoomlkknnlkjjoomlkknnmkkknnllkkoomlkknnlkkkoomlkknnmkkknnllkkoomkjjnnmlkkoolkkknnmlkknnmkkkoollkknnmkkkoomlkknnlkjjoomlkknnmkkknnllkkoomkkknnmkkkoollkknnmkkkoomlkknnlkkkoomlkknnmkjjoollkknnmkkkoomlkknnmkkkoolkkknnmlkkoomkkknnmlkkoolkllnnmlkkoomkkknnmlkkoomkkknnmlkkoolkkknnmlkkoomlllnnmkkkoomlkkoomkkknnmllloomlkknnmkkkoomlkknnmllloolkkkoomlllnnnlkkoomlllnnmlkkoomkllnnmlkkoomllloomlkknnmllloomlllnnmlkkoomlllnnnllloomlllnnmllloomlllnnmmlloonlllnnmllloomlllnnmmlloonlllnnmllloommllnnnlmmnnmmlloomlllnnnmmmnnmmlloomlmmnnnmllnnmmmmnnnmmmnnmmllnnmlmmnnnmmmnnmmmmoonmmmmmmmmmnnnnmmnnmmmmnnnmmmnnmmmmnnnmmmmmmnnnnnnmmmnnmmmmmmnnnnnnmmmmmmnnnnmmmmmmnnnnnnnnmnnnmmnmmmmmmnnnmmnnnnnnmmnnmmmnnnmmnnmm"},{"id":"krasnodar","name":"Краснодар","lat":45.0355,"lng":38.9753,"tz":"Europe/Moscow","off":180,"cover":"off","p":"060308031228143516531823mmmnnnmmmnnnmmnmnnllmnnnmmnnnnmmmnnnmmnnnnmmmnnnllnnnnmmmnnnmmmnnnllnnoommmnnnllmnnnmmnonnllmnoollmnnnmmnnnnllmnoollmnnnllnnnnmmmooollmnnnllmnnnllnnoollmnnnllmnoollmonnllmnnnllnnoollmnnnllmnookkmnnnllmooollmnnnllmnnnkkmnoollmnnnllmnookkmonnllmnookkmnnnllmnnnkkmnoollmnnnkkmnoollmnnnkkmnoollmnnnkkmonnllmnookkmnnnkkmnoolllnnnkkmnnnkkmnookkmnnnllmnnnkkmnookklmnnkkmnoollmnnnkkmnnnkklnookkmnnnllmnnnkkmnookkmnnnkklmnnkkmnookkmnnnlllnnnkkmnnnkkmmookkmnnnkklnnnkkmnookkmmnnkklnnnllmnookkmmnnkkmnnnkklnnnkkmmookkmnnnkklnnnkkmmnnllmnookklnnnkkmmnnkkmnookkmmnnkklnnnkkmmnnllmnookklnnnkkmmnnkkmnnnkkmmookklnnnllmmnnkkmnnnkkmmookklnnnllmmnnkkmnookkmmnnkklnnnllmmnnkkmnookkmmnnllmnnnkklmnnkkmnoollmmnnkkmmnnllmnnnkkmmoolllnnnkkmmnnllmnnnkkmmoollmmnnkkmnnnllmmnnllmnookkmmnnllmnnnllmmnnkkmmnnllmnnnlllmoollmnnnllmmnnkknmnnllmnnnllmmnnllmmnnllmnoollmmnnllmnnnllmmnnmmmmnnllmnnnllmmnnllmnnnllmmnnmmmmnnllnnnnllmmmmmmmmnnllmnnnmmmmnnllmmnnmmnnnnllmmmmmmmmnnmmmnnnmmmmmmllnmnnmmmnnnmmmmmmmmmmnnmmmmmmmmnnnnmmmmmmmmmmmmmmmnnnmmmmmmmmnmmmmmmmnnmmmmmmnnmnmmmmnmmmmmmmmmnnmmmmmmmmmmmmmnmmnnnmmmmmmmmmnnmmmmmmmmmmnnmmllnnnmmmmmmmmmnnmmllnnmmmmmmmmmmnnmmllnnmmmmnnnmllnnmmmmmmmmllnnmmllnnmmmmnnmmllnnmlllnnmmllnnmmllnnmmmmnnnmllnnmlllnnmmllnnmmllnnmlllnnmmllnnmmllnnmlkknnmmlloomlllnnmmllnnmmllnnllkknnmmllnnmlllnnmlkkoommllnnmlllnnmmkknnmlllnnmlkknnlmlloomlkknnmlllnnmmkknnmlllnnmlkkoollkknnmlllnnmlkknnmmkknnlllloomlkknnmlkknnmlllnnllkknnmlkkoomlkknnllllnnmlkknnmlkknnmlkknnllkkoomlkknnmlllnnlkkknnmlkknnmlkkoollkknnmlkknnmlkknnlkllnnmlkkoomlkknnllkknnmkkknnllkknnmlkkoomkkknnllkknnmlkknnmlkknnlklloomlkknnmlkknnlkkknnmlkknnmkkkoollkknnmlkknnmkkknnllkknnmllloomkkknnllkknnmkkknnmlkkoollkknnmkkknnmlllnnmlkkoolkkknnmlkknnmkkkoollllnnmlkknnmkkknnmlkkoomlllnnlkkknnmlkkoomlllnnmkkknnmlkkoomlllnnllkknnmkkkoomlllnnmlkknnmllloomkkknnmllloomlkknnmlllnnmlkkoomlllnnmlllnnmkkkoomlllnnmllloomlllnnmlkknnmllloommllnnmlllnnmllloomlllnnnlllnnmllloommllnnmlllnnmllloonlllnnmmllnnmllloommmmnnnlllnnmmlloomlmmnnnmllnnmlllnnmmmmnnnmmmoomlllnnmmmmnnnmllnnmmmmnnnmmmnnmmmmnnmlmmnnnmllnnmmmmnnnmmmnnmnmmnnnmmmnnmmmmmmnmnnnnmmmmnnnnmmnnmmmmmmnmnnnnmnmmnnnmmmmmmnnnnnnmmmmmmnnnnnnmnnmmmnmmmmmmnnnnnnmmmmmnnnmmnmnnmmmnnnmmnnnn"},{"id":"rostov","name":"Ростов-на-Дону","lat":47.2357,"lng":39.7015,"tz":"Europe/Moscow","off":180,"cover":"off","p":"060808081225142416421812mmmnnnmmnnnnmmmnnnmmnnnnllmnnnmmmnnnmmnnnnllmnnnmmnnoommmnnnllmnnnmmnnnnllmnoollnnnnmmmonnllmnoollnnnnmmmnoollmnnnllmooollnnnnllmnnnllmnoollmnnnllnooollmnnnllmnoollmooollmnnnkknnoollmnnnllmoookkmnnnllmnoollmnnnkkmooollmnnnkkmnoollmnookkmonnllmnookkmnnnllmnookkmnnnllmoookkmnnnkkmnoollmnnnkkmnookkmnookkmonnllmnookkmnnnkklnookkmnnnkkmnoollmnnnkkmnookkmnnnkklnookkmnnnkkmnookkmnnnkklnnnkkmnookkmnnnllmnookklnnnkkmnookkmnnnkkmnookklnnnkkmnnnkkmnookkmmnnkklnookkmnnnkkmnookklnnnkkmnnnkkmmookkmnnnkklnookkmnnnkkmmnnkklnookkmnnnkkmnookklmnnkkmnnnkkmnookkmmnnkklnookkmnnnkkmmnnkklnookkmnnnkkmmnnkkmnookklnnnkkmmookkmnnnkkmmnnlllnookkmnnnkkmmookkmnnnkklmnnkkmnoollmmnnkkmnookkmmnnkklnnnkkmnoollmmnnkkmnnnkkmmoollmnnnkklmookkmnnnllmmnnkkmnoollmmnnkkmnnnllmmookkmnnnllmmnnkkmnoollmmnnllmnnnkkmmoollmmnnllmnnnkkmmnnllmnoollmmnnllmnnnllmmnnllmnnnllmmoollmmnnllmnnnllmmnnllmnnnllmmnnllmnnnllmmnnllnmnnmmmnnnllmmnnllmnnnmmmmnnllmmnnmmnnnnllmmnnmmmmmmllmnnnmmmmnnmmmnnnllnmmmmmmmnnmmmmmmmmmnnnmmmmmmmmnmnnmmmnmmmmmmnnmmmmmmmmnmmmmmmnnnmmmmmmmmmmmmnnmmmmmmnmmmmmmnmmnnmmmmmmmmmmnnmmmmmmnmmmnnmmmmmmmmmmnnmmmmmmmnllnnnmmmnnmmmmmmmmllnnmmmmnnmmllnnmlmmnnnmllnnmmllmmmmmmnnmmllnnmmllnnmmmmnnmmllnnmlllnnmmllnnnmlloommllnnmlllnnmmllnnmmllnnmlllnnmmllnnmllloommkknnmmllnnmlllnnmmllnnmlkkoommllnnllkknnmlllnnmmlloomlkknnmlllnnmmkkoomlllnnmlkknnmmkknnlllloomlkknnmlkknnmllloommkknnmlkknnlllloomlkknnmlkknnmlkkoollkknnmlllnnmlkknnmlkkoollkknnmlkknnmlkkoollkknnmlllnnmkkkoomlkknnllkknnmlkkoomlkknnlkkknnmlkkoomlkknnllkknnmkkknnmlkkoollkknnmkkknnmlkkoollkknnmkkknnllkkoomlkknnmkkknnllkkoomkkknnmlkknnlljjoomkkknnmlkknnlkkkoomlkknnmkkknnllkkoomkkknnmlkknnlkkkoomlkknnmkkknnllkkoomkkknnmlkkoolkkknnmlkknnmlkkoolkkknnmlllnnmkkkoomlkknnlkkkoomlkknnmkkkoomlkknnmkkknnlllloomlkknnmkkkoomlkknnmkkkoomlllnnllkkoomkkknnmllloomlkknnmkkknnmllloomlkknnmkkkoomlllnnmlkkoomlllnnmlkkoomkllnnmllloomlkknnmllloomlkknnmllloomlllnnmllloomlkknnnllloomlllnnmllloommllnnmllloonlllnnmlllnnmmlloomlllnnnllloommmmnnmlllnnmmlloonlmmnnmmllnnmlllnnnmmmoommllnnnlmmnnmmmmnnmmllnnnmmmnnmmmmnnnmllnnmlmmnnmmmmnnnnmmnnmmmmnnnmmmnnmmmmnnnmmmnnmmnnnnnnmmmmmmmmnnnmmmnnmnnnmmnmmmnnmmnnmmnnmmmmmmmmnnnnnnnnmnnnmmnmnnmmmnmmmmnnnnnnmmnnmmnnnnmmmnnn"},{"id":"stavropol","name":"Ставрополь","lat":45.0428,"lng":41.9734,"tz":"Europe/Moscow","off":180,"cover":"off","p":"055107511216142316411811mmmnnnmmmmnnmmnnnnllmnnnmmnnnnmmmnnnmmnnnnmmmnnnllnnnnmmmnnnmmmnnnllnnoommmnnnllmnnnmmnnnnllmooollmnnnmmnnnnllmnoollmnnnmmnnnnllmnoollmonnllmnnnllnnoollmnnnllmnoollmonnllmnnnllnnoollmnnnllmnookkmnnnllmooollmnnnllmnnnkkmnoollmnnnllmnookkmonnllmnookkmnnnllmnnnkkmnoollmnnnkkmnoollmnnnkkmnoollmnnnkkmonnllmnookkmnnnkkmnoolllnnnkkmnnnkkmnoollmnnnkkmnnnkkmmookklnnnllmnookkmnnnkkmnnnkklnookkmnnnllmnnnkkmnookkmmnnkklnnnkkmnookkmnnnlllnnnkkmnnnkkmmookkmnnnkklnnnkkmnookkmmnnkklnnnllmnnnkkmmookkmnnnkklnnnkkmmookkmnnnkklnnnkkmmnnllmnookklnnnkkmmnnkkmnookkmmnnkklnnnkkmmnnllmnookklnnnkkmmnnkkmnnnkkmmookklnnnllmmnnkkmnnnkkmmookklnnnllmmnnkkmnookkmmnnkklnnnllmmnnkkmnookkmmnnllmnnnkklmnnkkmnoollmmnnkkmmnnllmnnnkkmmoolllnnnkkmmnnllmnnnkkmmoollmmnnkkmnnnllmmnnllmnookkmmnnllmnnnllmmnnkkmmnnllmnoolllmnnllmnnnllmmnnkknmnnllmnnnllmmnnllmnoollmmnnllmmnnllmnnnllmmnnllmmnnmmmnnnllmmnnllmnnnllmmnnmmmmnnllnnnnllmmnnmmmmmmllmnnnmmmmnnllmmnnmmnnnnllmmmmmmmmnnmmmnnnllmmmmmmnmnnmmmnnnmmmmmmmmmmnnmmmnmmmmnmnnmmmmmmmmmmmmmmmnnnmmmmmmmmnmmmmmmmnnmmmmmmnnmnmmmmnmmmmmmmmmnnmmmmmmmmmmmmmnmmnnnmmmmmmmmmnnmmmmmmmmmmnnmmllnnnmmmmmmmmmnnmmmmnnmmllmmmmmmnnmmllnnmmmmnnnmllnnmmmmmmmmllnnmmllnnmmmmnnmmllnnmlllnnmmllnnmmllnnmmmmnnnmllnnmlllnnmmllnnmmllnnmlllnnmmllnnmmllnnmlkknnmmlloommllnnmlllnnmmllnnllkknnmmllnnmlllnnmmkkoomlllnnmlllnnmmkknnmlllnnmlkknnlmlloomlkknnmlllnnmmkknnmlllnnmlkkoollkknnmlllnnmmkknnmlkknnllllnnmlkkoomlkknnmlllnnllkknnmlkknnmlkkoollllnnmlkknnmlkknnmlkknnllkkoomlllnnmlkknnlkkknnmlkknnmlkkoollkknnmlkknnmlkknnlkllnnmlkkoomlkknnllkknnmkkknnllkknnmlkkoomlkknnlkkknnmlkknnmlllnnlkkkoomlkknnmlkknnlkkknnmlkknnmkkkoollkknnmlkknnmkkknnllkknnmllloomkkknnllkknnmkkknnmlkkoollkknnmkkknnmlllnnmlkkoolkkknnmlkknnmkkkoollllnnmlkknnmkkknnmlkkoomlllnnlkkknnmlkkoomlllnnmkkknnmlkkoomlllnnllkknnmkkkoomlllnnmlkknnmllloomkkknnmllloomlkknnmlllnnmlkkoomlllnnmlllnnmkkkoomlllnnmllloomlkknnmlllnnmllloommllnnmlllnnmllloomlllnnnlllnnmllloommllnnmllloomlllnnnlllnnmmllnnmllloommmmnnnlllnnmmlloomlmmnnnmllnnmlllnnmmmmnnnmlloomlmmnnmmmmnnnmllnnmmmmnnnmmmnnmlmmnnmmllnnnmmmnnmmmmnnnmmmnnmnmmnnnmmmnnmmmmmmnmnnnnmmmmnnnnmmnnmmmmmmnmnnnnmnmmnnnmmmmmmmnnnnnnmmmmmmnnnnmnmmmmnnnnmmmmnnnnnnmmmmmnnnmmnmnnmmmnnnmmnnnn"},{"id":"sochi","name":"Сочи","lat":43.6028,"lng":39.7342,"tz":"Europe/Moscow","off":180,"cover":"off","p":"055407541225143716551825mmmnnnnnnnnnllmnnnmmnnnnmmmnnnmmmnnnmmnmnnmmmnnnllnnnnmmmnnnmmmnoollnonnmmmnnnllnnnnmmmnnnllmnoommnnnnllmnnnllmnnnmmmnoollnnnnllmnnnllmnoollmonnmmnnnnllmnoollmnnnllmnnnllmnoollnnnnllmonnkkmnoollmnnnllmnoollmnnnllmnnnkkmnoollmnnnllmnnnllmnookkmonnllmnnnllmnookkmnnnllmnnnkkmnoollmnnnkkmnnnllmnookkmnnnllmnnnkkmnookklnnnllmnnnkkmnoollmmnnkkmnnnkkmnoolllnnnkkmnnnkkmnnnllmnookkmmnnkklnnnkkmnnnllmnookkmnnnkklmnnkkmnnnllmnookkmnnnkklmnnkkmnnnllmnookklnnnkkmmnnkkmnnnkkmnnnlllmookkmnnnkkmmnnkklnnnkkmnnnllmmookklnnnkkmmnnkkmnnnkkmnnnlllmookkmnnnkkmmnnkklnnnllmmnnkkmnookkmmnnkklnnnkkmmnnllmnnnkklmookkmnnnllmmnnkkmmnnkklnnnllmmnnkkmnookkmmnnlllnnnkkmmnnkkmmnnllmnookkmmnnlllnnnkkmmnnkkmmnnllmnookkmmnnllmnnnlllmnnkkmmnnllmnnnkkmmoollmnnnllmmnnkkmmnnllmnnnllmmnnkkmmnnllmnoollmmnnllmmnnlllnnnkkmmnnllmnnnllmmnnllnmnnllmnnnllmmnnllmmnnllmnoollmmnnmmmmnnllmnnnllmmmmllmmnnllmnnnmmmmnnllmmnnllnnnnmmmmnnllmmnnmmmnnnllmmmmmmmmnnllmnnnmmnmnnmmmmmmllmnnnmmmmnnmmmmmmmmnmnnllmnmmmmmmnnmmmmmmmmmnnnmmnmmmmmmmnnmmmmmmmmmnmmnnnmnnmmmmmmmmmmmmmmmnmmmmmmmmnnnmmmmmmmnnmmmmmmnnmmmmmmmnmmnnnmllmmmmmmnnmmmmmmmmmmnnmmmmmmnmmmnnmmllnnmmmmmmmmllnnmmmmnnmmmmnnnmllmmmmmmnnmmllnnmmllnnmmmmnnmmllnnmmllmmmmmmnnmmllnnmlllnnnmllnnmmllnnmmmmnnmlllnnmmllnnmmllnnmmllnnmlllnnmmllnnmmkknnmlllnnmmllnnlllloommllnnmlkknnmmllnnmlllnnmmllnnmlkknnmmllnnmlkknnllllnnmmllnnmlkkoomlllnnmmkknnmlllnnllkknnmlllnnmmkknnmlkknnlllloomlkknnmlllnnmlkknnlmkknnmlllnnmlkknnmlkknnllllnnmlkkoomlkknnllkknnmlllnnmlkknnllkknnmlkknnmkllnnllkkoomlkknnmlkknnllkknnmlllnnmlkknnlkkknnmlkknnmlkknnllkkoomlllnnmkkknnllkknnmlkknnllkknnmkkknnmlllnnllkkoomkkknnmlkknnllkknnmlkknnmkllnnllkknnmlkkoomkkknnllkknnmlllnnmkkknnllkknnmlkkoomkkknnmlllnnllkknnmkkknnmllloomlkknnllkknnmkkknnmlllnnmlkkoolkllnnmlkknnmlkknnmllloomkkknnmlllnnllkknnmlkkoomlllnnmkkknnmllloomlllnnmlkknnmlllnnmlkkoomlllnnmlllnnmlkkoomlllnnmlllnnmllloomlkknnmlllnnmlllnnmllloomlllnnmlllnnmllloonmllnnmlllnnmlllnnmllloommllnnnlllnnmmmmoomlllnnmlllnnnmmmnnmlllnnmmlloommmmnnnlllnnmmmmnnmmllnnnlmmnnmmmmnnnmlloommmmnnmmmmnnnlmmnnmmmmnnnmllnnmmmmmmmmmmnnnnmmnnmmmmnnnmnnnnmmmmnnnmmmmmmnmmnnnmmmnnmmnnmmnnmmnnmmmmnnnmnnmmmnmmnnnmnnmmmmmmmmnnnnnnmnnnmmnnmmnnmmnnmmnnnnmmmnnnmmnnmmmmmmnn"},{"id":"samara","name":"Самара","lat":53.1959,"lng":50.1002,"tz":"Europe/Samara","off":240,"cover":"off","p":"065408541243141616321802mmmnnnmmnnoollmnnnmmnnnnllmnnnmmnooollmnnnmmmnoollnnnnllmnoommnonnllmnoollmnnnllnooollmnoollmnnnllnooollmnoollmooollnnnnkkmooollmnoollmoookknnoollmoookkmnoollmonnkkmnoollnoookkmnoollmoookkmnookkmoookkmnoollmoookkmnookkmoookkmnookknoookkmnookkmoookkmoookkmnookkloookkmnookkmonnkkmnookkmnookkmoookkmnookkmooojjmnookkmoookkmnookkloookkmnoojjmnookkmoookkmnookklnnnjjmoookkmnookkmnoojjmoookklnookkmnoojjmnookkmonnjjlnookkmnookkmnoojjmoookklnookkmnnnjjmnookklnoojjmnookkmooojjlnookkmnnnkkmnoojjmnookklnoojjmnookkmnnnkklnoojjmnookkmnoojjlnookkmnnnkkmnoojjmnookklnoojjmnookkmnnnkklnoojjmnookkmnookkmnoojjlnnnkkmmookkmnoojjmnookklnookkmnnnkkmnoojjmnookklmookkmnookkmnnnjjmnookkmnookklmookkmnookkmnnnkkmnookkmnookkmmookkmnoojjlnnnkkmmoollmnookkmnookkmnnnkkmmookkmnookkmnookkmmnnkkmnoollmnookkmnnnkkmmoollmnookkmmnnkkmnoollmnnnkkmmoollmnookkmnnnllmmoollmnnnkkmmoollmnnnllmnnnllmmookknnnnllmmnnllmnoollmmnnllmnnnllmmnnmmmnoollnmnnllmnnnllmmnnmmmnnnllmmnnmmmmnnllnnmmmmmmnnllmnnnmmmmnnmmmmmmmmnnnnllmmmmmmmmnnmmmnmmmmnmnnmmmmmmnnmmmmmmmnnnmmmmmmmmnmmmnnmmmmmmmmmmmmmmmmnnmnmmnnnmmmmmmmllnnmmmmnnmmmmmmmmllnnnmmmnnmmllnnmmmmnnmmllnnmlllnnmmmmnnnmllnnmmllnnmmllnnmmllnnmllloommllnnmmllnnmllloonmllnnmmllnnmlkkoommllnnmllloommkknnmllloommkknnmllloommkknnmllloomlkknnmmkkoomllloomlkknnmmkkoomlllnnmlkkoollkkoomlkknnmlkkoommkkoomlkknnmlkkoomlkkoomlkkoollkknnmlkkoomlkkoomkkknnmlkkoollkkoomljjoomlkknnmlkkoolkkkoomlkknnmljjoomlkkoolkkkoomlkknnmkjjoomlkkoollkkoomkjjnnmlkkoolkkkoomljjnnmkkkoollkkoomkjjoomlkknnlkjjoomlkkoomkkknnlkjjoomlkkoomkjjoollkknnmkjjoomkkkoollkknnmkjjoolkkkoomkjjoomlkknnlkjjoomkkkoomljjoolkkknnmkkkoomkjjoolkkkoomljjnnmkkkoolkjjoomkkkoomlkknnlkjjoomkkkoomkkkoolkjjnnmlkkoomkjjoomkkkoolkkkoomkjjnnmlkkoomkkkoolkkkoomkjjoomlkkoomkkknnlkkkoomkjjoomlkkoomkkkoomkkkoomlkkoomkkknnlkjjoomlkkoomkkkoomkkkoomlkkoomkkkoomlkkoomkkknnmlkkoomkkkoomllloomkkkoomlkkoomlkkoomkkkoomllloomlkknnmkkkoomllloonlkkoomllloomlkkoomlllnnmlkkoonllloomllloomlkkoomlllnnmllloonllloomlllnnmllloonmlloomlllnnmllloonmllnnmllloommllnnnlmmoommllnnnmmmnnmllloommmmnnnmllnnmmmmnnnmmmoommllnnnmmmnnmmmmnnnmmmnnmmmmnnmmmmmmnmmmnnmnnnnnnmmmnnmmmmmmnnnnnnmmmmmmnnnnnnmmmmmmmmmmmmnnoonnnnmmmmmnnnmmnnnnmmmmnnmmnnnnmmmnnn"},{"id":"yekaterinburg","name":"Екатеринбург","lat":56.8389,"lng":60.6057,"tz":"Asia/Yekaterinburg","off":300,"cover":"off","p":"073509351301141516271757llmnoommnnnnmmmnnnllnnoommmnnnllnooollmnnnmmmnoollnnoollmonnllnnoollmnoollmooollnnookkmooollmnoollnooollmnookkmooollnoookkmnoollmoookknnookkmooollmoookkmnookkmoppkknoookkmooollmnookkmoppkkmoookkmnookkmooojjnoppkkmoookkmnookkmoookkmoppkkmooojjmnookkmoppkkmoookkmnoojjmoookkmoppjjmoookkmnookklooojjmoppkkmnoojjmoookkmooojjmnppkkmooojjmoookklnoojjmopphhmpqqjjmnookklooojjmoppjjmnookkmooojjmnoojjloookkmnoojjmoppjjmnookklnoojjmooojjmnookklooojjmnppjjmnookkmooojjlnoojjmnoojjmoookklnoojjmnoojjmoppkklnoojjmnoojjmnoojjmoookklnoojjmnoojjmnookklooojjmnppjjmnoojjmnookklnoojjmnoojjmnookklooojjmnoojjmnookkmnppjjlnookkmnoojjmnoojjmnookklnoojjmnookkmnoojjmnoojjlnppkkmnoojjmnookkmnoojjmnookkmnookklnoojjmnookkmnppjjmnookkmnookkmnoojjmnookklmookkmnoojjmnookkmnookkmnookkmnookkmnookkmmookkmnookkmnookkmnookkmnookkmmookkmnookkmnookkmnookkmmookkmnoollmnookkmmnnllmnookkmnookknmoollmnnnllmnookkmmnnllmnoollmnnnkkmmoollmnnnllnmoollmnnnllmmnnllmnnnmmmmoollnnnnllmmnnllmnnnmmmmnnllmnnnmmnmmmmmmnnnllmmnnmmmmmmmmmnnnmmnmnnmmmmmmmmmmmmmmmnnnmmmmmmmmnmmmnnmmmmmmmmmmnnmmmmmmnnmmnnmmllmmmmmmnnmmmmnnmmllnnnmmmnnmmllnnmmmmnnmmllnnmlllnnmmllnnnmmmnnmmlloommllnnmlkknnmmlloommllnnmllloonmllnnmmkkoomllloommkknnmllloommkkoomlllnnmmkkoomlkkoomlkkoommllnnmlkkoomlkkoommkkoomlkkoomlkkoomlkkoomlkkoomlkkoommkkoomlkkoomlkkoomljjoollkkoomlkkoomkkkoomljjoomlkkoomlkkoomljjoollkkoomkjjoomlkkoomlkkoomljjoolkkkoomljjoomkkkoomljjoolljjoomkkkoomljjoomkkkoolljjoomkjjoomkkkoolljjppmkkkoomljjoomkjjoolkkkoomljjoomkjjoolkkkoomkjjoomljjoolkjjoomkkkoolkjjoomkjjoomlkkoolkjjoomkjjoomkjjoolkkkoomkjjoomkjjoolkjjoomlkkoomkjjoolkjjoomkjjoomkkkoolkjjoomkjjoolkkkoomkjjoomkjjoolkjjoomkkkppmkjjoomkjjoolkkkoomkjjoomkjjoolkkkoomkjjoomkjjoomkkkoolkjjoomkjjppmkkkoomkjjoolkkkoomkjjoomkkkoomkjjoomkjjpplkkkoomkjjoomkkkoomkkkoomljjoomkkkppmkjjoolkkkoomkkkoomkjjoomlkkppmkkkoomkjjoomkkkoomlkkoomkkkppmlkkoomkkkoomkjjoomlkkoomkkkppnlkkoomkkkoomllloomlkkoomkkkoomlkkppmlkkoonllloomkkkoomlkkoomllloonlkkoomllloomlkkoomllloonllloomlkkoommllnnnllloomllloommlloonlllnnmllloonmlloommmmnnmllloonmllnnmmmmoonlllnnmmmmnnnmllnnmmmmoommmmnnnmmmnnmmmmnnnmmmnnmmmmnnnnmmmmmmmmnnnmnnnnmnmmmmnmmmnnmnnnmmnnnnmmmmmmnnnnnnmmmmnnmmnnnnmmmnnnmmnnnnmmmnnnmmnnnn"},{"id":"almaty","name":"Алматы","lat":43.2389,"lng":76.8897,"tz":"Asia/Almaty","off":360,"cover":"off","p":"065908211259154817301853mmmnnnmmnnnnmmmnnmmmnnnnmmmnnnmmmnnnmmnnnnmmmnnnmlnnnnmmmnnnlmmnnnmlnnonmmmnnnmmnonnllmnnnmmmnnnllnnonmlmnnnmmmonnllmnnnllnnonmmmnnollmonnmlmnonllnnnnllmonnllmnonmlmnnnllmnnollnoonllmnnnllmnnnllmoonllmnnollmnnnllmoonlkmnnnllmnnnllmnoolkmonnllmnnnklmnonlkmnnnllmonollmnonkkmnnnllmnnnlkmoonklmnnolkmnnnklmnonlkmnnnklmnnolklonnklmnonlkmnnnkkmnnnllmnookkmnnnkklnnnllmnnnkkmoookkmnnnllmnnnkklnnnkkmnoollmnnnkkmnnnkklnnnkkmnnollmnonkklnnnkkmnnnkkmnnokkmnonkllnnnlkmnnnkkmmnokklnnnklmnnnkkmnookkmnnnkklnnnkkmnnoklmnnnkklnonkkmmnokkmnnnkllnnnlkmnnokkmnnnkkmmonkllnnokkmnnnkkmnnokklnnnklmmnokkmnonkkmnnnkklnnoklmnnnkkmmnokkmnnnkllnookkmnnnkkmmnoklmnnnkklnnoklmmonkkmnnokkmnnnklmnnokklmnnklmnnolkmnooklmmnnkkmnnoklmnnnkklmnoklmnnnklmnnolkmnooklmmnnklmnnokkmnnnklmmnollmnnoklmnnnkkmmoollmnnnklmmnoklmnnollmnnnklmmnollmnnnklmnnollmmnnklmnnollmmnnllmnnoklmnnnllmmnollmnnnkmmmnollmnnnllmmnnlmmnnollnmnnllmnnnlmmmmollmnnnlmmmnnllmnnnlmnmmnmlmnnnlmmmnnlmmnnnmmmmmnllmnnnmmnmmnlmmmnnmmmnmmmmmmnnlmmmmnmmnnnmmmmmmnmmmmnmmmmnmnmmnmmmmmmmnmmmmmmnnmmnmmmnmmmmmmnmmmnmmmmmmnmmmmnmmmmmmmmmmmnnnnmlmmmmmmnnmmmmnmmmmlnnmmmmnnnmllmmmmmmnnmlmlnnmmmlnmmmlmnnmmmlonnmllnmmmmlnnmmllnnmlmlnnmmllonmmllnnmlmlnmmmllonmmllnnnllknnmmmlonmlllnnmmlkonmlllnnmmllonmllknnmmllnnmllkonmmllnnmllkonmlllonmmlknnmllkonmlklnnlllkonmmlknnmllkonmlklnomllkonmllknnmlkkonmmlknnllklonmllknnmllkonmlkkonmllknnmlkkonlllknomkkknnmlkkonmllknnllkkonmlllnnmlkkonmlkknnlklkonmlkknnmlkkoomllknnlkkknnmlkkonmllknnlkkknnmlkkonmlkknnlklkonmlkknnmlkknolkkkonmllknnmkkknnllkknnmkkkonmlkknnlllknnmkkkonmlkknnlkkknomlkknnlklkonmlkknnmkkknnlkkknnmlkknnmkkkonlllknnmkkknomlkknnlkkknnmlklonmklknnlkkknnmlkknnmkkknnllkkoomkllnnmlkknnlkkknnmlkknnmkllnnmkkkoollkknnmkllnnmlkknnmkkknnllllnomkkknnmlkkonmkllnnllkknnmkklnomllknnmkklnnmllknnmlkloolkllnnmlkknnmkllnnmlkknomlllnnmkklonmlllnnmllknomkklnnmlllnnmlllnomlklnnmlllonmkllnnmlllnomlllnnmlklnnmlllnomlllnnmlllnnmlllonnlllnomlllnnmllmnnmlllnnmmmlnonllmnnmlllnnmlllnnmmmmnonlllnnmllmnnmmmlnnmllmnnnmmmnomlllnnmmmmnnnllmnnmmmmnnnmmlnnmllmnnmmmmnnnmmmnnmmmmnnnmmmnnmmmmnnmmmmmnnmmmnnmmmmnnnmmnnmmmmmmnnmmmnnmmmmnnnnnnmmmmmmnnnmmmnnmnnnmmnmmmnnmnnnmmnmmmnnmnnnmmnmmmnnmnnnmmnmmmmmmnnnnnnnnnmmmnnmmmnmmnmmmnnn"},{"id":"karaganda","name":"Караганда","lat":49.8047,"lng":73.1094,"tz":"Asia/Almaty","off":360,"cover":"off","p":"072609001316153617221856mmnnnnmmmonnmmnnnnmmmnonmlmnnnmmnnnnmmmnnnmlnnnnlmmoonmlmnnnmmnnonllmonomlnnnnlmmnonmlmonnllnnoomlmonnllmnonllnonommmnonlkmoonllmnnollnoonllmnnnllmooollmoonlknnnollmoonllmnonlkmonollmoonllmnookkmonnllnnoolkmoonklmooolkmnnnlkmoooklmoonlkmnnokkmoonllmnookkmoonkkmonolkmnooklmoonlkmnnokkmoonkklnookkmoonlkmnnokkmoookkmnonkkmonokkmnonkkmoookklnnokkmoonkkmnookkmonnkkmnookklonokkmnonkkmoookkmnnnkklnookkmoookkmnnnjkmnookjlonokkmnonkkmnoojkmonokklnookkmnnnkkmooojjlnookkmnnnkkmnoojkmonokklnookkmnnojjmnonkklnoojkmonokkmnookklnnojkmnonkjmnnojkmnookklonojkmnookkmnoojklnnokkmnoojjmnnokkmnoojklnnokkmnoojkmnnojkmnookklooojkmnnokkmnoojkmnnokklnoojkmnnokkmnoojkmnnpjklnookkmnnojkmnookkmnoojkmnnpjkmnookklnnojkmnopklmnnojkmmoojkmnnokkmnopjlmnnokklnopjkmnnoklmnoojkmnnpjkmnooklmnnpjkmnooklmmnpjkmnooklmnnpjkmnnoklmnoojkmnnpklmmooklmnnpjlmnnolkmnonmlmnnmllmmnnmlmnonllmnnmmlnnnnllmmnnmlmnnmmlmnnnllmmommlmnnnllmnnnmmmmnmmlnnnnmlmnnmlmmmnnmlmnnmmmmmmnmlnnnmmmmmnnmlmnnmmmmmnnmmmnmmllmmnnmmnnmmnmmmnmmmmmmnmmmnnmmmnmmmmmmmnnmmmnmmmmmmmmmmmmnmnnnmmnmmmmmmmmmnmmmmmmmmnnmmmmmmnmmmmnmmmmnmmmmmmnmmmmmnnmlmnmmmmmmnmmmmnnmmlmmmmmmmnnmllmmnnmmmnnmmllmnmmmmnnmllmmnmmlmnnmmllmnmlmmnnnmlmnnmmllmnmllmnnmmllmnmllmnnmlllnommlmmnmlllnnmmlmnnmlklmomllmonmmlkonmlljoomlkkpnmlljonmlkkpomlljonmmlkonmlkjpomlkkonmlljpomlkkonmlljonmlkkpollkjonmkljoomlkkpnmlkjoomlkkonmlljoomlkjpnlkkkonmlkjoomlkkonmkkjpomlkjonllkkoomkljonmlkkoomkkjonllkjoomkkkonmlkjoomkkkonlljjoomkkjonmlkkoolkkjonmlkkoomkkjonlkkjonmlkkoomkkjonlkkkoomljjonmkkknolkkjonmkkkoomlkjonlkkkoomkjjnnmkkkoollkjonmkkkoomkkjnnlkjkoomkkkonmkkjoollkknnmkkjoolkjkonmkkknomkkjonlkkknomkkkonmkjjoollkknnmkkkoomkkjonlkkknomkkkonmkjknolkkkonmkkjnomkkkonmkkkoollkknnmkkkoomkkknnlkkkoomkjknomkkkonmkkknolkkkonmlkknomkkkonmkkknomkkkoolkkknnmlkkoomkllnomkkkonmkkknomkkkonmlklnomkkkoolkkknnmllloomkkknomkkkonmlklnomklkoomlklnnmkkloomllknnmkklnomllkoomkklnnmllloonkklnomlllnnmlkkoomkllnomlllonmlllnomlklnnnllloomlllnomlllnnmklmoomlllnnnmllnomlllnnmllmoonlllnnmlllnomllmnnnmmlonmllmnomlllnnnmmmnnmllmnommmlnnnmlmnnmlmmnnnmlmnnmmmmnomlmlnnnmmmnnmmmmnnnmmnnnmmmmnnnmmmmnmmmmnmnmmmnnmnmmmnnmmnnnmmnmnmnmmmmnmnmnnmnmnmmnmnmnnmnmnmmnmnmnnmnnnnmnmmnmmmnnnnnmmnmnmmnnnmmmmmnnmmnnnn"},{"id":"prague","name":"Прага","lat":50.0755,"lng":14.4378,"tz":"Europe/Prague","off":60,"cover":"off","p":"064107581210135316131730mmnnnmmmmnnnmmnnnnmlmnnnmmnnnnmmmnnnllmnonmmnnnnmlmnnommnnnnllmnonmmmnnnllnnonmlmonollmnonlmnnnnmlmnonllmonollnnonmlmnnollmoonllnnnnllmnoolkmoonllmnnollnoonllmnoolkmnnnllmooollmnonkkmooollnnnnlkmnoollmoonkkmnoollmonnlkmnooklmnonlkmoookkmnnollmnonkkmooolkmnonklmonokkmnonlkmnookkmoookkmnnnlkmnookkmoonklmnnokkmnookkmnonkkmooolkmnnokklnonkkmnookkmonnkkmnookkmnookklnnnkkmnookjmoookkmnnnjkmnookklnonkkmnnokkmnookkmnonkklnnojjmnookkmnnnkklnookkmnookkmnnnjjmnookklnnokkmnonjkmnnokklnookjmnonjkmnnokklnookkmnnnjkmmookjlnnokkmnoojkmnonkklnnojkmnookjmmnokkmnonjklnnokkmnoojkmnnokklmoojjmnookkmnnnkklnoojkmmnokkmnoojkmnnokklnoojkmmnokkmnookkmnoojjlmnnkkmnoojkmnnokkmmoojklnnoklmnookkmmnojkmnookkmnoojklmnokkmnopkkmmnojkmnookkmnnoklmmoojkmnnokkmnookllmnokkmnoojkmmnoklmnookkmmnpkkmnoojlmnnokkmmooklmnnokkmmooklmnnoklmmookkmnnoklmmnoklmnookkmnnoklmmnoklmnooklmmnollnnnoklmmooklmnnollmmnoklmnnoklmmnollmmnoklmnnnllmmoolmnnnoklmmnnllmnnolmmmmnllmmnolmmnnnllnmnnlmmnnolmmmnnmlmmmnlmmnnnlmnmmnmmmmnnlmmnnnmlmmmmmmmmnnmmnmmnmnmnmmmmmmnmmmmmmnmmnmmmmmmnmmnnmmmmmmmmmmnmmmmmnnnmmmmmmmmlnnmmmmnmmmmlnnmnmmnnnmllnmmmmlnnmmmmnnmmllonmmmlnmmlllonnmmlnnmmlkonmmllnnmmmlonmmlknnmmllonmmllonmlmkonnmlknommllonmmlkonmllkonmmllonmlkkoommlkonmmlkonmllkonmmlkoomlkkonmmlkonmlkkoommlkonmllkoommkkonmllkonmlkjoommlkonmlkkoollkkonmllkoommkjonmlkkonmllkoomlkjonmlkkoollkkonmlkjoommkkonmllkoomlkjonllkkoomlkjonmkkkoomlkkonmlkjoollkkonmlkjoomlkknnllkjonmlkkoomkkjonllkkoomljjonmkkkoomlkknnllkjoomlkkonmkkjoollkknnmkjjoollkkonmlkjoomkkknnllkjoomkjkonmlkknolkkjonmlkkonmkkjnolljkonmkkkoollkjnnmkkkoomljjonlkkknomkkkonmlkjnolkkkonmljkoolkkjnnmlkkoomkkknnlkjkoomlkjonmkkknolkkkoomlkknnmkkjoomljknnlkkkoomkkkonmlkknolkkkoomlkknnmkkkoomkkjnnllkkoomkkkoomljknnmkkloomlkknolkkkonmlkknomklkoomlkkonmkkknomlkkoomkklnnmlkkoomkkknollklonmklkoomlkknomlklonmkkknomllloomlkknomkklonmllknonlkloomkkknomlllonmlkloomllknomlklonmlllnomllloomlkknonlllonmlllnomlklnomlllonnlllnomllloomlllnnmlkloonllmnnmmllnomlllonmlmlnonmlmnnmlllnommllonnllmnommmlnnnllmnommlmonmlmlnnnmlmnommmlnnnllmnnmmmmnnmmmmnnnmlmnnmmmmnnnmmmnnmmmmnnnmmmmnmmmmnnnmmmnnmmmmnnmnmmmnnmmmnmmmnnnnnmmmmmmnmmnnnmnnmnmnmmnmnmnnmmmnmmmnnmnnnmmnmmmmnmnnmmmnnnmnnnnnnmmnmmmmmmnn"}];
-function SCHEDULES_OFF() { return SCHEDULES.filter(s => s.cover === "off").map(s => s.id); }
-// место, сохранённое с таблицей, которую мы больше не включаем (Москва и др. в v29), — переводим на расчёт
-if (place && place.sched && (SCHEDULES_OFF().includes(place.sched))) { place.sched = null; place.avail = null; store("azkar-place", place); }
-const NEAR_KM = 40;
-function distKm(lat1, lng1, lat2, lng2) {
-  const r = Math.PI / 180, a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
-    Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lng2 - lng1) * r / 2) ** 2;
-  return 12742 * Math.asin(Math.sqrt(a));
-}
-// Какое готовое расписание подходит месту (id или null). region — название региона («Чеченская Республика», «Чечня»)
-function scheduleFor(lat, lng, region = "") {
-  const byRegion = SCHEDULES.find(s => s.cover.startsWith("region:") && region.includes(s.cover.slice(7)));
-  if (byRegion) return byRegion.id;
-  let best = null, bestKm = NEAR_KM;
-  for (const s of SCHEDULES) {
-    if (s.cover === "off") continue;                          // таблица не местного муфтията — считаем сами
-    if (s.cover.startsWith("region:") && region) continue;   // регион известен и это не он — таблица республики не подходит
-    const d = distKm(lat, lng, s.lat, s.lng);
-    if (d <= bestKm) { bestKm = d; best = s.id; }
-  }
-  return best;
-}
-const unpacked = {};
-function scheduleTable(s) {
-  if (unpacked[s.id]) return unpacked[s.id];
-  const p = s.p, m = [];
-  for (let i = 0; i < 24; i += 4) m.push(+p.slice(i, i + 2) * 60 + +p.slice(i + 2, i + 4));
-  for (let i = 24; i < p.length; i++) m.push(m[m.length - 6] + p.charCodeAt(i) - 109);
-  return (unpacked[s.id] = m);
-}
-function presetTimes(shift, now) {
-  const s = SCHEDULES.find(x => x.id === place.sched);
-  if (!s) return null;
-  const d = placeDay(shift, now), y = d.getFullYear(), mo = d.getMonth(), da = d.getDate();
-  const base = Date.UTC(y, mo, da);
-  // номер дня в году; таблица на 365 дней, поэтому в високосный год 29 февраля берём как 28-е
-  let n = Math.round((base - Date.UTC(y, 0, 1)) / 864e5);
-  if ((y % 4 === 0 && y % 100 !== 0 || y % 400 === 0) && n >= 59) n--;
-  const t = scheduleTable(s), o = {};
-  PRAYERS.forEach(([k], i) => { o[k] = new Date(base + (t[n * 6 + i] - s.off) * 60000); });
-  return o;
-}
-// Время намазов на день (shift: 0 — сегодня, 1 — завтра) с поправками человека. null — место не выбрано
-function prayerTimes(shift = 0, now = Date.now()) {
-  if (!place) return null;
-  let t;
-  if (place.sched) t = presetTimes(shift, now);
-  else if (window.adhan) {
-    const c = new adhan.Coordinates(place.lat, place.lng);
-    const params = METHODS[method][2] ? METHODS[method][2]() : adhan.CalculationMethod[method]();
-    params.madhab = adhan.Madhab[asrSchool];
-    // на севере летом ночь бывает такой светлой, что фаджр «не наступает» — тогда фаджр и иша берём
-    // по доле ночи, пропорциональной углу (TwilightAngle). Правило «седьмая часть ночи», которое библиотека
-    // советует для широт выше 48°, сдвигало фаджр в Москве на 17 минут позже официального (umma.ru, октябрь 2026)
-    params.highLatitudeRule = adhan.HighLatitudeRule.TwilightAngle;
-    const r = new adhan.PrayerTimes(c, placeDay(shift, now), params);
-    t = Object.fromEntries(PRAYERS.map(([k]) => [k, r[k]]));
-  }
-  if (!t) return null;
-  for (const [k] of PRAYERS) if (adjust[k]) t[k] = new Date(t[k].getTime() + adjust[k] * 60000);
-  return t;
-}
-const hm = d => d.toLocaleTimeString("ru-RU", { hour: "numeric", minute: "2-digit", timeZone: place.tz || undefined });
-
-// Карточка на главной: место, «Аср через 1:08», шесть времён; выделен текущий намаз
-function renderPrayer() {
-  const card = document.getElementById("ptimes"), t = prayerTimes();
-  card.classList.toggle("empty", !t);
-  document.getElementById("set-city").hidden = !!t;
-  if (!t) return;
-  const now = new Date();
-  // текущий — последний наступивший (до фаджра — ещё вчерашний иша); следующий — первый ненаступивший
-  let cur = "isha";
-  for (const [k] of PRAYERS) if (t[k] <= now) cur = k;
-  const nextK = (PRAYERS.find(([k]) => t[k] > now) || [])[0];
-  const nextAt = nextK ? t[nextK] : prayerTimes(1).fajr;
-  const mins = Math.max(0, Math.round((nextAt - now) / 60000));
-  document.getElementById("pt-city").textContent = place.name;
-  document.getElementById("pt-next").innerHTML =
-    `${PRAYER_NAME[nextK || "fajr"]} через <b>${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}</b>`;
-  document.getElementById("pt-row").innerHTML = PRAYERS.map(([k, name]) =>
-    `<div class="pt${k === cur ? " now" : ""}" data-p="${k}"><small>${name}</small><b>${hm(t[k])}</b></div>`).join("");
-}
-// Пока главная открыта, обновляем каждые полминуты: обратный отсчёт и выделение переезжают сами
-setInterval(() => { if (!document.getElementById("home").hidden) renderPrayer(); }, 30000);
-
-function renderPrayerSettings() {
-  document.getElementById("city-value").textContent = place ? place.name : "Не выбрано";
-  // выбор «предустановленное / автоматическое» есть, только если для места есть готовое расписание;
-  // способ расчёта и аср нужны только для автоматического
-  const avail = place && place.avail;
-  document.getElementById("open-source").hidden = !avail;
-  document.getElementById("source-value").textContent = place && place.sched ? "Предустановленное" : "Автоматическое";
-  document.getElementById("open-method").hidden = !!(place && place.sched);
-  document.getElementById("open-asr").hidden = !!(place && place.sched);
-  const n = Object.values(adjust).filter(Boolean).length;
-  document.getElementById("adjust-value").textContent = n ? `${n} ${n === 1 ? "намаз" : n < 5 ? "намаза" : "намазов"}` : "Нет";
-  document.getElementById("prayer-note").textContent = !place
-    ? "Укажите город или село — покажем время намазов на главной и будем напоминать об азкарах."
-    : place.sched ? "Готовое расписание на каждый день года, как в мечетях. Интернет не нужен."
-    : "Время считается в телефоне по положению солнца, интернет не нужен. Если в вашей мечети время отличается, подправьте его поправками по минутам.";
-  document.querySelectorAll("[data-source]").forEach(o => o.setAttribute("aria-checked",
-    (o.dataset.source === "preset") === !!(place && place.sched) ? "true" : "false"));
-  document.getElementById("method-value").textContent = METHODS[method][0];
-  document.getElementById("asr-value").textContent = ASR_NAMES[asrSchool];
-  document.getElementById("city-geo").setAttribute("aria-checked", place && place.geo ? "true" : "false");
-  document.querySelectorAll("#method-list .choice-row").forEach(o => o.setAttribute("aria-checked", o.dataset.method === method ? "true" : "false"));
-  document.querySelectorAll("[data-asr]").forEach(o => o.setAttribute("aria-checked", o.dataset.asr === asrSchool ? "true" : "false"));
-  renderAdjust();
-}
-function savePrayer() {
-  store("azkar-place", place); store("azkar-method", method); store("azkar-asr", asrSchool); store("azkar-adjust", adjust);
-  renderPrayerSettings(); renderPrayer(); scheduleNotifications();
-}
-
-const row = (attr, value, title, note = "") =>
-  `<button class="choice-row" role="radio" ${attr}="${value}"><span class="txt">${title}${note ? `<small>${note}</small>` : ""}</span><span class="check">✓</span></button>`;
-document.getElementById("method-list").innerHTML = Object.entries(METHODS).map(([k, [name, note]]) => row("data-method", k, name, note)).join("");
-
-// Общий помощник: открыть окно, закрыть по нажатию мимо
-function sheetOf(id, openers) {
-  const el = document.getElementById(id);
-  openers.forEach(b => document.getElementById(b).addEventListener("click", () => { el.hidden = false; }));
-  el.addEventListener("click", e => { if (e.target === el) closeSheet(el); });
-  return el;
-}
-const citySheet = sheetOf("city-sheet", ["open-city", "set-city", "pt-place"]);
-const methodSheet = sheetOf("method-sheet", ["open-method"]);
-const asrSheet = sheetOf("asr-sheet", ["open-asr"]);
-const sourceSheet = sheetOf("source-sheet", ["open-source"]);
-const adjustSheet = sheetOf("adjust-sheet", ["open-adjust"]);
-document.querySelectorAll("[data-source]").forEach(o => o.addEventListener("click", () => {
-  place.sched = o.dataset.source === "preset" ? place.avail : null;
-  savePrayer();
-  setTimeout(() => closeSheet(sourceSheet), 180);
-}));
-
-/* --- Поправки по минутам: от −30 до +30 для каждого намаза --- */
-function renderAdjust() {
-  document.getElementById("adjust-list").innerHTML = PRAYERS.map(([k, name]) => {
-    const v = adjust[k] || 0;
-    return `<div class="adj-row"><span class="name">${name}</span>
-      <button class="adj-btn" data-adj="${k}" data-d="-1" aria-label="${name}: на минуту раньше">−</button>
-      <span class="val${v ? " on" : ""}">${v ? (v > 0 ? "+" : "−") + Math.abs(v) + " мин" : "0"}</span>
-      <button class="adj-btn" data-adj="${k}" data-d="1" aria-label="${name}: на минуту позже">+</button></div>`;
-  }).join("");
-  document.getElementById("adjust-reset").disabled = !Object.values(adjust).some(Boolean);
-}
-document.getElementById("adjust-list").addEventListener("click", e => {
-  const b = e.target.closest(".adj-btn");
-  if (!b) return;
-  const v = Math.max(-30, Math.min(30, (adjust[b.dataset.adj] || 0) + +b.dataset.d));
-  if (v) adjust[b.dataset.adj] = v; else delete adjust[b.dataset.adj];
-  savePrayer();
-});
-document.getElementById("adjust-reset").addEventListener("click", () => { adjust = {}; savePrayer(); });
-
-/* --- Геопозиция ---
-   Координаты округляем до сотых (около километра): для намазов этого хватает, а точный адрес не храним.
-   Название места и регион узнаём у OpenStreetMap (нужен интернет). Без интернета место всё равно сохраняется,
-   а название и регион уточним при следующем запуске с интернетом */
-const round2 = x => Math.round(x * 100) / 100;
-// «Ассиновское сельское поселение» → «Ассиновское», «городской округ Грозный» → «Грозный»
-const cleanName = s => s && s.replace(/\s*(сельское|городское) поселение$/i, "").replace(/^городской округ\s+/i, "").trim();
-// lat/lng — точные координаты телефона: по ним название точнее (по округлённым иногда попадает соседнее село).
-// Сохраняем всё равно только округлённые
-async function lookupPlaceName(lat = place && place.lat, lng = place && place.lng) {
-  if (!place || !place.geo || place.checked) return;
-  try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=14&accept-language=ru&lat=${lat}&lon=${lng}`);
-    const a = (await r.json()).address || {};
-    if (!place || !place.geo) return;
-    const name = cleanName(a.city || a.town || a.village || a.hamlet || a.municipality || a.county);
-    if (name) place.name = name;
-    place.region = a.state || "";
-    // теперь знаем регион: в любом селе Чечни — общее расписание республики
-    const avail = scheduleFor(place.lat, place.lng, place.region);
-    if (avail !== place.avail) { place.sched = place.sched || !place.avail ? avail : place.sched; place.avail = avail; }
-    if (!avail) place.sched = null;
-    place.checked = true;
-    savePrayer();
-  } catch (e) {}
-}
-const GEO = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
-  ? window.Capacitor.Plugins.Geolocation : null;
-// Узнать координаты: в приложении — плагином (один системный запрос iOS), на сайте — средствами браузера
-function getPosition(ok, fail, opts) {
-  if (!GEO) return navigator.geolocation.getCurrentPosition(ok, fail, opts);
-  GEO.getCurrentPosition({ enableHighAccuracy: false, timeout: opts.timeout, maximumAge: opts.maximumAge }).then(ok, async e => {
-    let denied = false;
-    try { denied = (await GEO.checkPermissions()).location === "denied"; } catch (x) {}
-    fail({ code: denied ? 1 : 2, PERMISSION_DENIED: 1 });
-  });
-}
-function askLocation(fromButton) {
-  const note = document.getElementById("geo-note");
-  return new Promise(done => {
-    if (!GEO && !navigator.geolocation) { note.textContent = "Телефон не даёт определить место. Найдите город через поиск"; return done(); }
-    note.textContent = "Определяю…";
-    getPosition(pos => {
-      store("azkar-geo-denied", false);
-      const lat = round2(pos.coords.latitude), lng = round2(pos.coords.longitude), avail = scheduleFor(lat, lng);
-      place = { name: "Моё местоположение", region: "", lat, lng, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, geo: true, avail, sched: avail };
-      note.textContent = "Определено";
-      savePrayer();
-      if (fromButton) setTimeout(() => closeSheet(citySheet), 400);
-      lookupPlaceName(pos.coords.latitude, pos.coords.longitude);
-      done();
-    }, err => {
-      if (err.code === err.PERMISSION_DENIED) store("azkar-geo-denied", true);   // больше сами не спрашиваем
-      note.textContent = err.code === err.PERMISSION_DENIED
-        ? "Доступ к геопозиции запрещён. Найдите город через поиск или разрешите доступ в настройках телефона"
-        : "Не получилось определить. Попробуйте ещё раз или найдите город через поиск";
-      done();
-    }, { timeout: 15000, maximumAge: 3600e3 });
-  });
-}
-document.getElementById("city-geo").addEventListener("click", () => askLocation(true));
-
-/* --- Поиск города или села ---
-   Ищем в открытой базе географических названий через сервис Open-Meteo (бесплатно, без ключа).
-   Он сразу отдаёт и часовой пояс места. Найденное место сохраняется, дальше время считается без интернета */
-let found = [], searchTimer, searchId = 0;
-const searchNote = document.getElementById("search-note");
-const cityList = document.getElementById("city-list");
-async function searchPlaces(q) {
-  const id = ++searchId;   // ответы на старые запросы (человек уже дописал слово) выбрасываем
-  searchNote.textContent = "Ищу…";
-  try {
-    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?count=10&language=ru&format=json&name=${encodeURIComponent(q)}`);
-    const data = await r.json();
-    if (id !== searchId) return;
-    found = data.results || [];
-  } catch (e) {
-    if (id !== searchId) return;
-    found = []; cityList.innerHTML = "";
-    searchNote.textContent = "Для поиска нужен интернет";
-    return;
-  }
-  searchNote.textContent = found.length ? "" : "Ничего не нашлось. Проверьте название или попробуйте соседний город";
-  cityList.innerHTML = "";
-  found.forEach((f, i) => {
-    const b = document.createElement("button");
-    b.className = "choice-row"; b.setAttribute("role", "radio"); b.dataset.i = i;
-    const txt = document.createElement("span"); txt.className = "txt";
-    txt.textContent = f.name;   // textContent, а не innerHTML: название пришло из интернета, вставляем как простой текст
-    const small = document.createElement("small");
-    small.textContent = [f.admin1, f.country].filter(Boolean).join(", ");
-    txt.appendChild(small);
-    const check = document.createElement("span"); check.className = "check"; check.textContent = "✓";
-    b.append(txt, check);
-    cityList.appendChild(b);
-  });
-}
-document.getElementById("city-search").addEventListener("input", e => {
-  const q = e.target.value.trim();
-  clearTimeout(searchTimer);
-  if (q.length < 2) { searchId++; found = []; cityList.innerHTML = ""; searchNote.textContent = "Начните писать название, например «Курчалой»"; return; }
-  searchTimer = setTimeout(() => searchPlaces(q), 350);   // ждём, пока человек перестанет печатать
-});
-cityList.addEventListener("click", e => {
-  const o = e.target.closest(".choice-row");
-  if (!o) return;
-  const f = found[o.dataset.i];
-  // готовое расписание есть — включаем его сразу (как в мечетях); переключить на расчёт можно в настройках
-  const avail = scheduleFor(f.latitude, f.longitude, f.admin1 || "");
-  place = { name: f.name, region: f.admin1 || "", lat: round2(f.latitude), lng: round2(f.longitude), tz: f.timezone || undefined,
-            avail, sched: avail, checked: true };
-  o.setAttribute("aria-checked", "true");
-  savePrayer();
-  setTimeout(() => closeSheet(citySheet), 180);
-});
-document.getElementById("method-list").addEventListener("click", e => {
-  const o = e.target.closest(".choice-row");
-  if (!o) return;
-  method = o.dataset.method; savePrayer();
-  setTimeout(() => closeSheet(methodSheet), 180);
-});
-document.querySelectorAll("[data-asr]").forEach(o => o.addEventListener("click", () => {
-  asrSchool = o.dataset.asr; savePrayer();
-  setTimeout(() => closeSheet(asrSheet), 180);
-}));
-
-/* ================================================================
-   НАПОМИНАНИЯ (только в приложении для iPhone)
-   Утром — в момент фаджра «Утренние азкары», вечером — в момент аср «Вечерние азкары».
-   iOS держит не больше 64 запланированных уведомлений, поэтому ставим на 30 дней вперёд (2 в день)
-   и переставляем при каждом открытии приложения и при смене места или поправок
-   ================================================================ */
-const LN = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
-  ? window.Capacitor.Plugins.LocalNotifications : null;
-let notify = load("azkar-notify", { morning: true, evening: true });
-const NOTIFY_DAYS = 30;
-// Что и когда напомнить: список { id, at, time } на NOTIFY_DAYS дней вперёд (без прошедших)
-function notificationPlan(now = Date.now()) {
-  if (!place) return [];
-  const plan = [];
-  for (let d = 0; d < NOTIFY_DAYS + 1; d++) {
-    const t = prayerTimes(d, now);
-    if (!t) break;
-    if (notify.morning && t.fajr > now) plan.push({ id: d * 2 + 1, at: t.fajr, time: "morning" });
-    if (notify.evening && t.asr > now) plan.push({ id: d * 2 + 2, at: t.asr, time: "evening" });
-  }
-  // по одному напоминанию каждого включённого вида на NOTIFY_DAYS дней (всего не больше 60 — в лимите iOS 64)
-  return plan.slice(0, NOTIFY_DAYS * ((notify.morning ? 1 : 0) + (notify.evening ? 1 : 0)));
-}
-async function scheduleNotifications() {
-  if (!LN) return;
-  try {
-    const pending = await LN.getPending();
-    if (pending.notifications.length) await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
-    const perm = await LN.checkPermissions();
-    if (perm.display !== "granted") return;
-    const plan = notificationPlan();
-    if (!plan.length) return;
-    await LN.schedule({ notifications: plan.map(n => ({
-      id: n.id, schedule: { at: n.at, allowWhileIdle: true },
-      title: n.time === "morning" ? "Утренние азкары" : "Вечерние азкары",
-      body: n.time === "morning" ? "Время утренних азкаров" : "Время вечерних азкаров",
-      extra: { time: n.time } })) });
-  } catch (e) {}
-}
-async function renderNotify() {
-  document.getElementById("notify-group").hidden = !LN;
-  if (!LN) return;
-  document.getElementById("sw-nm").setAttribute("aria-checked", notify.morning ? "true" : "false");
-  document.getElementById("sw-ne").setAttribute("aria-checked", notify.evening ? "true" : "false");
-  let note = !place ? "Чтобы напоминать вовремя, укажите город или село выше." : "Напоминание приходит в начале времени фаджра и аср.";
-  try { if ((await LN.checkPermissions()).display === "denied") note = "Уведомления запрещены. Включите их в настройках iPhone: Настройки → Азкары → Уведомления."; } catch (e) {}
-  document.getElementById("notify-note").textContent = note;
-}
-document.querySelectorAll(".switch[data-notify]").forEach(sw => sw.addEventListener("click", async () => {
-  notify[sw.dataset.notify] = !notify[sw.dataset.notify];
-  store("azkar-notify", notify);
-  if (LN && notify[sw.dataset.notify]) { try { await LN.requestPermissions(); } catch (e) {} }
-  renderNotify(); scheduleNotifications();
-}));
-// Нажали на уведомление — сразу открываем нужные азкары
-if (LN) LN.addListener("localNotificationActionPerformed", a => {
-  const t = a && a.notification && a.notification.extra && a.notification.extra.time;
-  if (t === "morning" || t === "evening") openTime(t);
 });
 
 /* Переключатель «Основные | Полные» на главной */
@@ -1756,7 +1244,7 @@ function renderSettings() {
     o.setAttribute("aria-checked", o.dataset.mode === mode ? "true" : "false"));
 }
 
-document.querySelectorAll(".switch[data-key]").forEach(sw => sw.addEventListener("click", () => {
+document.querySelectorAll(".switch").forEach(sw => sw.addEventListener("click", () => {
   show[sw.dataset.key] = !show[sw.dataset.key];
   store("azkar-show", show);
   renderSettings();
@@ -1831,11 +1319,9 @@ document.getElementById("back").addEventListener("click", () => showScreen("home
 // Вернулись в приложение (например, утром, а открыто оно было с вечера):
 // если день сменился и азкары открыты — показываем их уже с обнулёнными счётчиками
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible") return;
-  if (checkNewDay() && !document.getElementById("reader").hidden) openTime(time);
+  if (document.visibilityState !== "visible" || !checkNewDay()) return;
+  if (!document.getElementById("reader").hidden) openTime(time);
   updateHome();
-  renderNotify();
-  scheduleNotifications();   // напоминания всегда на месяц вперёд от сегодняшнего дня
 });
 
 /* Сброс счётчиков открытых азкаров (утренних или вечерних).
@@ -2145,22 +1631,8 @@ document.getElementById("tb-reset").addEventListener("click", () => askReset(
 // Запомнили, открыто ли приложение с экрана «Домой» (старые iPhone сообщают это только так)
 if (navigator.standalone) document.documentElement.classList.add("standalone");
 renderSettings();
-renderPrayerSettings();
 renderTasbih();
 showScreen("home");
-renderNotify();
-// Первый запуск, место ещё не выбрано: сразу спрашиваем геопозицию (телефон покажет запрос),
-// а в приложении после неё — разрешение на уведомления. Запретил геопозицию — больше сами не спрашиваем
-(async () => {
-  if (!place && !load("azkar-geo-denied", false)) await askLocation(false);
-  else lookupPlaceName();   // место по геопозиции без названия и региона (не было интернета) — уточняем
-  if (LN && !load("azkar-notify-asked", false)) {
-    store("azkar-notify-asked", true);
-    try { await LN.requestPermissions(); } catch (e) {}
-    renderNotify();
-  }
-  scheduleNotifications();
-})();
 </script>
 
 <script>
