@@ -477,13 +477,53 @@ const section = name => console.log("•", name);
   }
 
   // ---------------------------------------------------------------
+  section("Окна: смахнуть пальцем вниз; ползунки размера по 1%");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const g = await ctx.newPage(); g.on("pageerror", e => errs.push(e.message));
+    await g.goto(URL); await g.evaluate(() => localStorage.clear()); await g.reload(); await W(g, 400);
+    const swipe = async (id, from, dist, ms) => g.evaluate(async ([id, from, dist, ms]) => {
+      const el = document.querySelector(`#${id} .sheet`), r = el.getBoundingClientRect();
+      const T = y => new Touch({ identifier: 1, target: el, clientX: r.left + 150, clientY: y });
+      const y0 = r.top + from;
+      el.dispatchEvent(new TouchEvent("touchstart", { touches: [T(y0)], bubbles: true, cancelable: true }));
+      const steps = 8;
+      for (let i = 1; i <= steps; i++) { el.dispatchEvent(new TouchEvent("touchmove", { touches: [T(y0 + dist * i / steps)], bubbles: true, cancelable: true })); await new Promise(f => setTimeout(f, ms / steps)); }
+      el.dispatchEvent(new TouchEvent("touchend", { touches: [], bubbles: true, cancelable: true }));
+    }, [id, from, dist, ms]);
+    await g.click("#tab-settings"); await W(g, 200);
+    // короткий медленный — окно возвращается
+    await g.click("#open-theme"); await W(g, 400);
+    await swipe("theme-sheet", 20, 40, 400); await W(g, 400);
+    check(await g.locator("#theme-sheet").isVisible(), "окно закрылось от короткого движения");
+    check(await g.evaluate(() => document.querySelector("#theme-sheet .sheet").style.transform === ""), "окно не вернулось на место");
+    // длинный — закрывается
+    await swipe("theme-sheet", 20, 220, 300); await W(g, 400);
+    check(await g.locator("#theme-sheet").isHidden(), "окно «Тема» не закрылось смахиванием вниз");
+    // быстрый короткий смах — тоже закрывается
+    await g.click("#open-mode"); await W(g, 400);
+    await swipe("mode-sheet", 20, 60, 60); await W(g, 400);
+    check(await g.locator("#mode-sheet").isHidden(), "окно не закрылось быстрым смахиванием");
+    // после закрытия окно открывается снова нормально
+    await g.click("#open-mode"); await W(g, 400);
+    check(await g.locator("#mode-sheet").isVisible() && await g.evaluate(() => document.querySelector("#mode-sheet .sheet").style.transform === ""), "окно после смахивания открывается сдвинутым");
+    await g.click("#mode-sheet", { position: { x: 10, y: 10 } }); await W(g, 400);
+    // ползунок размера: шаг 1%
+    await g.click("#open-size"); await W(g, 400);
+    await g.focus("#size-ar"); await g.keyboard.press("ArrowRight"); await W(g, 100);
+    check((await g.locator("#size-ar-out").innerText()) === "101%", "ползунок шагает не по 1%: " + await g.locator("#size-ar-out").innerText());
+    // движение по ползунку не закрывает окно
+    await swipe("size-sheet", 140, 200, 300); await W(g, 400);
+    await ctx.close();
+  }
+
   section("Установка на телефон и работа без интернета");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const q = await ctx.newPage(); q.on("pageerror", e => errs.push(e.message));
     await q.goto(URL); await W(q, 1500);
     const name = await q.evaluate(async () => { const r = await fetch(document.querySelector("link[rel=manifest]").href); return r.ok ? (await r.json()).name : null; });
-    check(name === "Азкары", "manifest не загрузился");
+    check(name === "Hisn — азкары", "manifest не загрузился");
     const icons = await q.evaluate(async () => {
       const load = src => new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = src; });
       return { apple: await load(document.querySelector("link[rel=apple-touch-icon]").href),

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Азкары">
+<meta name="apple-mobile-web-app-title" content="Hisn">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
@@ -18,7 +18,7 @@
   body { margin: 0; -webkit-text-size-adjust: 100%; }
   img { max-width: 100%; }
 </style>
-<title>Азкары утра и вечера</title>
+<title>Hisn — азкары утра и вечера</title>
 <script>
 /* Тема ставится самой первой строкой, ещё до того как браузер нарисует страницу, —
    иначе в тёмной теме на долю секунды мелькал бы белый экран */
@@ -175,7 +175,7 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
   content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px);
   border-radius: 10px; background: var(--surface);
   box-shadow: 0 1px 2px rgba(var(--sh), .10), 0 3px 10px rgba(var(--sh), .10);
-  transition: transform .45s cubic-bezier(.34, 1.36, .64, 1);   /* чуть перелетает и возвращается */
+  transition: transform .38s cubic-bezier(.25, .8, .25, 1);   /* мягко тормозит у края, без перелёта: с перелётом на телефоне выезжала за дорожку */
 }
 .set-switch[data-set="full"]::before { transform: translateX(100%); }
 :root[data-theme="dark"] .set-switch::before { background: #343f38; }   /* в тёмной теме фон карточек сливается с дорожкой */
@@ -433,7 +433,7 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 /* Окно выбора, которое выезжает снизу */
 .sheet-back { position: fixed; inset: 0; background: var(--dim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
 .sheet-back { animation: dim-in .25s ease; }
-.sheet-back.closing { animation: dim-out .22s ease forwards; }
+.sheet-back.closing, .sheet-back.closing-drag { animation: dim-out .22s ease forwards; }
 .sheet-back.closing .sheet { animation: down .22s var(--ease) forwards; }
 .sheet {
   width: min(560px, 100%); background: var(--surface); border-radius: 20px 20px 0 0;
@@ -665,11 +665,11 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
     <div class="size-row">
       <div class="size-head"><label for="size-ar">Арабский текст</label><output id="size-ar-out"></output></div>
-      <div class="slider-line"><span class="s ar-glyph">ع</span><input type="range" id="size-ar" data-key="ar" min="0.8" max="1.6" step="0.1"><span class="l ar-glyph">ع</span></div>
+      <div class="slider-line"><span class="s ar-glyph">ع</span><input type="range" id="size-ar" data-key="ar" min="0.8" max="1.6" step="0.01"><span class="l ar-glyph">ع</span></div>
     </div>
     <div class="size-row">
       <div class="size-head"><label for="size-tx">Перевод и транскрипция</label><output id="size-tx-out"></output></div>
-      <div class="slider-line"><span class="s">А</span><input type="range" id="size-tx" data-key="tx" min="0.8" max="1.6" step="0.1"><span class="l">А</span></div>
+      <div class="slider-line"><span class="s">А</span><input type="range" id="size-tx" data-key="tx" min="0.8" max="1.6" step="0.01"><span class="l">А</span></div>
     </div>
     <button class="sheet-btn plain" id="size-reset">Как было</button>
   </div>
@@ -717,8 +717,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     Счётчик
   </button>
   <button class="tab-item" role="tab" id="tab-settings" data-screen="settings">
-    <!-- ползунки: три дорожки с бегунками — настройки в основном про «что показывать» и размер -->
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" opacity=".45"/><circle cx="15.5" cy="6.5" r="2.6" fill="currentColor" stroke="none"/><circle cx="8" cy="12" r="2.6" fill="currentColor" stroke="none"/><circle cx="13" cy="17.5" r="2.6" fill="currentColor" stroke="none"/></svg>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.3 2h3.4l.6 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8c.1.6.1 1.2 0 1.8l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.6 2.6h-3.4l-.6-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.8a6 6 0 0 1 0-1.8l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" transform="translate(0 1)"/></svg>
     Настройки
   </button>
 </nav>
@@ -1255,6 +1254,48 @@ function closeSheet(el = sheet) {
   el.classList.add("closing");
   setTimeout(() => { el.hidden = true; el.classList.remove("closing"); }, 220);
 }
+/* Любое выезжающее окно можно смахнуть пальцем вниз, как в iOS.
+   Окно едет за пальцем; отпустили ниже трети высоты или смахнули быстро — закрывается, иначе возвращается.
+   Не мешаем ползункам размера текста и прокрутке длинных списков внутри окна */
+function closeSheetFrom(back, el) {
+  el.style.transition = "transform .22s cubic-bezier(.3, .7, .3, 1)";
+  el.style.transform = "translateY(100%)";
+  back.classList.add("closing-drag");
+  setTimeout(() => { back.hidden = true; back.classList.remove("closing-drag"); el.style.transition = el.style.transform = ""; }, 220);
+}
+document.querySelectorAll(".sheet-back").forEach(back => {
+  const el = back.querySelector(".sheet");
+  let y0 = null, x0 = 0, t0 = 0, dy = 0, dragging = false;
+  el.addEventListener("touchstart", e => {
+    const tgt = e.target;
+    if (e.touches.length !== 1 || tgt.closest("input[type=range], input[type=search]")) { y0 = null; return; }
+    const list = tgt.closest(".sheet-list, #city-list");
+    if (list && list.scrollTop > 0) { y0 = null; return; }   // список прокручен — сначала он едет вверх
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; t0 = Date.now(); dy = 0; dragging = false;
+  }, { passive: true });
+  el.addEventListener("touchmove", e => {
+    if (y0 === null) return;
+    const ny = e.touches[0].clientY - y0, nx = e.touches[0].clientX - x0;
+    if (!dragging) {
+      if (Math.abs(nx) > Math.abs(ny) || ny < 6) { if (ny < -6 || Math.abs(nx) > 10) y0 = null; return; }
+      dragging = true; el.style.transition = "none";
+    }
+    dy = Math.max(0, ny);
+    el.style.transform = `translateY(${dy}px)`;
+    if (e.cancelable) e.preventDefault();   // пока тянем окно, страница под ним не прокручивается
+  }, { passive: false });
+  const end = () => {
+    if (y0 === null) return;
+    y0 = null;
+    if (!dragging) return;
+    const fast = dy / Math.max(1, Date.now() - t0) > 0.5;
+    if (dy > el.offsetHeight / 3 || (fast && dy > 30)) closeSheetFrom(back, el);
+    else { el.style.transition = "transform .25s cubic-bezier(.3, .7, .3, 1)"; el.style.transform = ""; setTimeout(() => { el.style.transition = ""; }, 260); }
+  };
+  el.addEventListener("touchend", end);
+  el.addEventListener("touchcancel", end);
+});
+
 const sheet = document.getElementById("mode-sheet");
 document.getElementById("open-mode").addEventListener("click", () => { sheet.hidden = false; });
 sheet.addEventListener("click", e => { if (e.target === sheet) closeSheet(); });   // нажали мимо окна — закрыть
@@ -1282,7 +1323,7 @@ const sizeSheet = document.getElementById("size-sheet");
 document.getElementById("open-size").addEventListener("click", () => { sizeSheet.hidden = false; });
 sizeSheet.addEventListener("click", e => { if (e.target === sizeSheet) closeSheet(sizeSheet); });
 document.querySelectorAll("#size-sheet input[type=range]").forEach(r => r.addEventListener("input", () => {
-  size[r.dataset.key] = Math.round(r.value * 10) / 10;   // 1.2000001 → 1.2
+  size[r.dataset.key] = Math.round(r.value * 100) / 100;   // шаг 1%; 1.2300001 → 1.23
   store("azkar-size", size);
   renderSettings();
 }));
