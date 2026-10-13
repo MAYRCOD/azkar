@@ -554,6 +554,14 @@ const section = name => console.log("•", name);
     check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "вкладка «Дуа» не открылась");
     const soon = await d.locator(".dua-row.soon").count(), ready = await d.locator(".dua-row:not(.soon)").count();
     check(ready === 32 && soon === 1, `тем с текстами ${ready}, «скоро» ${soon}`);
+    // «3 дуа» справа всегда в одну строку — даже на узком экране и с длинным названием темы
+    for (const w of [320, 390]) {
+      await d.setViewportSize({ width: w, height: 800 }); await W(d, 200);
+      const wrapped = await d.evaluate(() => [...document.querySelectorAll(".dua-row .value")]
+        .filter(v => v.getBoundingClientRect().height > parseFloat(getComputedStyle(v).lineHeight) * 1.5 + 2).map(v => v.textContent));
+      check(wrapped.length === 0, `${w}px: число дуа переносится на 2 строки: ` + JSON.stringify(wrapped));
+    }
+    await d.setViewportSize({ width: 390, height: 844 }); await W(d, 200);
     await d.click('[data-cat="eat-before"]'); await W(d, 600);
     check(await d.locator("#dua-read").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "тема не открылась страницей");
     check((await d.locator(".dua-card").count()) === 2 && (await d.locator("#dua-read .counter").count()) === 0, "на странице темы не 2 карточки или есть счётчик");

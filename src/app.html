@@ -395,7 +395,7 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
   width: 100%; min-height: 48px; padding: 8px 14px; background: none; border: 0; text-align: left;
 }
 .row + .row { border-top: 1px solid var(--line); }
-.row .value { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.row .value { color: var(--muted); display: flex; align-items: center; gap: 6px; flex: none; white-space: nowrap; }   /* «3 дуа» не переносится на две строки */
 .row .value::after { content: "›"; font-size: 20px; line-height: 1; color: var(--inactive); }
 
 /* ---------- Дуа: список тем, как настройки iPhone ---------- */
