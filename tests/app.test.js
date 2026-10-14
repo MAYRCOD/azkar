@@ -553,7 +553,7 @@ const section = name => console.log("•", name);
     await d.click("#tab-duas"); await W(d, 500);
     check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "вкладка «Дуа» не открылась");
     const soon = await d.locator(".dua-row.soon").count(), ready = await d.locator(".dua-row:not(.soon)").count();
-    check(ready === 71 && soon === 0, `тем с текстами ${ready}, «скоро» ${soon}`);
+    check(ready === 74 && soon === 0, `тем с текстами ${ready}, «скоро» ${soon}`);
     // «3 дуа» справа всегда в одну строку — даже на узком экране и с длинным названием темы
     for (const w of [320, 390]) {
       await d.setViewportSize({ width: w, height: 800 }); await W(d, 200);
@@ -585,7 +585,7 @@ const section = name => console.log("•", name);
     check(!(await d.locator('[data-cat="fav"]').count()), "пустое «Избранное» осталось в списке");
     await d.fill("#dua-search", "сон"); await W(d, 200);
     const found = await d.locator(".dua-row").allInnerTexts();
-    check(found.length === 2 && found.every(t => /сном|пробуждении/.test(t)), "поиск «сон» нашёл не то: " + JSON.stringify(found));
+    check(found.length === 3 && found.every(t => /сном|пробуждении|ночью/.test(t)), "поиск «сон» нашёл не то: " + JSON.stringify(found));
     await d.fill("#dua-search", "абракадабра"); await W(d, 200);
     check(await d.locator(".dua-empty").isVisible(), "при пустом поиске нет «Ничего не найдено»");
     await d.fill("#dua-search", ""); await d.click("#tab-home"); await W(d, 400);
