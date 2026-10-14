@@ -564,7 +564,7 @@ const section = name => console.log("•", name);
     await d.setViewportSize({ width: 390, height: 844 }); await W(d, 200);
     await d.click('[data-cat="eat-before"]'); await W(d, 600);
     check(await d.locator("#dua-read").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "тема не открылась страницей");
-    check((await d.locator(".dua-card").count()) === 4 && (await d.locator("#dua-read .counter").count()) === 0, "на странице темы не 4 карточки или есть счётчик");
+    check((await d.locator(".dua-card").count()) === 2 && (await d.locator("#dua-read .counter").count()) === 0, "на странице темы не 2 карточки или есть счётчик");
     check((await d.locator(".dua-card").nth(1).locator(".dua-head b").innerText()) === "Если забыл сказать в начале", "нет заголовка у второго дуа");
     check(!(await d.locator(".dua-card").first().locator(".tr").isVisible()), "транскрипция не свёрнута");
     await d.locator(".dua-card").first().locator("summary").click(); await W(d, 200);
