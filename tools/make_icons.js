@@ -1,4 +1,4 @@
-// Делает иконки приложения из логотипа src/logo/logo.svg.
+// Делает иконки «мечеть» (src/logo/mosque) из логотипа src/logo/logo.svg. Сейчас стоит другая иконка — см. tools/set_icon.py.
 // Рисует SVG в настоящем браузере, поэтому иконки получаются чёткими в любом размере.
 // Запуск из корня репозитория:  NODE_PATH=tests/node_modules node tools/make_icons.js
 //
