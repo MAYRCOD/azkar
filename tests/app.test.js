@@ -553,7 +553,7 @@ const section = name => console.log("•", name);
     await d.click("#tab-duas"); await W(d, 500);
     check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "вкладка «Дуа» не открылась");
     const soon = await d.locator(".dua-row.soon").count(), ready = await d.locator(".dua-row:not(.soon)").count();
-    check(ready === 92 && soon === 0, `тем с текстами ${ready}, «скоро» ${soon}`);
+    check(ready === 100 && soon === 0, `тем с текстами ${ready}, «скоро» ${soon}`);
     // «3 дуа» справа всегда в одну строку — даже на узком экране и с длинным названием темы
     for (const w of [320, 390]) {
       await d.setViewportSize({ width: w, height: 800 }); await W(d, 200);
