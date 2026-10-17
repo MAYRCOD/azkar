@@ -616,6 +616,69 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  section("Напоминания: только в приложении, разрешение, расписание на 30 дней, без напоминания после прочтения");
+  {
+    // На сайте раздела нет
+    const ctx0 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const w = await ctx0.newPage(); w.on("pageerror", e => errs.push(e.message));
+    await w.goto(URL); await W(w, 300);
+    check(await w.locator("#remind-group").isHidden(), "на сайте видны напоминания, хотя там они не работают");
+    await ctx0.close();
+    // «Приложение»: подменяем Capacitor и плагин уведомлений, запоминаем, что приложение им передаёт
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await ctx.addInitScript(() => {
+      window.__n = { pending: [], asked: 0, grant: "granted", listeners: {} };
+      const N = {
+        requestPermissions: async () => { window.__n.asked++; return { display: window.__n.grant }; },
+        cancel: async ({ notifications }) => { const ids = notifications.map(x => x.id); window.__n.pending = window.__n.pending.filter(x => !ids.includes(x.id)); },
+        schedule: async ({ notifications }) => { window.__n.pending.push(...notifications); },
+        addListener: (name, fn) => { window.__n.listeners[name] = fn; },
+      };
+      window.Capacitor = { isNativePlatform: () => true, Plugins: { Haptics: { impact: async () => {} }, LocalNotifications: N } };
+    });
+    const a = await ctx.newPage(); a.on("pageerror", e => errs.push(e.message));
+    await a.goto(URL); await a.evaluate(() => localStorage.clear()); await a.reload(); await W(a, 400);
+    await a.click("#tab-settings"); await W(a, 400);
+    check(await a.locator("#remind-group").isVisible(), "в приложении нет раздела «Напоминания»");
+    check(await a.locator("#rt-morning").isHidden(), "время видно, хотя напоминание выключено");
+    // отказали в разрешении — переключатель остаётся выключенным
+    await a.evaluate(() => window.__n.grant = "denied");
+    await a.click("#rs-morning"); await W(a, 300);
+    check((await a.getAttribute("#rs-morning", "aria-checked")) === "false", "без разрешения напоминание включилось");
+    // разрешили — 30 утренних уведомлений, первое — не раньше, чем сейчас
+    await a.evaluate(() => window.__n.grant = "granted");
+    await a.click("#rs-morning"); await W(a, 300);
+    let st = await a.evaluate(() => ({ n: __n.pending.length, ids: __n.pending.map(x => x.id), open: __n.pending.every(x => x.extra.open === "morning"),
+      future: __n.pending.every(x => new Date(x.schedule.at) > new Date()), times: [...new Set(__n.pending.map(x => new Date(x.schedule.at).getHours() + ":" + new Date(x.schedule.at).getMinutes()))] }));
+    check(st.n >= 29 && st.n <= 30 && st.open && st.future && st.times.join() === "7:0", "утренние напоминания расписаны неверно: " + JSON.stringify(st).slice(0, 200));
+    check(await a.locator("#rt-morning").isVisible(), "после включения не видно время");
+    // поменяли время — всё переставлено, повторов нет
+    await a.fill("#rt-morning", "05:45"); await a.dispatchEvent("#rt-morning", "change"); await W(a, 300);
+    st = await a.evaluate(() => ({ n: __n.pending.length, uniq: new Set(__n.pending.map(x => x.id)).size, times: [...new Set(__n.pending.map(x => { const d = new Date(x.schedule.at); return d.getHours() + ":" + d.getMinutes(); }))] }));
+    check(st.n === st.uniq && st.times.join() === "5:45", "после смены времени напоминания задвоились или время не то: " + JSON.stringify(st));
+    // вечер тоже
+    await a.click("#rs-evening"); await W(a, 300);
+    check(await a.evaluate(() => __n.pending.filter(x => x.extra.open === "evening").length >= 29), "вечерние напоминания не поставлены");
+    // утренние прочитаны → сегодняшнего утреннего напоминания нет, завтрашнее есть
+    await a.evaluate(() => { const c = {}; setItems("morning").forEach(z => c["morning:" + z.id] = z.times); localStorage.setItem(KEY, JSON.stringify(c)); counts = c; updateHome(); });
+    await W(a, 300);
+    st = await a.evaluate(() => { const t = new Date(), same = d => d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+      const m = __n.pending.filter(x => x.extra.open === "morning").map(x => new Date(x.schedule.at));
+      return { today: m.some(same), tomorrow: m.some(d => d.getDate() === new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1).getDate()) }; });
+    check(!st.today && st.tomorrow, "после прочтения утренних сегодняшнее напоминание не убрано (или пропало завтрашнее): " + JSON.stringify(st));
+    // нажали на уведомление — открылись вечерние азкары
+    await a.evaluate(() => __n.listeners.localNotificationActionPerformed({ notification: { extra: { open: "evening" } } })); await W(a, 600);
+    check(await a.locator("#reader").isVisible() && await a.evaluate(() => time === "evening"), "нажатие на уведомление не открыло вечерние азкары");
+    // выключили утро — утренних не осталось
+    await a.click("#back").catch(() => {}); await W(a, 300); await a.click("#tab-settings"); await W(a, 400);
+    await a.click("#rs-morning"); await W(a, 300);
+    check(await a.evaluate(() => !__n.pending.some(x => x.extra.open === "morning")), "после выключения утренние напоминания остались");
+    // настройки сохраняются
+    await a.reload(); await W(a, 400);
+    check(await a.evaluate(() => !remind.morning.on && remind.morning.time === "05:45" && remind.evening.on), "настройки напоминаний не сохранились");
+    await ctx.close();
+  }
+
   section("Установка на телефон и работа без интернета");
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
