@@ -506,6 +506,7 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 /* Части дуа, дополненные по книге из других хадисов: выделены цветом, после них — номер.
    Нажал на номер — всплывает, кто передал эту часть */
 .add { color: var(--accent-ink); }
+.src-add { display: block; color: var(--accent-ink); }   /* источники вставок под основным источником */
 .add-ref {
   position: relative; display: inline-grid; place-items: center; vertical-align: .55em;
   min-width: 17px; height: 17px; padding: 0 4px; margin: 0 3px; border: 0; border-radius: 999px;
@@ -3186,7 +3187,7 @@ function openDua(id) {
       ${z.ru ? `<p class="ru">${addMarks(z.ru, z)}</p>` : ""}
       ${z.tr ? `<details class="dua-tr"><summary>Транскрипция</summary><p class="tr">${addMarks(z.tr, z)}</p></details>` : ""}
       <div class="dua-foot">
-        <span class="src">${z.src}</span>
+        <span class="src">${z.src}${addLines(z).map(l => `<span class="src-add">${l}</span>`).join("")}</span>
         <span class="dua-acts">
           <button class="dua-act" data-act="copy" aria-label="Скопировать">${DUA_BTN.copy}</button>
           <button class="dua-act" data-act="share" aria-label="Поделиться">${DUA_BTN.share}</button>
@@ -3197,20 +3198,25 @@ function openDua(id) {
   if (document.getElementById("dua-read").hidden) showScreen("dua-read");
 }
 // Дополненные части дуа: в данных они в двойных фигурных скобках «{{…}}», а в z.adds
-// по порядку записано, кто передал каждую часть. Одинаковый источник — одинаковый номер
-const addSrcs = z => [...new Set(z.adds || [])];
+// по порядку записано, кто передал каждую часть. Вставки нумеруются по порядку: 1, 2, 3…
 function addMarks(html, z) {
   if (!z.adds) return html;
-  const u = addSrcs(z); let k = 0;
+  let k = 0;
   return html.replace(/\{\{([\s\S]*?)\}\}/g, (_, t) => {
-    const n = u.indexOf(z.adds[k++]) + 1;
+    const n = ++k;
     return `<span class="add">${t}</span><button class="add-ref" data-n="${n}" aria-label="Кто передал эту часть">${n}</button>`;
   });
 }
 const plain = t => t && t.replace(/\{\{|\}\}/g, "");
+// Строки источников вставок: «1, 2, 3 — Муслим 763» (одинаковый источник — в одну строку)
+function addLines(z) {
+  const g = new Map();
+  (z.adds || []).forEach((src, i) => g.set(src, [...(g.get(src) || []), i + 1]));
+  return [...g].map(([src, ns]) => ns.join(", ") + " — " + src);
+}
 // Текст для копирования и «поделиться»: всё, что на карточке (без скобок-пометок)
 function duaText(z) {
-  const src = "Источник: " + z.src + (z.adds ? "\nДополнено по: " + addSrcs(z).join("; ") : "");
+  const src = "Источник: " + z.src + (z.adds ? "\nДополнения: " + addLines(z).join("; ") : "");
   return [z.title, z.how, plain(z.ar), [plain(z.ru), plain(z.tr)].filter(Boolean).join("\n"), src].filter(Boolean).join("\n\n");
 }
 // Подсказка над номером: кто передал эту часть дуа
@@ -3225,7 +3231,7 @@ function openAddPop(b) {
   const z = DUA_ALL.find(x => x.id === b.closest(".dua-card").dataset.id);
   const pop = document.createElement("div");
   pop.className = "add-pop"; pop.id = "add-pop"; pop.setAttribute("role", "status");
-  pop.innerHTML = `<small>Эту часть дуа передал</small>${addSrcs(z)[b.dataset.n - 1]}`;
+  pop.innerHTML = `<small>Эту часть дуа передал</small>${z.adds[b.dataset.n - 1]}`;
   document.body.appendChild(pop); b.classList.add("on");
   const r = b.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
   const x = Math.max(12, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 12));

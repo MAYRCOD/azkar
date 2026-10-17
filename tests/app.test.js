@@ -566,6 +566,10 @@ const section = name => console.log("•", name);
     check((await d.locator("#add-pop").innerText()).includes("ан-Насаи 1619"), "номер дополнения не показывает, кто передал");
     await d.mouse.click(5, 5); await W(d, 200);
     check(!(await d.locator("#add-pop").count()), "подсказка о дополнении не закрывается");
+    await d.evaluate(() => openDua("mosque-go")); await W(d, 600);
+    const goCard = d.locator('#dua-cards .dua-card[data-id="d-m-go"]');
+    check((await goCard.locator(".ar .add-ref").allInnerTexts()).join() === "1,2,3", "вставки должны нумероваться 1, 2, 3");
+    check((await goCard.locator(".src").innerText()).includes("1, 2, 3 — Муслим 763"), "в источниках нет строки «1, 2, 3 — Муслим 763»");
     await d.click("#dua-back").catch(() => {}); await W(d, 300);
     // «3 дуа» справа всегда в одну строку — даже на узком экране и с длинным названием темы
     for (const w of [320, 390]) {
