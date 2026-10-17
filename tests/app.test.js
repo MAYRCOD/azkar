@@ -562,14 +562,19 @@ const section = name => console.log("•", name);
     check(!strayBraces.length, "скобки-пометки без источников: " + strayBraces.join(", "));
     await d.evaluate(() => openDua("pr-open")); await W(d, 600);
     check(!(await d.locator("#dua-cards").innerText()).includes("{{"), "на экране видны скобки «{{»");
-    await d.locator('#dua-cards .dua-card[data-id="d-pr-nur"] .ar .add-ref').nth(2).click(); await W(d, 300);
+    await d.locator('#dua-cards .dua-card[data-id="d-pr-nur"] .ru .add-ref').nth(2).click(); await W(d, 300);
     check((await d.locator("#add-pop").innerText()).includes("ан-Насаи 1619"), "номер дополнения не показывает, кто передал");
     await d.mouse.click(5, 5); await W(d, 200);
     check(!(await d.locator("#add-pop").count()), "подсказка о дополнении не закрывается");
-    await d.evaluate(() => openDua("mosque-go")); await W(d, 600);
-    const goCard = d.locator('#dua-cards .dua-card[data-id="d-m-go"]');
-    check((await goCard.locator(".ar .add-ref").allInnerTexts()).join() === "1,2,3", "вставки должны нумероваться 1, 2, 3");
-    check((await goCard.locator(".src").innerText()).includes("1, 2, 3 — Муслим 763"), "в источниках нет строки «1, 2, 3 — Муслим 763»");
+    const nur = d.locator('#dua-cards .dua-card[data-id="d-pr-nur"]');
+    check(!(await nur.locator(".ar .add-ref, .tr .add-ref, .src .add-ref").count()) && (await nur.locator(".ar .add").count()) === 4,
+      "номера вставок должны быть только в переводе, а зелёный цвет — и в арабском");
+    check((await nur.locator(".ru .add-ref").allInnerTexts()).join() === "1,2,3,4", "в переводе вставки должны нумероваться 1, 2, 3, 4");
+    check(!/\d —/.test(await nur.locator(".src").innerText()), "в источниках не должно быть нумерации вставок");
+    await d.evaluate(() => openDua("adhan")); await W(d, 600);
+    await d.locator('#dua-cards .dua-card[data-id="d-a-wasila"] .ru .add-ref').click(); await W(d, 300);
+    check((await d.locator("#add-pop").innerText()).includes("Ибн Баз"), "у дуа после азана нет пояснения про аль-Байхаки и Ибн База");
+    await d.mouse.click(5, 5); await W(d, 200);
     await d.click("#dua-back").catch(() => {}); await W(d, 300);
     // «3 дуа» справа всегда в одну строку — даже на узком экране и с длинным названием темы
     for (const w of [320, 390]) {
