@@ -561,6 +561,10 @@ const section = name => console.log("•", name);
     const strayBraces = await d.evaluate(() => DUA_ALL.filter(z => !z.adds && /\{\{|\}\}/.test([z.ar, z.ru, z.tr].join(""))).map(z => z.id));
     check(!strayBraces.length, "скобки-пометки без источников: " + strayBraces.join(", "));
     await d.evaluate(() => openDua("pr-open")); await W(d, 600);
+    check(await d.evaluate(() => document.getElementById("tabbar").classList.contains("away")), "на странице темы дуа нижняя панель не уехала");
+    await d.click("#dua-back"); await W(d, 400);
+    check(await d.evaluate(() => !document.getElementById("tabbar").classList.contains("away")), "после «‹ Дуа» нижняя панель не вернулась");
+    await d.evaluate(() => openDua("pr-open")); await W(d, 600);
     check(!(await d.locator("#dua-cards").innerText()).includes("{{"), "на экране видны скобки «{{»");
     await d.locator('#dua-cards .dua-card[data-id="d-pr-nur"] .ru .add-ref').nth(2).click(); await W(d, 300);
     check((await d.locator("#add-pop").innerText()).includes("ан-Насаи 1619"), "номер дополнения не показывает, кто передал");
@@ -642,6 +646,7 @@ const section = name => console.log("•", name);
     await a.goto(URL); await a.evaluate(() => localStorage.clear()); await a.reload(); await W(a, 400);
     await a.click("#tab-settings"); await W(a, 400);
     check(await a.locator("#remind-group").isVisible(), "в приложении нет раздела «Напоминания»");
+    check(await a.evaluate(() => document.querySelector("#settings .group").id === "remind-group"), "«Напоминания» должны быть в самом верху настроек");
     check(await a.locator("#rt-morning").isHidden(), "время видно, хотя напоминание выключено");
     // отказали в разрешении — переключатель остаётся выключенным
     await a.evaluate(() => window.__n.grant = "denied");
