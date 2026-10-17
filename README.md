@@ -19,7 +19,8 @@ azkar/
 ├── manifest.webmanifest  ← название и иконка для установки на телефон
 ├── icon-*.png, apple-touch-icon.png  ← иконки (делаются из src/logo/logo.svg)
 ├── src/                  ← ИСХОДНИКИ: всё правится здесь
-│   ├── app.html          ← разметка, стили, логика и тексты азкаров (список AZKAR)
+│   ├── app.html          ← разметка, стили и логика
+│   ├── data/             ← ТЕКСТЫ: азкары, аяты дня, дуа (JSON, см. src/data/README.md)
 │   ├── pwa-head.html     ← «шапка» страницы для телефона
 │   ├── fonts/            ← шрифты (встраиваются в index.html при сборке)
 │   ├── images/           ← картинки для кнопок утро/вечер
@@ -36,7 +37,7 @@ azkar/
 ## Как внести изменение
 
 ```bash
-# 1. Поправить src/app.html
+# 1. Поправить src/app.html (или тексты в src/data/*.json)
 # 2. Собрать (номер версии — на 1 больше прежнего)
 python3 tools/build.py --version 4
 # 3. Проверить (первый раз: cd tests && npm install)

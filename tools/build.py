@@ -1,8 +1,9 @@
 """
 Сборка приложения «Азкары».
 
-Берёт исходник src/app.html, встраивает в него шрифты и картинки
-(вместо меток __FONT__, __IMG_MORNING__ и т.д.) и записывает:
+Берёт исходник src/app.html, встраивает в него тексты из src/data/*.json
+(вместо меток __AZKAR_JSON__ и т.д.), шрифты и картинки (__FONT__, __IMG_MORNING__…)
+и записывает:
 
   index.html          — готовое приложение для GitHub Pages и телефона
   build/preview.html  — то же без «шапки» для телефона (для предпросмотра в Claude)
@@ -15,6 +16,7 @@
 """
 import argparse
 import base64
+import json
 import pathlib
 import re
 
@@ -30,6 +32,14 @@ EMBED = {
     "__IMG_EVENING__": SRC / "images" / "evening.jpg",
 }
 
+# метка в исходнике → файл с данными (JSON), который вставляем как есть, текстом.
+# JSON — это готовый кусок JavaScript, поэтому в app.html получается: const AYAT = [ ... ];
+DATA = {
+    "__AZKAR_JSON__": SRC / "data" / "azkar.json",
+    "__AYAT_JSON__": SRC / "data" / "ayat.json",
+    "__DUA_JSON__": SRC / "data" / "dua.json",
+}
+
 PWA_TAIL = """
 <script>
   // Включаем офлайн-режим — только на сайте (http/https). Внутри iOS-приложения файла sw.js нет,
@@ -43,6 +53,15 @@ PWA_TAIL = """
 
 def build_preview() -> str:
     html = (SRC / "app.html").read_text(encoding="utf-8")
+    for mark, path in DATA.items():
+        assert mark in html, f"в src/app.html нет метки {mark}"
+        text = path.read_text(encoding="utf-8")
+        try:
+            data = json.loads(text)   # проверяем файл до вставки: лишняя запятая или кавычка — понятная ошибка здесь,
+        except json.JSONDecodeError as e:   # а не «белый экран» в приложении
+            raise SystemExit(f"Ошибка в {path.relative_to(ROOT)}: строка {e.lineno}, столбец {e.colno}: {e.msg}")
+        # в приложение — без отступов и переносов (файл меньше), сами тексты не меняются
+        html = html.replace(mark, json.dumps(data, ensure_ascii=False, separators=(",", ":")))
     for mark, path in EMBED.items():
         assert mark in html, f"в src/app.html нет метки {mark}"
         html = html.replace(mark, base64.b64encode(path.read_bytes()).decode())
