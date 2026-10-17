@@ -53,11 +53,11 @@ const section = name => console.log("•", name);
     dup: AZKAR.length - new Set(AZKAR.map(z => z.id)).size }));
   check(counts.m === 17, `основных утренних не 17, а ${counts.m}`);
   check(counts.e === 16, `основных вечерних не 16, а ${counts.e}`);
-  check(counts.mf === 17 + 10 && counts.ef === 16 + 7, `всего утренних (основные + только полные) не 27 или вечерних не 23: ${counts.mf}/${counts.ef}`);
+  check(counts.mf === 17 + 10 && counts.ef === 16 + 8, `всего утренних (основные + только полные) не 27 или вечерних не 24: ${counts.mf}/${counts.ef}`);
   check(await p.evaluate(() => FULL_ORDER.morning.join(",")) === "m-ikhlas,m-falaq,m-nas,m-sayyid,m-adada,m-hasbi,m-bismillah,m-radiitu,m-bika,m-hayyu,fm-fath,m-fitra,m-asbahna,m-alim,f-14,m-subhan100,m-kursi,f-17,f-18,f-19,f-20,f-21,m-afiya,fm-ilm,fm-istighfar,fm-salawat", "полные утренние: не тот порядок, что в видео");
   check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("morning") && !z.full && z.id !== "m-tahlil10").every(z => FULL_ORDER.morning.includes(z.id))), "не все основные утренние входят в полные");
   check(await p.evaluate(() => { const a = AZKAR.find(z => z.id === "m-tahlil10"), b = AZKAR.find(z => z.id === "f-14"); return b.times === 100 && a.times === 10 && ["ar","ru","tr","src"].every(k => a[k] === b[k]); }), "«Ля иляха илля-Ллах» в полных: не 100 раз или текст отличается от основных");
-  check(await p.evaluate(() => FULL_ORDER.evening.join(",")) === "e-ikhlas,e-falaq,e-nas,e-sayyid,e-hasbi,e-bismillah,e-radiitu,e-bika,fe-ushhiduka,e-hayyu,fe-fath,fe-maamsa,e-alim,fe-tahlil100,e-subhan100,e-kursi,fe-baqara285,fe-baqara286,f-19,f-20,f-21,e-amsayna,e-kalimat,e-afiya,fe-salawat", "полные вечерние: не тот порядок, что в видео");
+  check(await p.evaluate(() => FULL_ORDER.evening.join(",")) === "e-ikhlas,e-falaq,e-nas,e-sayyid,e-hasbi,e-bismillah,e-radiitu,e-bika,fe-ushhiduka,e-hayyu,fe-fath,fe-fitra,fe-maamsa,e-alim,fe-tahlil100,e-subhan100,e-kursi,fe-baqara285,fe-baqara286,f-19,f-20,f-21,e-amsayna,e-kalimat,e-afiya,fe-salawat", "полные вечерние: не тот порядок, что в видео");
   check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("evening") && !z.full && z.id !== "e-tahlil10").every(z => FULL_ORDER.evening.includes(z.id))), "не все основные вечерние входят в полные");
   check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("evening") && !z.full).map(z => z.id).join(",")) === "e-ikhlas,e-falaq,e-nas,e-sayyid,e-hasbi,e-bismillah,e-radiitu,e-bika,e-hayyu,e-alim,e-tahlil10,e-subhan100,e-kursi,e-amsayna,e-kalimat,e-afiya", "основные вечерние не в порядке полных");
   check(counts.dup === 0, "повторяются id азкаров");
@@ -68,7 +68,7 @@ const section = name => console.log("•", name);
     check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Основные", "по умолчанию не «Основные»");
     check((await p.locator("#count-morning").innerText()) === "17 азкаров" && (await p.locator("#count-evening").innerText()) === "16 азкаров", "неверное число на кнопках (основные)");
     await p.click('.set-opt[data-set="full"]'); await W(p, 500);
-    check((await p.locator("#count-morning").innerText()) === "26 азкаров" && (await p.locator("#count-evening").innerText()) === "25 азкаров", "неверное число на кнопках (полные): " + await p.locator("#count-morning").innerText() + " / " + await p.locator("#count-evening").innerText());
+    check((await p.locator("#count-morning").innerText()) === "26 азкаров" && (await p.locator("#count-evening").innerText()) === "26 азкаров", "неверное число на кнопках (полные): " + await p.locator("#count-morning").innerText() + " / " + await p.locator("#count-evening").innerText());
     // таблетка переехала вправо
     const pill = await p.evaluate(() => getComputedStyle(document.getElementById("set-switch"), "::before").transform);
     check(pill !== "none", "подложка переключателя не переехала");
@@ -554,6 +554,19 @@ const section = name => console.log("•", name);
     check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "вкладка «Дуа» не открылась");
     const soon = await d.locator(".dua-row.soon").count(), ready = await d.locator(".dua-row:not(.soon)").count();
     check(ready === 101 && soon === 0, `тем с текстами ${ready}, «скоро» ${soon}`);
+    // дополненные части: пометок «{{…}}» столько же, сколько источников, и на экране скобок не видно
+    const badAdds = await d.evaluate(() => DUA_ALL.filter(z => z.adds).filter(z =>
+      ["ar", "ru", "tr"].some(f => (z[f].match(/\{\{/g) || []).length !== z.adds.length || (z[f].match(/\}\}/g) || []).length !== z.adds.length)).map(z => z.id));
+    check(!badAdds.length, "пометки дополнений не совпадают с источниками: " + badAdds.join(", "));
+    const strayBraces = await d.evaluate(() => DUA_ALL.filter(z => !z.adds && /\{\{|\}\}/.test([z.ar, z.ru, z.tr].join(""))).map(z => z.id));
+    check(!strayBraces.length, "скобки-пометки без источников: " + strayBraces.join(", "));
+    await d.evaluate(() => openDua("pr-open")); await W(d, 600);
+    check(!(await d.locator("#dua-cards").innerText()).includes("{{"), "на экране видны скобки «{{»");
+    await d.locator('#dua-cards .dua-card[data-id="d-pr-nur"] .ar .add-ref').nth(2).click(); await W(d, 300);
+    check((await d.locator("#add-pop").innerText()).includes("ан-Насаи 1619"), "номер дополнения не показывает, кто передал");
+    await d.mouse.click(5, 5); await W(d, 200);
+    check(!(await d.locator("#add-pop").count()), "подсказка о дополнении не закрывается");
+    await d.click("#dua-back").catch(() => {}); await W(d, 300);
     // «3 дуа» справа всегда в одну строку — даже на узком экране и с длинным названием темы
     for (const w of [320, 390]) {
       await d.setViewportSize({ width: w, height: 800 }); await W(d, 200);
