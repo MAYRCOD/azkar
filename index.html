@@ -417,9 +417,16 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .row + .row { border-top: 1px solid var(--line); }
 /* Напоминания: время (системный выбор времени) и переключатель в одной строке */
 .remind-ctl { display: flex; align-items: center; gap: 10px; flex: none; }
+/* Время — два выпадающих списка (часы и минуты): всегда 24 часа, без AM/PM,
+   на iPhone при нажатии открывается системное колесо выбора */
 .remind-time {
-  font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--accent-ink);
-  background: var(--press); border: 0; border-radius: 8px; padding: 5px 8px; min-height: 32px;
+  display: inline-flex; align-items: center; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--accent-ink);
+  background: var(--press); border-radius: 8px; padding: 0 4px; min-height: 32px;
+}
+.remind-time[hidden] { display: none; }
+.remind-time select {
+  appearance: none; -webkit-appearance: none; border: 0; background: none; color: inherit;
+  font: inherit; font-weight: 700; padding: 5px 1px; text-align: center;
 }
 .group-note { margin: 0; padding-inline: 14px; font-size: 12px; color: var(--muted); line-height: 1.4; }
 .row .value { color: var(--muted); display: flex; align-items: center; gap: 6px; flex: none; white-space: nowrap; }   /* «3 дуа» не переносится на две строки */
@@ -780,10 +787,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <span class="group-title">Напоминания</span>
     <div class="rows">
       <div class="row"><span class="lbl"><span class="tile tile-orange" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></span><span id="lbl-rm-morning">Утренние азкары</span></span>
-        <span class="remind-ctl"><input type="time" class="remind-time" id="rt-morning" aria-label="Время напоминания об утренних азкарах" hidden>
+        <span class="remind-ctl"><span class="remind-time" id="rt-morning" data-time="morning" hidden><select class="rt-h" aria-label="Час напоминания (утренние)"></select>:<select class="rt-m" aria-label="Минуты напоминания (утренние)"></select></span>
         <button class="switch remind-sw" role="switch" id="rs-morning" data-time="morning" aria-labelledby="lbl-rm-morning"></button></span></div>
       <div class="row"><span class="lbl"><span class="tile tile-purple" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.6A8.3 8.3 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/></svg></span><span id="lbl-rm-evening">Вечерние азкары</span></span>
-        <span class="remind-ctl"><input type="time" class="remind-time" id="rt-evening" aria-label="Время напоминания о вечерних азкарах" hidden>
+        <span class="remind-ctl"><span class="remind-time" id="rt-evening" data-time="evening" hidden><select class="rt-h" aria-label="Час напоминания (вечерние)"></select>:<select class="rt-m" aria-label="Минуты напоминания (вечерние)"></select></span>
         <button class="switch remind-sw" role="switch" id="rs-evening" data-time="evening" aria-labelledby="lbl-rm-evening"></button></span></div>
     </div>
     <p class="group-note">Если азкары уже прочитаны, в этот день напоминания не будет.</p>
@@ -3251,7 +3258,12 @@ function openAddPop(b) {
   addPopTop = r.top;
   haptic("tap");
 }
-document.addEventListener("click", e => { if (!e.target.closest(".add-ref, .add-pop")) closeAddPop(); }, true);
+// Нажали в другом месте — закрываем. Щелчок «вибрации» на сайте не считаем: на iPhone вибрация —
+// это нажатие на скрытый переключатель, и без этой проверки подсказка закрывалась сразу же
+document.addEventListener("click", e => {
+  if (e.target.closest(".add-ref, .add-pop") || !e.isTrusted || hapticLabel.contains(e.target)) return;
+  closeAddPop();
+}, true);
 // при прокрутке закрываем, но только если номер правда сдвинулся (фокус на кнопке тоже даёт «scroll»)
 document.addEventListener("scroll", () => {
   const b = document.querySelector(".add-ref.on");
@@ -3629,8 +3641,9 @@ function renderRemind() {
   document.getElementById("remind-group").hidden = !NOTIF;
   for (const t of ["morning", "evening"]) {
     document.getElementById("rs-" + t).setAttribute("aria-checked", remind[t].on ? "true" : "false");
-    const inp = document.getElementById("rt-" + t);
-    inp.value = remind[t].time; inp.hidden = !remind[t].on;
+    const box = document.getElementById("rt-" + t), [h, m] = remind[t].time.split(":");
+    box.querySelector(".rt-h").value = h; box.querySelector(".rt-m").value = m;
+    box.hidden = !remind[t].on;
   }
 }
 // Составить список уведомлений заново (старые наши — убрать, новые — поставить)
@@ -3669,12 +3682,17 @@ document.querySelectorAll(".remind-sw").forEach(sw => sw.addEventListener("click
   scheduleReminders();
   if (remind[t].on) toast("Напомню в " + remind[t].time);
 }));
-document.querySelectorAll(".remind-time").forEach(inp => inp.addEventListener("change", () => {
-  if (!inp.value) { inp.value = remind[inp.id.slice(3)].time; return; }   // «очистить» время нельзя
-  remind[inp.id.slice(3)].time = inp.value;
-  store("azkar-remind", remind);
-  scheduleReminders();
-}));
+// Списки часов (00–23) и минут (00–59)
+const pad2 = n => String(n).padStart(2, "0");
+document.querySelectorAll(".remind-time").forEach(box => {
+  box.querySelector(".rt-h").innerHTML = Array.from({ length: 24 }, (_, i) => `<option>${pad2(i)}</option>`).join("");
+  box.querySelector(".rt-m").innerHTML = Array.from({ length: 60 }, (_, i) => `<option>${pad2(i)}</option>`).join("");
+  box.addEventListener("change", () => {
+    remind[box.dataset.time].time = box.querySelector(".rt-h").value + ":" + box.querySelector(".rt-m").value;
+    store("azkar-remind", remind);
+    scheduleReminders();
+  });
+});
 // Нажали на уведомление — сразу открываем нужные азкары
 if (NOTIF) NOTIF.addListener("localNotificationActionPerformed", e => {
   const t = e && e.notification && e.notification.extra && e.notification.extra.open;

@@ -564,6 +564,8 @@ const section = name => console.log("•", name);
     check(!(await d.locator("#dua-cards").innerText()).includes("{{"), "на экране видны скобки «{{»");
     await d.locator('#dua-cards .dua-card[data-id="d-pr-nur"] .ru .add-ref').nth(2).click(); await W(d, 300);
     check((await d.locator("#add-pop").innerText()).includes("ан-Насаи 1619"), "номер дополнения не показывает, кто передал");
+    await d.evaluate(() => hapticLabel.click()); await W(d, 100);
+    check(await d.locator("#add-pop").count() === 1, "подсказка закрывается от щелчка «вибрации» (на iPhone не открылась бы)");
     await d.mouse.click(5, 5); await W(d, 200);
     check(!(await d.locator("#add-pop").count()), "подсказка о дополнении не закрывается");
     const nur = d.locator('#dua-cards .dua-card[data-id="d-pr-nur"]');
@@ -653,7 +655,9 @@ const section = name => console.log("•", name);
     check(st.n >= 29 && st.n <= 30 && st.open && st.future && st.times.join() === "7:0", "утренние напоминания расписаны неверно: " + JSON.stringify(st).slice(0, 200));
     check(await a.locator("#rt-morning").isVisible(), "после включения не видно время");
     // поменяли время — всё переставлено, повторов нет
-    await a.fill("#rt-morning", "05:45"); await a.dispatchEvent("#rt-morning", "change"); await W(a, 300);
+    check((await a.locator("#rt-morning").innerText()).replace(/\s/g, "").startsWith("00"), "нет списка часов");
+    check(!/AM|PM/i.test(await a.locator("#rt-morning").innerText()), "время должно быть в 24-часовом формате, без AM/PM");
+    await a.selectOption("#rt-morning .rt-h", "05"); await a.selectOption("#rt-morning .rt-m", "45"); await W(a, 300);
     st = await a.evaluate(() => ({ n: __n.pending.length, uniq: new Set(__n.pending.map(x => x.id)).size, times: [...new Set(__n.pending.map(x => { const d = new Date(x.schedule.at); return d.getHours() + ":" + d.getMinutes(); }))] }));
     check(st.n === st.uniq && st.times.join() === "5:45", "после смены времени напоминания задвоились или время не то: " + JSON.stringify(st));
     // вечер тоже
