@@ -2030,12 +2030,11 @@ async function renderQuran() {
   // Суры — одним списком подряд, 1…114 (без деления на джузы — решение Майрбека)
   const list = qView === "juzs" || m ? [] : qIndex.surahs.filter(x => !q || String(x.n) === q || low(x.ru).includes(q) || low(x.ru).replace(/^[а-я]+-/, "").includes(q));
   if (qView === "juzs") {
-    // 30 джузов: где начинается каждый (сура, аят) и на какой странице мусхафа
+    // 30 джузов: с какой суры и аята начинается каждый (как «7:88») и с какой страницы мусхафа
     html += `<div class="group" style="--i:${k++}"><div class="rows">` + qIndex.juzs.map(j => {
-      const x = qSurah(j.s);
       return `<button class="row q-row" data-s="${j.s}" data-a="${j.a}">
         <span class="lbl"><span class="dua-num q-num">${j.n}</span>
-          <span class="q-name"><span>Джуз ${j.n}</span><small>${x.ru}${j.a > 1 ? `, аят ${j.a}` : ""} · стр. ${j.page}</small></span></span></button>`;
+          <span class="q-name"><span>Джуз ${j.n}</span><small>${j.s}:${j.a} · Стр. ${j.page}</small></span></span></button>`;
     }).join("") + `</div></div>`;
   }
   if (list.length) {

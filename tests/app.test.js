@@ -706,6 +706,7 @@ const section = name => console.log("•", name);
     await k.click('#q-switch [data-view="juzs"]'); await W(k, 500);
     check((await k.locator(".q-row").count()) === 30 && !(await k.locator("#q-search").isVisible()), "в режиме «Джузы» не 30 строк или виден поиск");
     check(!(await k.locator("#q-list .q-ar-name").count()), "в списке джузов справа не должно быть названий сур");
+    check((await k.locator(".q-row").nth(8).innerText()).replace(/\s+/g, " ").includes("Джуз 9 7:88 · Стр. 162"), "строка джуза 9 должна быть «Джуз 9 · 7:88 · Стр. 162»");
     await k.locator(".q-row").nth(1).click(); await W(k, 900);
     check((await k.locator(".q-head h1").innerText()) === "аль-Бакара" && await atTop(142), "джуз 2 не открыл аль-Бакара, 142");
     await k.click("#q-back"); await W(k, 500);
