@@ -632,6 +632,20 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #quran-read { touch-action: pan-y; will-change: transform; }
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
+.q-switch { margin: 0; }
+.q-switch[data-set="juzs"]::before { transform: translateX(100%); }
+.q-top-acts { display: flex; gap: 6px; }
+/* Строка «Перейти к 2:255» над результатами поиска */
+.q-jump .tile { font-size: 13px; }
+.q-jump.soon { pointer-events: none; }
+.q-jump.soon .lbl { opacity: .5; }
+.q-go-input {
+  font: inherit; font-size: 28px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums;
+  width: 100%; padding: 10px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+}
+.q-go-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.q-go-yes { background: var(--accent); color: #fff; font-weight: 600; }
+#q-go-hint.bad { color: #ff3b30; }
 .q-row .q-num { width: 30px; height: 30px; font-size: 12.5px; }
 .q-name { display: grid; gap: 1px; text-align: left; min-width: 0; }
 .q-name small { color: var(--muted); font-size: 12.5px; font-weight: 400; }
@@ -819,9 +833,14 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 <!-- Список сур. Нажал на суру — открывается её страница: аят за аятом, под каждым перевод -->
 <main class="screen" id="quran" hidden>
   <h1>Коран</h1>
-  <label class="search">
+  <!-- Список по сурам или по джузам — тот же переключатель, что «Основные | Полные» на главной -->
+  <div class="set-switch q-switch" id="q-switch" role="radiogroup" aria-label="Как показать Коран">
+    <button class="set-opt" role="radio" data-view="surahs">Суры</button>
+    <button class="set-opt" role="radio" data-view="juzs">Джузы</button>
+  </div>
+  <label class="search" id="q-search-box">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <input type="search" id="q-search" placeholder="Номер или название суры" autocomplete="off" enterkeyhint="search">
+    <input type="search" id="q-search" placeholder="Сура или аят: «Ясин», «2:255»" autocomplete="off" enterkeyhint="search">
   </label>
   <div id="q-list"></div>
   <p class="q-credits">Текст — Мединский мусхаф (Комплекс короля Фахда, риваят Хафса).<br>Перевод смыслов — Э. Кулиев.</p>
@@ -831,7 +850,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 <main class="screen" id="quran-read" hidden>
   <div class="topbar">
     <button class="back" id="q-back">‹ Коран</button>
-    <button class="q-toggle" id="q-ru-toggle" aria-pressed="true">Перевод</button>
+    <span class="q-top-acts">
+      <button class="q-toggle" id="q-go" aria-haspopup="dialog">К аяту</button>
+      <button class="q-toggle" id="q-ru-toggle" aria-pressed="true">Перевод</button>
+    </span>
   </div>
   <header class="q-head" id="q-head"></header>
   <div class="q-ayahs" id="q-ayahs"></div>
@@ -879,6 +901,16 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
   </div>
 </main>
+
+<!-- Окно «Перейти к аяту» на странице суры -->
+<div class="sheet-back" id="q-go-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="q-go-title">
+    <h2 id="q-go-title">Перейти к аяту</h2>
+    <p id="q-go-hint"></p>
+    <input class="q-go-input" id="q-go-input" type="number" inputmode="numeric" pattern="[0-9]*" min="1" enterkeyhint="go" aria-labelledby="q-go-title">
+    <button class="sheet-btn q-go-yes" id="q-go-yes">Перейти</button>
+  </div>
+</div>
 
 <!-- Окно подтверждения сброса -->
 <div class="sheet-back" id="reset-sheet" hidden>
@@ -1957,6 +1989,7 @@ let qLast = load("azkar-quran-last", null);
 let qMarks = load("azkar-quran-marks", []);
 let qRu = load("azkar-quran-ru", true);
 let qIndex = null;   // список сур (index.json), когда загрузился
+let qView = load("azkar-quran-view", "surahs") === "juzs" ? "juzs" : "surahs";   // список: по сурам или по джузам
 const qSurah = n => qIndex && qIndex.surahs.find(x => x.n === n);
 
 async function renderQuran() {
@@ -1964,8 +1997,23 @@ async function renderQuran() {
   qFont();
   try { qIndex = await qGet("index"); }
   catch (e) { box.innerHTML = `<p class="q-msg">Не получилось открыть список сур. Проверьте интернет и попробуйте снова</p>`; return; }
-  const q = low(document.getElementById("q-search").value.trim());
+  const raw = document.getElementById("q-search").value.trim();
+  const q = low(raw);
+  document.getElementById("q-switch").dataset.set = qView;
+  document.querySelectorAll("#q-switch .set-opt").forEach(o => o.setAttribute("aria-checked", o.dataset.view === qView ? "true" : "false"));
+  document.getElementById("q-search-box").hidden = qView === "juzs";
   let html = "", k = 0;
+  // В поиске номер аята: «2:255», «2 255», «2.255» — сразу предлагаем перейти
+  const m = qView === "surahs" && raw.match(/^(\d{1,3})\s*[:.\s]\s*(\d{1,3})$/);
+  if (m) {
+    const x = qSurah(+m[1]), a = +m[2];
+    const ok = x && a >= 1 && a <= x.ayahs;
+    html += `<div class="group" style="--i:${k++}"><div class="rows">
+      <button class="row q-jump${ok ? "" : " soon"}"${ok ? ` data-s="${x.n}" data-a="${a}"` : ' disabled aria-disabled="true"'}>
+        <span class="lbl"><span class="tile tile-green" aria-hidden="true">${Q_ICON.book}</span>
+          <span>${ok ? `Перейти к аяту ${a}` : !x ? `Суры ${m[1]} нет` : `В суре ${x.ru} ${x.ayahs} ${ayahWord(x.ayahs)}`}</span></span>
+        <span class="value">${ok ? x.ru : ""}</span></button></div></div>`;
+  }
   if (!q && qLast && qSurah(qLast.s)) {
     html += `<div class="group" style="--i:${k++}"><div class="rows">
       <button class="row" data-s="${qLast.s}" data-a="${qLast.a}">
@@ -1984,7 +2032,17 @@ async function renderQuran() {
   // поэтому заголовок — диапазон до следующей группы: «Джуз 1–2», «Джуз 3»… Так видны все 30
   const starts = [...new Set(qIndex.surahs.map(x => x.juz))];
   const juzTitle = j => { const nx = starts[starts.indexOf(j) + 1] || 31; return nx - 1 > j ? `Джуз ${j}–${nx - 1}` : `Джуз ${j}`; };
-  const list = qIndex.surahs.filter(x => !q || String(x.n) === q || low(x.ru).includes(q) || low(x.ru).replace(/^[а-я]+-/, "").includes(q));
+  const list = qView === "juzs" || m ? [] : qIndex.surahs.filter(x => !q || String(x.n) === q || low(x.ru).includes(q) || low(x.ru).replace(/^[а-я]+-/, "").includes(q));
+  if (qView === "juzs") {
+    // 30 джузов: где начинается каждый (сура, аят) и на какой странице мусхафа
+    html += `<div class="group" style="--i:${k++}"><div class="rows">` + qIndex.juzs.map(j => {
+      const x = qSurah(j.s);
+      return `<button class="row q-row" data-s="${j.s}" data-a="${j.a}">
+        <span class="lbl"><span class="dua-num q-num">${j.n}</span>
+          <span class="q-name"><span>Джуз ${j.n}</span><small>${x.ru}${j.a > 1 ? `, аят ${j.a}` : ""} · стр. ${j.page}</small></span></span>
+        <span class="q-ar-name" lang="ar">${x.ar}</span></button>`;
+    }).join("") + `</div></div>`;
+  }
   const juzs = [...new Set(list.map(x => x.juz))];
   for (const j of juzs) {
     html += `<div class="group" style="--i:${k++}"><span class="group-title">${juzTitle(j)}</span><div class="rows">` +
@@ -1994,11 +2052,22 @@ async function renderQuran() {
         <span class="q-ar-name" lang="ar">${x.ar}</span></button>`).join("") + `</div></div>`;
   }
   box.innerHTML = html || `<p class="dua-empty">Ничего не найдено</p>`;
-  box.querySelectorAll(".row[data-s]").forEach(r =>
+  box.querySelectorAll("#q-list .row[data-s]").forEach(r =>
     r.addEventListener("click", () => openSurah(+r.dataset.s, r.dataset.a ? +r.dataset.a : 0)));
 }
 document.getElementById("q-search").addEventListener("input", renderQuran);
-document.getElementById("q-search").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+// «Найти» на клавиатуре: если в поиске номер аята — сразу переходим, иначе просто прячем клавиатуру
+document.getElementById("q-search").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.target.blur();
+  const go = document.querySelector("#q-list .q-jump[data-s]");
+  if (go) go.click();
+});
+document.querySelectorAll("#q-switch .set-opt").forEach(o => o.addEventListener("click", () => {
+  if (qView === o.dataset.view) return;
+  qView = o.dataset.view; store("azkar-quran-view", qView);
+  haptic("tap"); renderQuran();
+}));
 
 let qOpen = 0;   // открытая сура
 async function openSurah(n, ayah = 0) {
@@ -2011,12 +2080,14 @@ async function openSurah(n, ayah = 0) {
   qOpen = n;
   const last = data.ayahs[data.ayahs.length - 1].page;
   const pages = last > x.page ? `страницы ${x.page}–${last}` : `страница ${x.page}`;
+  const lastJuz = data.ayahs[data.ayahs.length - 1].juz;
+  const juz = lastJuz > x.juz ? `Джузы ${x.juz}–${lastJuz}` : `Джуз ${x.juz}`;   // длинная сура идёт через несколько джузов
   document.getElementById("q-head").innerHTML = `
     <span class="q-head-ar" lang="ar">${x.ar}</span>
     <h1>${x.ru}</h1>
     ${x.meaning ? `<p class="q-meaning">«${x.meaning}»</p>` : ""}
     <p>Сура ${n} · ${x.ayahs} ${ayahWord(x.ayahs)}</p>
-    <p>Джуз ${x.juz} · ${pages}</p>
+    <p>${juz} · ${pages}</p>
     ${n !== 1 && n !== 9 ? `<div class="q-basmala" lang="ar">${qIndex.basmala}</div>` : ""}`;
   box.innerHTML = data.ayahs.map((a, i) => `
     <article class="q-ayah" id="qa-${i + 1}" data-a="${i + 1}">
@@ -2037,12 +2108,40 @@ async function openSurah(n, ayah = 0) {
     (prev ? `<button class="prev" data-s="${prev.n}"><small>‹ Предыдущая</small>${prev.ru}</button>` : "<span></span>") +
     (next ? `<button class="next" data-s="${next.n}"><small>Следующая ›</small>${next.ru}</button>` : "<span></span>");
   showScreen("quran-read");
-  if (ayah > 1) {
-    const el = document.getElementById("qa-" + ayah);
-    if (el) { el.scrollIntoView({ block: "start" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1700); }
-  }
+  if (ayah > 1) qJump(ayah);
   saveQLast();
 }
+// Прокрутить открытую суру к аяту и на мгновение подсветить его
+function qJump(a) {
+  const el = document.getElementById("qa-" + a);
+  if (!el) return;
+  el.scrollIntoView({ block: "start" });
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  setTimeout(() => el.classList.remove("flash"), 1700);
+}
+
+// Кнопка «К аяту»: окно с номером. Неверный номер — подсказка красным, окно не закрывается
+const qGoSheet = document.getElementById("q-go-sheet"), qGoInput = document.getElementById("q-go-input");
+const qGoHint = () => { const x = qSurah(qOpen); return `${x.ru}: аяты 1–${x.ayahs}`; };
+document.getElementById("q-go").addEventListener("click", () => {
+  const h = document.getElementById("q-go-hint");
+  h.textContent = qGoHint(); h.classList.remove("bad");
+  qGoInput.value = ""; qGoInput.max = qSurah(qOpen).ayahs;
+  qGoSheet.hidden = false;
+  setTimeout(() => qGoInput.focus(), 50);   // сразу открыть клавиатуру с цифрами
+});
+function qGoSubmit() {
+  const a = +qGoInput.value, x = qSurah(qOpen), h = document.getElementById("q-go-hint");
+  if (!Number.isInteger(a) || a < 1 || a > x.ayahs) {
+    h.textContent = `В суре ${x.ru} ${x.ayahs} ${ayahWord(x.ayahs)} — введите число от 1 до ${x.ayahs}`;
+    h.classList.add("bad"); haptic("tap"); return;
+  }
+  qGoInput.blur(); closeSheet(qGoSheet);
+  setTimeout(() => { qJump(a); saveQLast(); }, 230);   // после того как окно уехало и клавиатура спряталась
+}
+document.getElementById("q-go-yes").addEventListener("click", qGoSubmit);
+qGoInput.addEventListener("keydown", e => { if (e.key === "Enter") qGoSubmit(); });
+qGoSheet.addEventListener("click", e => { if (e.target === qGoSheet) closeSheet(qGoSheet); });
 document.getElementById("q-nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-s]"); if (b) openSurah(+b.dataset.s);
 });

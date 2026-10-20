@@ -12,7 +12,7 @@
   meanings-ru.json  — значение названия по-русски (с quran.com: «Весть», «Рассвет»)
 
 Пишет src/data/quran/:
-  index.json  — список сур (только те, у которых есть перевод) + басмала
+  index.json  — список сур (только те, у которых есть перевод), басмала и начала 30 джузов
   112.json …  — по файлу на суру: аяты с переводом, страница, строки, джуз
 
 Сура попадает в приложение, только когда для неё есть перевод и название.
@@ -78,7 +78,14 @@ def main() -> None:
             "sajda": chapters[n]["sajda"],
         })
 
-    index = {"basmala": basmala, "surahs": surahs}
+    # Где начинается каждый из 30 джузов (сура, аят, страница) — для перехода по джузам
+    juzs = []
+    for a in ayahs:
+        if not juzs or juzs[-1]["n"] != a["jozz"]:
+            juzs.append({"n": a["jozz"], "s": a["sora"], "a": a["aya_no"], "page": a["page"]})
+    assert [j["n"] for j in juzs] == list(range(1, 31)), "джузы должны идти 1…30 подряд"
+
+    index = {"basmala": basmala, "surahs": surahs, "juzs": juzs}
     (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"Коран: {len(surahs)} сур — " + ", ".join(str(s['n']) for s in surahs))
 
