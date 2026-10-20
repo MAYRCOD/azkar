@@ -6,7 +6,11 @@
 и записывает:
 
   index.html          — готовое приложение для GitHub Pages и телефона
-  build/preview.html  — то же без «шапки» для телефона (для предпросмотра в Claude)
+  quran/              — раздел «Коран»: по файлу на суру + шрифт мусхафа. Приложение
+                        берёт их только при открытии суры, поэтому они не утяжеляют запуск
+  build/preview.html  — то же без «шапки» для телефона
+  build/standalone.html — предпросмотр одним файлом: Коран и его шрифт встроены внутрь
+                        (отдельные файлы из одного HTML-файла не открыть)
 
 Запуск из корня репозитория:
   python3 tools/build.py              — просто собрать
@@ -17,6 +21,7 @@
 import argparse
 import base64
 import json
+import shutil
 import pathlib
 import re
 
@@ -39,6 +44,11 @@ DATA = {
     "__DUA_JSON__": SRC / "data" / "dua.json",
 }
 
+# Раздел «Коран»: данные (их готовит tools/make_quran.py) и шрифт Мединского мусхафа (KFGQPC Hafs v18)
+QURAN_DATA = SRC / "data" / "quran"
+QURAN_FONT = SRC / "fonts" / "kfgqpc-hafs-v18.ttf"
+QURAN_OUT = ROOT / "quran"
+
 PWA_TAIL = """
 <script>
   // Включаем офлайн-режим — только на сайте (http/https). Внутри iOS-приложения файла sw.js нет,
@@ -50,8 +60,40 @@ PWA_TAIL = """
 """
 
 
-def build_preview() -> str:
+def quran_inline() -> str:
+    """Весь раздел «Коран» одним объектом — для предпросмотра одним файлом."""
+    files = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(QURAN_DATA.glob("*.json"))}
+    font = "data:font/ttf;base64," + base64.b64encode(QURAN_FONT.read_bytes()).decode()
+    return json.dumps({"files": files, "font": font}, ensure_ascii=False, separators=(",", ":"))
+
+
+def copy_quran() -> list:
+    """Кладёт файлы Корана рядом с index.html (папка quran/). Возвращает их список для sw.js."""
+    if QURAN_OUT.exists():
+        shutil.rmtree(QURAN_OUT)
+    QURAN_OUT.mkdir()
+    names = []
+    for p in sorted(QURAN_DATA.glob("*.json")):
+        data = json.loads(p.read_text(encoding="utf-8"))   # проверка + сжатие
+        (QURAN_OUT / p.name).write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        names.append(p.name)
+    shutil.copyfile(QURAN_FONT, QURAN_OUT / "hafs18.ttf")   # шрифт — без изменений (условие KFGQPC)
+    names.append("hafs18.ttf")
+    return ["./quran/" + n for n in names]
+
+
+def set_sw_quran(files: list) -> None:
+    """Список файлов Корана в sw.js — чтобы сайт сохранил их и открывал суры без интернета."""
+    sw = ROOT / "sw.js"
+    text, count = re.subn(r"const QURAN_FILES = \[.*?\];", "const QURAN_FILES = " + json.dumps(files) + ";",
+                          sw.read_text(encoding="utf-8"))
+    assert count == 1, "в sw.js не найдена строка QURAN_FILES"
+    sw.write_text(text, encoding="utf-8")
+
+
+def build_preview(inline: bool = False) -> str:
     html = (SRC / "app.html").read_text(encoding="utf-8")
+    html = html.replace("__QURAN_INLINE__", quran_inline() if inline else "null")
     for mark, path in DATA.items():
         assert mark in html, f"в src/app.html нет метки {mark}"
         text = path.read_text(encoding="utf-8")
@@ -93,6 +135,14 @@ def main() -> None:
     (ROOT / "build").mkdir(exist_ok=True)
     (ROOT / "build" / "preview.html").write_text(preview, encoding="utf-8")
     (ROOT / "index.html").write_text(build_pwa(preview), encoding="utf-8")
+    set_sw_quran(copy_quran())
+    # одним файлом, как полноценная страница (с viewport — иначе на телефоне всё мелкое)
+    head = '<!doctype html>\n<html lang="ru">\n<head>\n<meta charset="utf-8">\n' \
+           '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+    full = build_preview(inline=True)
+    cut = full.index("</style>") + len("</style>")
+    (ROOT / "build" / "standalone.html").write_text(
+        head + full[:cut] + "\n</head>\n<body>\n" + full[cut:] + "\n</body>\n</html>\n", encoding="utf-8")
     if args.version:
         set_version(args.version)
     ver = re.search(r'azkar-v(\d+)', (ROOT / "sw.js").read_text(encoding="utf-8")).group(1)

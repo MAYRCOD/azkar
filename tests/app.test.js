@@ -622,6 +622,60 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  section("Коран: вкладка, список сур, страница суры, перевод, закладки, «Продолжить чтение»");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 480 } });
+    const k = await ctx.newPage(); k.on("pageerror", e => errs.push(e.message));
+    // экран пониже, чтобы короткие суры прокручивались (проверяем «Продолжить» и переход к аяту)
+    await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 400);
+    await k.click("#tab-quran"); await W(k, 800);
+    check(await k.locator("#quran").isVisible() && (await k.getAttribute("#tabbar", "data-active")) === "quran", "вкладка «Коран» не открылась");
+    check((await k.locator(".q-row").count()) === 3, "в списке не 3 суры");
+    check(await k.evaluate(() => document.fonts.check('30px "QuranHafs"')), "шрифт мусхафа не загрузился");
+    await k.click('.q-row[data-s="113"]'); await W(k, 800);
+    check(await k.locator("#quran-read").isVisible() && await k.evaluate(() => document.getElementById("tabbar").classList.contains("away")),
+      "сура не открылась или нижняя панель не уехала");
+    check((await k.locator(".q-ayah").count()) === 5 && (await k.locator(".q-head h1").innerText()) === "аль-Фаляк", "у аль-Фаляк не 5 аятов");
+    // текст мусхафа показан как есть — совпадает с данными символ в символ
+    const same = await k.evaluate(async () => {
+      const d = await (await fetch("quran/113.json")).json();
+      return [...document.querySelectorAll(".q-ayah .q-ar")].every((el, i) => el.textContent === d.ayahs[i].ar);
+    });
+    check(same, "арабский текст на экране отличается от данных мусхафа");
+    check(await k.locator(".q-basmala").isVisible(), "нет басмалы перед сурой");
+    await k.click("#q-ru-toggle"); await W(k, 200);
+    check(!(await k.locator(".q-ru").first().isVisible()), "перевод не прячется");
+    await k.click("#q-ru-toggle"); await W(k, 200);
+    check(await k.locator(".q-ru").first().isVisible(), "перевод не возвращается");
+    await k.click('#qa-3 [data-act="mark"]'); await W(k, 200);
+    check(await k.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem("azkar-quran-marks"))) === '[{"s":113,"a":3}]'), "закладка не сохранилась");
+    await k.evaluate(() => { const el = document.getElementById("qa-4"); el.scrollIntoView({ block: "start" }); }); await W(k, 600);
+    check(await k.evaluate(() => JSON.parse(localStorage.getItem("azkar-quran-last")).a >= 3), "место чтения не запоминается при прокрутке");
+    await k.click(".q-nav .next"); await W(k, 800);
+    check((await k.locator(".q-head h1").innerText()) === "ан-Нас", "кнопка «Следующая» не открыла ан-Нас");
+    await k.click("#q-back"); await W(k, 800);
+    check(!(await k.evaluate(() => document.getElementById("tabbar").classList.contains("away"))), "после «‹ Коран» нижняя панель не вернулась");
+    const rows = await k.locator("#q-list .row:not(.q-row)").allInnerTexts();
+    check(rows.length === 2 && rows[0].includes("Продолжить") && rows[1].includes("аль-Фаляк, аят 3"), "нет «Продолжить чтение» или закладки: " + JSON.stringify(rows));
+    await k.locator("#q-list .row:not(.q-row)").nth(1).click(); await W(k, 900);
+    check((await k.locator(".q-head h1").innerText()) === "аль-Фаляк" && await k.evaluate(() => {
+      const r = document.getElementById("qa-3").getBoundingClientRect(); return r.top >= -2 && r.top < 120;
+    }), "закладка не привела к аяту 3");
+    await k.click("#q-back"); await W(k, 600);
+    await k.fill("#q-search", "нас"); await W(k, 300);
+    check((await k.locator(".q-row").count()) === 1, "поиск «нас» нашёл не одну суру");
+    await k.fill("#q-search", "112"); await W(k, 300);
+    check((await k.locator(".q-row").count()) === 1, "поиск по номеру не работает");
+    await k.fill("#q-search", "");
+    // 5 подписей внизу помещаются на узком экране
+    for (const w of [320, 390]) {
+      await k.setViewportSize({ width: w, height: 700 }); await W(k, 200);
+      const over = await k.evaluate(() => [...document.querySelectorAll(".tab-item")].filter(t => t.scrollWidth > t.clientWidth + 1).length);
+      check(over === 0, `${w}px: подписи вкладок не помещаются`);
+    }
+    await ctx.close();
+  }
+
   section("Напоминания: только в приложении, разрешение, расписание на 30 дней, без напоминания после прочтения");
   {
     // На сайте раздела нет
@@ -703,6 +757,9 @@ const section = name => console.log("•", name);
     await q.reload(); await W(q, 800);
     await ctx.setOffline(true); await q.reload(); await W(q, 800);
     check(await q.locator("#go-morning").isVisible(), "без интернета не открылось");
+    await q.click("#tab-quran"); await W(q, 800);
+    await q.click('.q-row[data-s="112"]'); await W(q, 800);
+    check((await q.locator(".q-ayah").count()) === 4, "без интернета сура не открылась");
     await ctx.close();
   }
 

@@ -1,0 +1,601 @@
+[
+ {
+  "n": 1,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 2,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 3,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 4,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 5,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 6,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 7,
+  "place": "mecca",
+  "sajda": [
+   206
+  ]
+ },
+ {
+  "n": 8,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 9,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 10,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 11,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 12,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 13,
+  "place": "medina",
+  "sajda": [
+   15
+  ]
+ },
+ {
+  "n": 14,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 15,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 16,
+  "place": "mecca",
+  "sajda": [
+   50
+  ]
+ },
+ {
+  "n": 17,
+  "place": "mecca",
+  "sajda": [
+   109
+  ]
+ },
+ {
+  "n": 18,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 19,
+  "place": "mecca",
+  "sajda": [
+   58
+  ]
+ },
+ {
+  "n": 20,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 21,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 22,
+  "place": "medina",
+  "sajda": [
+   18,
+   77
+  ]
+ },
+ {
+  "n": 23,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 24,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 25,
+  "place": "mecca",
+  "sajda": [
+   60
+  ]
+ },
+ {
+  "n": 26,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 27,
+  "place": "mecca",
+  "sajda": [
+   26
+  ]
+ },
+ {
+  "n": 28,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 29,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 30,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 31,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 32,
+  "place": "mecca",
+  "sajda": [
+   15
+  ]
+ },
+ {
+  "n": 33,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 34,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 35,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 36,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 37,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 38,
+  "place": "mecca",
+  "sajda": [
+   24
+  ]
+ },
+ {
+  "n": 39,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 40,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 41,
+  "place": "mecca",
+  "sajda": [
+   38
+  ]
+ },
+ {
+  "n": 42,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 43,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 44,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 45,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 46,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 47,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 48,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 49,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 50,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 51,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 52,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 53,
+  "place": "mecca",
+  "sajda": [
+   62
+  ]
+ },
+ {
+  "n": 54,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 55,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 56,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 57,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 58,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 59,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 60,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 61,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 62,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 63,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 64,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 65,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 66,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 67,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 68,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 69,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 70,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 71,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 72,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 73,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 74,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 75,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 76,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 77,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 78,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 79,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 80,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 81,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 82,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 83,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 84,
+  "place": "mecca",
+  "sajda": [
+   21
+  ]
+ },
+ {
+  "n": 85,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 86,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 87,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 88,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 89,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 90,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 91,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 92,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 93,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 94,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 95,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 96,
+  "place": "mecca",
+  "sajda": [
+   19
+  ]
+ },
+ {
+  "n": 97,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 98,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 99,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 100,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 101,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 102,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 103,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 104,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 105,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 106,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 107,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 108,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 109,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 110,
+  "place": "medina",
+  "sajda": []
+ },
+ {
+  "n": 111,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 112,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 113,
+  "place": "mecca",
+  "sajda": []
+ },
+ {
+  "n": 114,
+  "place": "mecca",
+  "sajda": []
+ }
+]

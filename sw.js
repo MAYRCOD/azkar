@@ -2,9 +2,11 @@
 // Когда выкладываешь новую версию — поменяй число в VERSION, и телефоны обновятся.
 const VERSION = "azkar-v48";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+// Файлы раздела «Коран» (суры и шрифт мусхафа) — список вписывает tools/build.py
+const QURAN_FILES = ["./quran/112.json", "./quran/113.json", "./quran/114.json", "./quran/index.json", "./quran/hafs18.ttf"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.concat(QURAN_FILES))));
   self.skipWaiting();
 });
 self.addEventListener("activate", e => {

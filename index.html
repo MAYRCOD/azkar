@@ -593,8 +593,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .tabbar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  width: min(360px, calc(100% - 32px));
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+  width: min(400px, calc(100% - 24px));
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
   background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
   box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 10px 28px rgba(var(--sh), .12);
   padding: 4px; z-index: 10;
@@ -602,20 +602,83 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 .tabbar.away { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
 .tabbar::before {
-  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 20px) / 4);
+  content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 24px) / 5);
   border-radius: 999px; background: var(--press); transition: transform .38s var(--ease);
 }
-/* Подложка переезжает под выбранную вкладку: на одну, две или три своих ширины + промежутки */
-.tabbar[data-active="duas"]::before { transform: translateX(calc(100% + 4px)); }
-.tabbar[data-active="tasbih"]::before { transform: translateX(calc(200% + 8px)); }
-.tabbar[data-active="settings"]::before { transform: translateX(calc(300% + 12px)); }
+/* Подложка переезжает под выбранную вкладку: на одну, две, три или четыре своих ширины + промежутки */
+.tabbar[data-active="quran"]::before { transform: translateX(calc(100% + 4px)); }
+.tabbar[data-active="duas"]::before { transform: translateX(calc(200% + 8px)); }
+.tabbar[data-active="tasbih"]::before { transform: translateX(calc(300% + 12px)); }
+.tabbar[data-active="settings"]::before { transform: translateX(calc(400% + 16px)); }
 .tab-item {
   display: grid; justify-items: center; gap: 2px; border: 0; background: none;
-  border-radius: 999px; padding: 6px 6px 5px; color: var(--inactive); font-size: 12px; position: relative;
+  border-radius: 999px; padding: 6px 2px 5px; color: var(--inactive); font-size: 11px; position: relative;
+  min-width: 0; white-space: nowrap;
   transition: color .25s ease, transform .15s ease;
 }
 .tab-item svg { width: 21px; height: 21px; }
+@media (max-width: 359px) { .tab-item { font-size: 9.5px; letter-spacing: -.01em; } }   /* 5 подписей на узком экране (iPhone SE 1) */
 .tab-item[aria-selected="true"] { color: var(--accent-ink); }
+
+/* ---------- Коран ---------- */
+/* Шрифт мусхафа (KFGQPC Hafs v18) подгружается при первом открытии раздела — см. qFont() */
+:root { --f-quran: "QuranHafs", var(--f-arabic); }
+#quran { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 15px; }   /* как у «Дуа» */
+#quran h1 { font-size: 24px; }
+#q-list { display: grid; gap: 18px; }
+#quran-read { overflow-y: auto; padding-block: 16px calc(40px + env(safe-area-inset-bottom, 0px)); }   /* панели внизу нет */
+#quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
+.q-row .lbl { gap: 12px; }
+.q-row .q-num { width: 30px; height: 30px; font-size: 12.5px; }
+.q-name { display: grid; gap: 1px; text-align: left; min-width: 0; }
+.q-name small { color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.q-row .q-ar-name { font-family: var(--f-quran); font-size: 22px; color: var(--gold); line-height: 1.6; flex: none; }
+.q-row .value { color: var(--muted); font-size: 14px; }
+.q-credits { text-align: center; color: var(--muted); font-size: 12px; line-height: 1.5; margin: 18px 8px 0; }
+/* Включено/выключено — «таблетка», как кнопка-переключатель */
+.q-toggle {
+  border: 0; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 600;
+  background: var(--press); color: var(--accent-ink); transition: background .2s ease, color .2s ease;
+}
+.q-toggle[aria-pressed="false"] { background: none; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+/* Заголовок суры */
+.q-head { text-align: center; margin: 4px 0 14px; display: grid; gap: 2px; }
+.q-head .q-head-ar { font-family: var(--f-quran); font-size: 40px; line-height: 1.7; color: var(--gold); }
+.q-head h1 { margin: 0; }
+.q-head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.q-basmala { font-family: var(--f-quran); font-size: calc(28px * var(--ar-k, 1)); text-align: center; direction: rtl; margin: 6px 0 10px; line-height: 2; }
+/* Аяты — одним листом, разделены линиями: так удобнее читать подряд, чем отдельными карточками */
+.q-ayahs {
+  background: var(--surface); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow);
+  padding: 2px 16px;
+}
+.q-ayah { padding: 12px 0 14px; display: grid; gap: 8px; scroll-margin-top: 12px; }
+.q-ayah + .q-ayah { border-top: 1px solid var(--line); }
+.q-ayah-top { display: flex; justify-content: space-between; align-items: center; }
+.q-ayah .q-ar {
+  font-family: var(--f-quran); font-size: calc(30px * var(--ar-k, 1)); line-height: 2.15;
+  direction: rtl; text-align: right; margin: 0;
+}
+.q-ayah .q-ru { margin: 0; font-size: calc(15.5px * var(--tx-k, 1)); line-height: 1.5; }
+.q-ayahs.no-ru .q-ru { display: none; }
+.q-acts { display: flex; gap: 2px; }
+.q-act { border: 0; background: none; color: var(--muted); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; }
+.q-act svg { width: 19px; height: 19px; }
+.q-act:active { background: var(--press); }
+.q-act.on { color: var(--accent-ink); }
+.q-act.on svg { fill: currentColor; }
+/* «Продолжить» привёл к аяту — он на мгновение подсвечивается */
+.q-ayah.flash { animation: q-flash 1.6s ease; }
+@keyframes q-flash { 0%, 40% { background: var(--press); } 100% { background: transparent; } }
+.q-ayah.flash { margin-inline: -16px; padding-inline: 16px; }
+.q-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+.q-nav button {
+  flex: 1; border: 1px solid var(--edge); background: var(--surface); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 10px 12px; font: inherit; font-size: 14px; color: var(--fg); display: grid; gap: 1px; text-align: left;
+}
+.q-nav button small { color: var(--muted); font-size: 12px; }
+.q-nav .next { text-align: right; }
+.q-msg { text-align: center; color: var(--muted); padding: 24px 0; }
 
 /* ---------- Анимации ---------- */
 /* Экран появляется: лёгкое проявление со сдвигом снизу */
@@ -631,7 +694,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #home.enter .choice:nth-child(1) { animation-delay: .06s; }
 #home.enter .choice:nth-child(2) { animation-delay: .12s; }
 /* Хадисы и строки настроек — тоже по очереди, задержку задаёт --i */
-#settings.enter .group, #duas.enter .group, #dua-read.enter .dua-card { animation: rise .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
+#settings.enter .group, #duas.enter .group, #quran.enter .group, #dua-read.enter .dua-card { animation: rise .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 
 /* Нажатие: кнопка чуть «проседает» */
@@ -745,6 +808,28 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   <p class="dua-sub" id="dua-sub"></p>
   <div class="dua-cards" id="dua-cards"></div>
 </main>
+<!-- ===== КОРАН ===== -->
+<!-- Список сур. Нажал на суру — открывается её страница: аят за аятом, под каждым перевод -->
+<main class="screen" id="quran" hidden>
+  <h1>Коран</h1>
+  <label class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="search" id="q-search" placeholder="Номер или название суры" autocomplete="off" enterkeyhint="search">
+  </label>
+  <div id="q-list"></div>
+  <p class="q-credits">Текст — Мединский мусхаф (Комплекс короля Фахда, риваят Хафса).<br>Перевод смыслов — Э. Кулиев.</p>
+</main>
+
+<!-- Страница суры -->
+<main class="screen" id="quran-read" hidden>
+  <div class="topbar">
+    <button class="back" id="q-back">‹ Коран</button>
+    <button class="q-toggle" id="q-ru-toggle" aria-pressed="true">Перевод</button>
+  </div>
+  <header class="q-head" id="q-head"></header>
+  <div class="q-ayahs" id="q-ayahs"></div>
+  <nav class="q-nav" id="q-nav"></nav>
+</main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- ===== НАСТРОЙКИ ===== -->
@@ -854,6 +939,11 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   <button class="tab-item" role="tab" id="tab-home" data-screen="home">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 2.6a1.6 1.6 0 0 1 2 0l7.4 5.9c.4.3.6.8.6 1.3V19a3 3 0 0 1-3 3h-3v-5.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V22H6a3 3 0 0 1-3-3V9.8c0-.5.2-1 .6-1.3z"/></svg>
     Главная
+  </button>
+  <button class="tab-item" role="tab" id="tab-quran" data-screen="quran">
+    <!-- раскрытая книга -->
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 6.4C9.3 4.9 6.6 4.1 3 4.1v14c3.5 0 6.2.8 8.1 2.3z"/><path d="M12.9 6.4c1.8-1.5 4.5-2.3 8.1-2.3v14c-3.5 0-6.2.8-8.1 2.3z"/></svg>
+    Коран
   </button>
   <button class="tab-item" role="tab" id="tab-duas" data-screen="duas">
     <!-- две раскрытые ладони, поднятые в дуа (правая — зеркало левой) -->
@@ -1063,14 +1153,15 @@ function showScreen(id) {
   screen._enterTimer = setTimeout(() => screen.classList.remove("enter"), 900);
   // Нижняя панель уезжает при чтении: в азкарах (там внизу счётчик) и на странице темы дуа.
   // Вернуться — кнопкой «‹ Назад» / «‹ Дуа» вверху
-  const tabbar = document.getElementById("tabbar"), away = id === "reader" || id === "dua-read";
+  const tabbar = document.getElementById("tabbar"), away = id === "reader" || id === "dua-read" || id === "quran-read";
   tabbar.classList.toggle("away", away);
   document.getElementById("tab-veil").classList.toggle("away", away);
   if (id === "home") updateHome();
   if (id === "duas") renderDuas();
+  if (id === "quran") renderQuran();
   document.getElementById("toast").classList.remove("show");   // подсказка не переезжает на другой экран
   // чтение азкаров относится к «Главной», страница темы дуа — к «Дуа»
-  const tab = id === "reader" ? "home" : id === "dua-read" ? "duas" : id;
+  const tab = id === "reader" ? "home" : id === "dua-read" ? "duas" : id === "quran-read" ? "quran" : id;
   tabbar.dataset.active = tab;   // по этому атрибуту подложка переезжает на нужную вкладку
   document.querySelectorAll(".tab-item").forEach(t =>
     t.setAttribute("aria-selected", t.dataset.screen === tab ? "true" : "false"));
@@ -1820,6 +1911,176 @@ document.querySelectorAll(".tb-slot").forEach(sl => sl.addEventListener("click",
 document.getElementById("tb-reset").addEventListener("click", () => askReset(
   `Сбросить счётчик ${tb.active + 1}?`, "Число начнётся с нуля, другие счётчики не изменятся",
   () => { tb.values[tb.active] = 0; store("azkar-counter", tb); renderTasbih(); }));
+
+/* ================================================================
+   КОРАН — режим «Текст с переводом»
+   Данные — в папке quran/ рядом с приложением (готовит tools/make_quran.py, кладёт tools/build.py):
+   index.json — список сур, 112.json и т.д. — по файлу на суру. Берём файл только когда суру открыли,
+   поэтому Коран не замедляет запуск приложения. В предпросмотре одним файлом всё уже встроено
+   в QURAN_INLINE. Текст мусхафа показываем как есть, ничего в нём не заменяем
+   ================================================================ */
+const QURAN_INLINE = null;
+const qCache = {};
+function qGet(name) {
+  if (!qCache[name]) qCache[name] = QURAN_INLINE
+    ? Promise.resolve(QURAN_INLINE.files[name])
+    : fetch(`quran/${name}.json`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  qCache[name].catch(() => delete qCache[name]);   // не получилось (нет интернета) — в следующий раз попробуем снова
+  return qCache[name];
+}
+// Шрифт Мединского мусхафа (KFGQPC Hafs v18) — под него сделан текст. Подгружаем один раз
+let qFontLoad = null;
+function qFont() {
+  if (!qFontLoad) {
+    const url = QURAN_INLINE ? QURAN_INLINE.font : "quran/hafs18.ttf";
+    qFontLoad = new FontFace("QuranHafs", `url(${url})`).load()
+      .then(f => document.fonts.add(f)).catch(() => { qFontLoad = null; });
+  }
+  return qFontLoad;
+}
+const Q_ICON = {
+  mark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/></svg>',
+  markFill: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 6.4C9.3 4.9 6.6 4.1 3 4.1v14c3.5 0 6.2.8 8.1 2.3z"/><path d="M12.9 6.4c1.8-1.5 4.5-2.3 8.1-2.3v14c-3.5 0-6.2.8-8.1 2.3z"/></svg>',
+};
+// «аят»: 1 аят, 2 аята, 5 аятов
+const ayahWord = n => n % 10 === 1 && n % 100 !== 11 ? "аят" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "аята" : "аятов";
+const PLACE = { mecca: "мекканская", medina: "мединская" };
+// Где остановился: { s: сура, a: аят }. Закладки: [{ s, a }]. Показывать ли перевод
+let qLast = load("azkar-quran-last", null);
+let qMarks = load("azkar-quran-marks", []);
+let qRu = load("azkar-quran-ru", true);
+let qIndex = null;   // список сур (index.json), когда загрузился
+const qSurah = n => qIndex && qIndex.surahs.find(x => x.n === n);
+
+async function renderQuran() {
+  const box = document.getElementById("q-list");
+  qFont();
+  try { qIndex = await qGet("index"); }
+  catch (e) { box.innerHTML = `<p class="q-msg">Не получилось открыть список сур. Проверьте интернет и попробуйте снова</p>`; return; }
+  const q = low(document.getElementById("q-search").value.trim());
+  let html = "", k = 0;
+  if (!q && qLast && qSurah(qLast.s)) {
+    html += `<div class="group" style="--i:${k++}"><div class="rows">
+      <button class="row" data-s="${qLast.s}" data-a="${qLast.a}">
+        <span class="lbl"><span class="tile tile-green" aria-hidden="true">${Q_ICON.book}</span><span>Продолжить чтение</span></span>
+        <span class="value">${qSurah(qLast.s).ru}, ${qLast.a}</span></button></div></div>`;
+  }
+  const marks = qMarks.filter(m => qSurah(m.s));
+  if (!q && marks.length) {
+    html += `<div class="group" style="--i:${k++}"><span class="group-title">Закладки</span><div class="rows">` +
+      marks.map(m => `<button class="row" data-s="${m.s}" data-a="${m.a}">
+        <span class="lbl"><span class="tile tile-orange" aria-hidden="true">${Q_ICON.markFill}</span><span>${qSurah(m.s).ru}, аят ${m.a}</span></span>
+        <span class="value">${m.s}:${m.a}</span></button>`).join("") + `</div></div>`;
+  }
+  // суры группами по джузам (джуз — по первому аяту суры)
+  const list = qIndex.surahs.filter(x => !q || String(x.n) === q || low(x.ru).includes(q) || low(x.ru).replace(/^[а-я]+-/, "").includes(q));
+  const juzs = [...new Set(list.map(x => x.juz))];
+  for (const j of juzs) {
+    html += `<div class="group" style="--i:${k++}"><span class="group-title">Джуз ${j}</span><div class="rows">` +
+      list.filter(x => x.juz === j).map(x => `<button class="row q-row" data-s="${x.n}">
+        <span class="lbl"><span class="dua-num q-num">${x.n}</span>
+          <span class="q-name"><span>${x.ru}</span><small>${x.ayahs} ${ayahWord(x.ayahs)} · ${PLACE[x.place]}</small></span></span>
+        <span class="q-ar-name" lang="ar">${x.ar}</span></button>`).join("") + `</div></div>`;
+  }
+  box.innerHTML = html || `<p class="dua-empty">Ничего не найдено</p>`;
+  box.querySelectorAll(".row[data-s]").forEach(r =>
+    r.addEventListener("click", () => openSurah(+r.dataset.s, r.dataset.a ? +r.dataset.a : 0)));
+}
+document.getElementById("q-search").addEventListener("input", renderQuran);
+document.getElementById("q-search").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+
+let qOpen = 0;   // открытая сура
+async function openSurah(n, ayah = 0) {
+  const screen = document.getElementById("quran-read");
+  const box = document.getElementById("q-ayahs");
+  let data;
+  try { [, qIndex, data] = await Promise.all([qFont(), qGet("index"), qGet(String(n))]); }
+  catch (e) { toast("Не получилось открыть суру. Нужен интернет"); return; }
+  const x = qSurah(n);
+  qOpen = n;
+  document.getElementById("q-head").innerHTML = `
+    <span class="q-head-ar" lang="ar">${x.ar}</span>
+    <h1>${x.ru}</h1>
+    <p>Сура ${n} · ${PLACE[x.place]} · ${x.ayahs} ${ayahWord(x.ayahs)}</p>
+    <p>Джуз ${x.juz} · страница ${x.page}</p>
+    ${n !== 1 && n !== 9 ? `<div class="q-basmala" lang="ar">${qIndex.basmala}</div>` : ""}`;
+  box.innerHTML = data.ayahs.map((a, i) => `
+    <article class="q-ayah" id="qa-${i + 1}" data-a="${i + 1}">
+      <div class="q-ayah-top">
+        <span class="dua-num">${i + 1}</span>
+        <span class="q-acts">
+          <button class="q-act" data-act="share" aria-label="Поделиться аятом">${DUA_BTN.share}</button>
+          <button class="q-act${qMarks.some(m => m.s === n && m.a === i + 1) ? " on" : ""}" data-act="mark" aria-label="Закладка">${Q_ICON.mark}</button>
+        </span>
+      </div>
+      <p class="q-ar" lang="ar">${a.ar}</p>
+      <p class="q-ru">${a.ru}</p>
+    </article>`).join("");
+  applyQRu();
+  // соседние суры — внизу страницы
+  const i = qIndex.surahs.indexOf(x), prev = qIndex.surahs[i - 1], next = qIndex.surahs[i + 1];
+  document.getElementById("q-nav").innerHTML =
+    (prev ? `<button class="prev" data-s="${prev.n}"><small>‹ Предыдущая</small>${prev.ru}</button>` : "<span></span>") +
+    (next ? `<button class="next" data-s="${next.n}"><small>Следующая ›</small>${next.ru}</button>` : "<span></span>");
+  showScreen("quran-read");
+  if (ayah > 1) {
+    const el = document.getElementById("qa-" + ayah);
+    if (el) { el.scrollIntoView({ block: "start" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1700); }
+  }
+  saveQLast();
+}
+document.getElementById("q-nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-s]"); if (b) openSurah(+b.dataset.s);
+});
+document.getElementById("q-back").addEventListener("click", () => showScreen("quran"));
+
+// Где остановился: первый аят, который сейчас виден вверху экрана. Запоминаем при прокрутке
+function saveQLast() {
+  if (!qOpen) return;
+  const top = document.getElementById("quran-read").getBoundingClientRect().top + 60;
+  const all = [...document.querySelectorAll(".q-ayah")];
+  const cur = all.find(el => el.getBoundingClientRect().bottom > top) || all[0];
+  if (!cur) return;
+  qLast = { s: qOpen, a: +cur.dataset.a };
+  store("azkar-quran-last", qLast);
+}
+let qScrollTimer;
+document.getElementById("quran-read").addEventListener("scroll", () => {
+  clearTimeout(qScrollTimer); qScrollTimer = setTimeout(saveQLast, 250);
+});
+
+// Перевод: показать / спрятать (удобно, когда учишь суру наизусть)
+function applyQRu() {
+  document.getElementById("q-ayahs").classList.toggle("no-ru", !qRu);
+  const t = document.getElementById("q-ru-toggle");
+  t.setAttribute("aria-pressed", qRu ? "true" : "false");
+}
+document.getElementById("q-ru-toggle").addEventListener("click", () => {
+  qRu = !qRu; store("azkar-quran-ru", qRu); applyQRu(); haptic("tap");
+});
+
+// Кнопки у аята: поделиться и закладка
+document.getElementById("q-ayahs").addEventListener("click", async e => {
+  const b = e.target.closest(".q-act"); if (!b) return;
+  const a = +b.closest(".q-ayah").dataset.a, x = qSurah(qOpen);
+  if (b.dataset.act === "share") {
+    const el = b.closest(".q-ayah");
+    const text = [el.querySelector(".q-ar").textContent, el.querySelector(".q-ru").textContent,
+      `Коран, сура ${x.ru}, ${qOpen}:${a} (перевод смыслов Э. Кулиева)`].join("\n\n");
+    if (navigator.share) { try { await navigator.share({ text }); } catch (err) {} }
+    else toast(await copyText(text) ? "Скопировано — можно вставить в сообщение" : "Не получилось скопировать");
+  }
+  if (b.dataset.act === "mark") {
+    const on = !qMarks.some(m => m.s === qOpen && m.a === a);
+    qMarks = on ? [...qMarks, { s: qOpen, a }].sort((p, q) => p.s - q.s || p.a - q.a)
+                : qMarks.filter(m => !(m.s === qOpen && m.a === a));
+    store("azkar-quran-marks", qMarks);
+    b.classList.toggle("on", on);
+    haptic(on ? "done" : "tap");
+    toast(on ? `Закладка: ${x.ru}, аят ${a}` : "Закладка убрана");
+  }
+});
 
 /* ================================================================
    СТАРТ
