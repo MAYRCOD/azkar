@@ -1829,6 +1829,16 @@ if (navigator.standalone) document.documentElement.classList.add("standalone");
 renderSettings();
 renderTasbih();
 showScreen("home");
+
+// Приложение для iPhone: заставка со значком держится на экране, пока страница не нарисована
+// (иначе после неё секунду-другую виден пустой экран, пока запускается встроенный браузер).
+// Убираем её, когда первый экран готов: два requestAnimationFrame = «после ближайшей отрисовки».
+// Повтор через секунду — на случай, если первый вызов пришёл раньше, чем заставка успела показаться;
+// если страница вовсе не дойдёт до этого места, заставка сама уйдёт через 6 с (capacitor.config.json)
+const SPLASH = HAPTICS ? window.Capacitor.Plugins.SplashScreen : null;
+const hideSplash = () => { if (SPLASH) SPLASH.hide({ fadeOutDuration: 200 }).catch(() => {}); };
+requestAnimationFrame(() => requestAnimationFrame(hideSplash));
+setTimeout(hideSplash, 1000);
 </script>
 
 <script>
