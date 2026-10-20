@@ -7,7 +7,6 @@
    "meaning": "Открывающая Коран",
    "ar": "الفَاتِحة",
    "ayahs": 7,
-   "place": "mecca",
    "page": 1,
    "juz": 1,
    "sajda": []
@@ -18,7 +17,6 @@
    "meaning": "Корова",
    "ar": "البَقَرَة",
    "ayahs": 286,
-   "place": "medina",
    "page": 2,
    "juz": 1,
    "sajda": []
@@ -29,7 +27,6 @@
    "meaning": "Семейство Имрана",
    "ar": "آل عِمران",
    "ayahs": 200,
-   "place": "medina",
    "page": 50,
    "juz": 3,
    "sajda": []
@@ -40,7 +37,6 @@
    "meaning": "Женщины",
    "ar": "النِّسَاء",
    "ayahs": 176,
-   "place": "medina",
    "page": 77,
    "juz": 4,
    "sajda": []
@@ -51,7 +47,6 @@
    "meaning": "Трапеза",
    "ar": "المَائدة",
    "ayahs": 120,
-   "place": "medina",
    "page": 106,
    "juz": 6,
    "sajda": []
@@ -62,7 +57,6 @@
    "meaning": "Скот",
    "ar": "الأنعَام",
    "ayahs": 165,
-   "place": "mecca",
    "page": 128,
    "juz": 7,
    "sajda": []
@@ -73,7 +67,6 @@
    "meaning": "Ограды",
    "ar": "الأعرَاف",
    "ayahs": 206,
-   "place": "mecca",
    "page": 151,
    "juz": 8,
    "sajda": [
@@ -86,7 +79,6 @@
    "meaning": "Трофеи",
    "ar": "الأنفَال",
    "ayahs": 75,
-   "place": "medina",
    "page": 177,
    "juz": 9,
    "sajda": []
@@ -97,7 +89,6 @@
    "meaning": "Покаяние",
    "ar": "التوبَة",
    "ayahs": 129,
-   "place": "medina",
    "page": 187,
    "juz": 10,
    "sajda": []
@@ -108,7 +99,6 @@
    "meaning": "Йунус",
    "ar": "يُونس",
    "ayahs": 109,
-   "place": "mecca",
    "page": 208,
    "juz": 11,
    "sajda": []
@@ -119,7 +109,6 @@
    "meaning": "Худ",
    "ar": "هُود",
    "ayahs": 123,
-   "place": "mecca",
    "page": 221,
    "juz": 11,
    "sajda": []
@@ -130,7 +119,6 @@
    "meaning": "Йусуф",
    "ar": "يُوسُف",
    "ayahs": 111,
-   "place": "mecca",
    "page": 235,
    "juz": 12,
    "sajda": []
@@ -141,7 +129,6 @@
    "meaning": "Гром",
    "ar": "الرَّعد",
    "ayahs": 43,
-   "place": "medina",
    "page": 249,
    "juz": 13,
    "sajda": [
@@ -154,7 +141,6 @@
    "meaning": "Ибрахим",
    "ar": "إبراهِيم",
    "ayahs": 52,
-   "place": "mecca",
    "page": 255,
    "juz": 13,
    "sajda": []
@@ -165,7 +151,6 @@
    "meaning": "Хиджр ",
    "ar": "الحِجر",
    "ayahs": 99,
-   "place": "mecca",
    "page": 262,
    "juz": 14,
    "sajda": []
@@ -176,7 +161,6 @@
    "meaning": "Пчелы",
    "ar": "النَّحل",
    "ayahs": 128,
-   "place": "mecca",
    "page": 267,
    "juz": 14,
    "sajda": [
@@ -189,7 +173,6 @@
    "meaning": "Ночной перенос",
    "ar": "الإسرَاء",
    "ayahs": 111,
-   "place": "mecca",
    "page": 282,
    "juz": 15,
    "sajda": [
@@ -202,7 +185,6 @@
    "meaning": "Пещера",
    "ar": "الكَهف",
    "ayahs": 110,
-   "place": "mecca",
    "page": 293,
    "juz": 15,
    "sajda": []
@@ -213,7 +195,6 @@
    "meaning": "Марьям",
    "ar": "مَريَم",
    "ayahs": 98,
-   "place": "mecca",
    "page": 305,
    "juz": 16,
    "sajda": [
@@ -226,7 +207,6 @@
    "meaning": "Та Ха ",
    "ar": "طه",
    "ayahs": 135,
-   "place": "mecca",
    "page": 312,
    "juz": 16,
    "sajda": []
@@ -237,7 +217,6 @@
    "meaning": "Пророки",
    "ar": "الأنبيَاء",
    "ayahs": 112,
-   "place": "mecca",
    "page": 322,
    "juz": 17,
    "sajda": []
@@ -248,7 +227,6 @@
    "meaning": "Паломничество",
    "ar": "الحج",
    "ayahs": 78,
-   "place": "medina",
    "page": 332,
    "juz": 17,
    "sajda": [
@@ -262,7 +240,6 @@
    "meaning": "Верующие",
    "ar": "المؤمنُون",
    "ayahs": 118,
-   "place": "mecca",
    "page": 342,
    "juz": 18,
    "sajda": []
@@ -273,7 +250,6 @@
    "meaning": "Свет",
    "ar": "النور",
    "ayahs": 64,
-   "place": "medina",
    "page": 350,
    "juz": 18,
    "sajda": []
@@ -284,7 +260,6 @@
    "meaning": "аль-Фуркан",
    "ar": "الفُرقَان",
    "ayahs": 77,
-   "place": "mecca",
    "page": 359,
    "juz": 18,
    "sajda": [
@@ -297,7 +272,6 @@
    "meaning": "Поэты",
    "ar": "الشعراء",
    "ayahs": 227,
-   "place": "mecca",
    "page": 367,
    "juz": 19,
    "sajda": []
@@ -308,7 +282,6 @@
    "meaning": "Муравьи",
    "ar": "النَّمل",
    "ayahs": 93,
-   "place": "mecca",
    "page": 377,
    "juz": 19,
    "sajda": [
@@ -321,7 +294,6 @@
    "meaning": "Рассказ",
    "ar": "القَصَص",
    "ayahs": 88,
-   "place": "mecca",
    "page": 385,
    "juz": 20,
    "sajda": []
@@ -332,7 +304,6 @@
    "meaning": "Паук",
    "ar": "العَنكبُوت",
    "ayahs": 69,
-   "place": "mecca",
    "page": 396,
    "juz": 20,
    "sajda": []
@@ -343,7 +314,6 @@
    "meaning": "Римляне",
    "ar": "الرُّوم",
    "ayahs": 60,
-   "place": "mecca",
    "page": 404,
    "juz": 21,
    "sajda": []
@@ -354,7 +324,6 @@
    "meaning": "Лукман",
    "ar": "لُقمَان",
    "ayahs": 34,
-   "place": "mecca",
    "page": 411,
    "juz": 21,
    "sajda": []
@@ -365,7 +334,6 @@
    "meaning": "Земной поклон",
    "ar": "السَّجدة",
    "ayahs": 30,
-   "place": "mecca",
    "page": 415,
    "juz": 21,
    "sajda": [
@@ -378,7 +346,6 @@
    "meaning": "Союзники",
    "ar": "الأحزَاب",
    "ayahs": 73,
-   "place": "medina",
    "page": 418,
    "juz": 21,
    "sajda": []
@@ -389,7 +356,6 @@
    "meaning": "Сава",
    "ar": "سَبإ",
    "ayahs": 54,
-   "place": "mecca",
    "page": 428,
    "juz": 22,
    "sajda": []
@@ -400,7 +366,6 @@
    "meaning": "Творец",
    "ar": "فَاطِر",
    "ayahs": 45,
-   "place": "mecca",
    "page": 434,
    "juz": 22,
    "sajda": []
@@ -411,7 +376,6 @@
    "meaning": "Йа Син",
    "ar": "يسٓ",
    "ayahs": 83,
-   "place": "mecca",
    "page": 440,
    "juz": 22,
    "sajda": []
@@ -422,7 +386,6 @@
    "meaning": "Выстроившиеся в ряды",
    "ar": "الصَّافَات",
    "ayahs": 182,
-   "place": "mecca",
    "page": 446,
    "juz": 23,
    "sajda": []
@@ -433,7 +396,6 @@
    "meaning": "Сод",
    "ar": "صٓ",
    "ayahs": 88,
-   "place": "mecca",
    "page": 453,
    "juz": 23,
    "sajda": [
@@ -446,7 +408,6 @@
    "meaning": "Толпы",
    "ar": "الزُّمَر",
    "ayahs": 75,
-   "place": "mecca",
    "page": 458,
    "juz": 23,
    "sajda": []
@@ -457,7 +418,6 @@
    "meaning": "Прощающий",
    "ar": "غَافِر",
    "ayahs": 85,
-   "place": "mecca",
    "page": 467,
    "juz": 24,
    "sajda": []
@@ -468,7 +428,6 @@
    "meaning": "Разъяснены",
    "ar": "فُصِّلَت",
    "ayahs": 54,
-   "place": "mecca",
    "page": 477,
    "juz": 24,
    "sajda": [
@@ -481,7 +440,6 @@
    "meaning": "Совет",
    "ar": "الشُّوري",
    "ayahs": 53,
-   "place": "mecca",
    "page": 483,
    "juz": 25,
    "sajda": []
@@ -492,7 +450,6 @@
    "meaning": "Украшения",
    "ar": "الزُّخرُف",
    "ayahs": 89,
-   "place": "mecca",
    "page": 489,
    "juz": 25,
    "sajda": []
@@ -503,7 +460,6 @@
    "meaning": "Дым",
    "ar": "الدُّخان",
    "ayahs": 59,
-   "place": "mecca",
    "page": 496,
    "juz": 25,
    "sajda": []
@@ -514,7 +470,6 @@
    "meaning": "Коленопреклоненные",
    "ar": "الجاثِية",
    "ayahs": 37,
-   "place": "mecca",
    "page": 499,
    "juz": 25,
    "sajda": []
@@ -525,7 +480,6 @@
    "meaning": "Барханы",
    "ar": "الأحقَاف",
    "ayahs": 35,
-   "place": "mecca",
    "page": 502,
    "juz": 26,
    "sajda": []
@@ -536,7 +490,6 @@
    "meaning": "Мухаммад",
    "ar": "مُحمد",
    "ayahs": 38,
-   "place": "medina",
    "page": 507,
    "juz": 26,
    "sajda": []
@@ -547,7 +500,6 @@
    "meaning": "Победа",
    "ar": "الفَتح",
    "ayahs": 29,
-   "place": "medina",
    "page": 511,
    "juz": 26,
    "sajda": []
@@ -558,7 +510,6 @@
    "meaning": "Комнаты",
    "ar": "الحُجُرَات",
    "ayahs": 18,
-   "place": "medina",
    "page": 515,
    "juz": 26,
    "sajda": []
@@ -569,7 +520,6 @@
    "meaning": "Каф",
    "ar": "قٓ",
    "ayahs": 45,
-   "place": "mecca",
    "page": 518,
    "juz": 26,
    "sajda": []
@@ -580,7 +530,6 @@
    "meaning": "Рассеивающие прах",
    "ar": "الذَّاريَات",
    "ayahs": 60,
-   "place": "mecca",
    "page": 520,
    "juz": 26,
    "sajda": []
@@ -591,7 +540,6 @@
    "meaning": "Гора",
    "ar": "الطُّور",
    "ayahs": 49,
-   "place": "mecca",
    "page": 523,
    "juz": 27,
    "sajda": []
@@ -602,7 +550,6 @@
    "meaning": "Звезда",
    "ar": "النَّجم",
    "ayahs": 62,
-   "place": "mecca",
    "page": 526,
    "juz": 27,
    "sajda": [
@@ -615,7 +562,6 @@
    "meaning": "Месяц",
    "ar": "القَمَر",
    "ayahs": 55,
-   "place": "mecca",
    "page": 528,
    "juz": 27,
    "sajda": []
@@ -626,7 +572,6 @@
    "meaning": "Милостивый",
    "ar": "الرَّحمٰن",
    "ayahs": 78,
-   "place": "medina",
    "page": 531,
    "juz": 27,
    "sajda": []
@@ -637,7 +582,6 @@
    "meaning": "Событие",
    "ar": "الوَاقِعة",
    "ayahs": 96,
-   "place": "mecca",
    "page": 534,
    "juz": 27,
    "sajda": []
@@ -648,7 +592,6 @@
    "meaning": "Железо",
    "ar": "الحدِيد",
    "ayahs": 29,
-   "place": "medina",
    "page": 537,
    "juz": 27,
    "sajda": []
@@ -659,7 +602,6 @@
    "meaning": "Препирающаяся",
    "ar": "المُجَادلة",
    "ayahs": 22,
-   "place": "medina",
    "page": 542,
    "juz": 28,
    "sajda": []
@@ -670,7 +612,6 @@
    "meaning": "Сбор",
    "ar": "الحَشر",
    "ayahs": 24,
-   "place": "medina",
    "page": 545,
    "juz": 28,
    "sajda": []
@@ -681,7 +622,6 @@
    "meaning": "Испытуемая",
    "ar": "المُمتَحنَة",
    "ayahs": 13,
-   "place": "medina",
    "page": 549,
    "juz": 28,
    "sajda": []
@@ -692,7 +632,6 @@
    "meaning": "Ряды",
    "ar": "الصَّف",
    "ayahs": 14,
-   "place": "medina",
    "page": 551,
    "juz": 28,
    "sajda": []
@@ -703,7 +642,6 @@
    "meaning": "Собрание",
    "ar": "الجُمعَة",
    "ayahs": 11,
-   "place": "medina",
    "page": 553,
    "juz": 28,
    "sajda": []
@@ -714,7 +652,6 @@
    "meaning": "Лицемеры",
    "ar": "المُنَافِقُونَ",
    "ayahs": 11,
-   "place": "medina",
    "page": 554,
    "juz": 28,
    "sajda": []
@@ -725,7 +662,6 @@
    "meaning": "Взаимное обделение",
    "ar": "التغَابُن",
    "ayahs": 18,
-   "place": "medina",
    "page": 556,
    "juz": 28,
    "sajda": []
@@ -736,7 +672,6 @@
    "meaning": "Развод",
    "ar": "الطَّلَاق",
    "ayahs": 12,
-   "place": "medina",
    "page": 558,
    "juz": 28,
    "sajda": []
@@ -747,7 +682,6 @@
    "meaning": "Запрещение",
    "ar": "التَّحرِيم",
    "ayahs": 12,
-   "place": "medina",
    "page": 560,
    "juz": 28,
    "sajda": []
@@ -758,7 +692,6 @@
    "meaning": "Власть",
    "ar": "المُلك",
    "ayahs": 30,
-   "place": "mecca",
    "page": 562,
    "juz": 29,
    "sajda": []
@@ -769,7 +702,6 @@
    "meaning": "Письменная трость",
    "ar": "القَلَم",
    "ayahs": 52,
-   "place": "mecca",
    "page": 564,
    "juz": 29,
    "sajda": []
@@ -780,7 +712,6 @@
    "meaning": "Неминуемое",
    "ar": "الحَاقة",
    "ayahs": 52,
-   "place": "mecca",
    "page": 566,
    "juz": 29,
    "sajda": []
@@ -791,7 +722,6 @@
    "meaning": "Ступени",
    "ar": "المَعَارج",
    "ayahs": 44,
-   "place": "mecca",
    "page": 568,
    "juz": 29,
    "sajda": []
@@ -802,7 +732,6 @@
    "meaning": "Нух",
    "ar": "نُوح",
    "ayahs": 28,
-   "place": "mecca",
    "page": 570,
    "juz": 29,
    "sajda": []
@@ -813,7 +742,6 @@
    "meaning": "Джинны",
    "ar": "الجِن",
    "ayahs": 28,
-   "place": "mecca",
    "page": 572,
    "juz": 29,
    "sajda": []
@@ -824,7 +752,6 @@
    "meaning": "Закутавшийся",
    "ar": "المُزمل",
    "ayahs": 20,
-   "place": "mecca",
    "page": 574,
    "juz": 29,
    "sajda": []
@@ -835,7 +762,6 @@
    "meaning": "Завернувшийся",
    "ar": "المُدثر",
    "ayahs": 56,
-   "place": "mecca",
    "page": 575,
    "juz": 29,
    "sajda": []
@@ -846,7 +772,6 @@
    "meaning": "Воскресение",
    "ar": "القِيَامة",
    "ayahs": 40,
-   "place": "mecca",
    "page": 577,
    "juz": 29,
    "sajda": []
@@ -857,7 +782,6 @@
    "meaning": "Человек",
    "ar": "الإنسَان",
    "ayahs": 31,
-   "place": "medina",
    "page": 578,
    "juz": 29,
    "sajda": []
@@ -868,7 +792,6 @@
    "meaning": "Посылаемые",
    "ar": "المُرسَلات",
    "ayahs": 50,
-   "place": "mecca",
    "page": 580,
    "juz": 29,
    "sajda": []
@@ -879,7 +802,6 @@
    "meaning": "Весть",
    "ar": "النَّبَإ",
    "ayahs": 40,
-   "place": "mecca",
    "page": 582,
    "juz": 30,
    "sajda": []
@@ -890,7 +812,6 @@
    "meaning": "Исторгающие",
    "ar": "النَّازعَات",
    "ayahs": 46,
-   "place": "mecca",
    "page": 583,
    "juz": 30,
    "sajda": []
@@ -901,7 +822,6 @@
    "meaning": "Нахмурился",
    "ar": "عَبَسَ",
    "ayahs": 42,
-   "place": "mecca",
    "page": 585,
    "juz": 30,
    "sajda": []
@@ -912,7 +832,6 @@
    "meaning": "Скручивание",
    "ar": "التَّكوير",
    "ayahs": 29,
-   "place": "mecca",
    "page": 586,
    "juz": 30,
    "sajda": []
@@ -923,7 +842,6 @@
    "meaning": "Раскалывание",
    "ar": "الانفِطَار",
    "ayahs": 19,
-   "place": "mecca",
    "page": 587,
    "juz": 30,
    "sajda": []
@@ -934,7 +852,6 @@
    "meaning": "Обвешивающие",
    "ar": "المُطَففين",
    "ayahs": 36,
-   "place": "mecca",
    "page": 587,
    "juz": 30,
    "sajda": []
@@ -945,7 +862,6 @@
    "meaning": "Разверзнется",
    "ar": "الانشِقَاق",
    "ayahs": 25,
-   "place": "mecca",
    "page": 589,
    "juz": 30,
    "sajda": [
@@ -958,7 +874,6 @@
    "meaning": "Созвездия Зодиака",
    "ar": "البُرُوج",
    "ayahs": 22,
-   "place": "mecca",
    "page": 590,
    "juz": 30,
    "sajda": []
@@ -969,7 +884,6 @@
    "meaning": "Ночной путник",
    "ar": "الطَّارق",
    "ayahs": 17,
-   "place": "mecca",
    "page": 591,
    "juz": 30,
    "sajda": []
@@ -980,7 +894,6 @@
    "meaning": "Всевышний",
    "ar": "الأعلى",
    "ayahs": 19,
-   "place": "mecca",
    "page": 591,
    "juz": 30,
    "sajda": []
@@ -991,7 +904,6 @@
    "meaning": "Покрывающее",
    "ar": "الغَاشِية",
    "ayahs": 26,
-   "place": "mecca",
    "page": 592,
    "juz": 30,
    "sajda": []
@@ -1002,7 +914,6 @@
    "meaning": "Заря",
    "ar": "الفَجر",
    "ayahs": 30,
-   "place": "mecca",
    "page": 593,
    "juz": 30,
    "sajda": []
@@ -1013,7 +924,6 @@
    "meaning": "Город",
    "ar": "البَلَد",
    "ayahs": 20,
-   "place": "mecca",
    "page": 594,
    "juz": 30,
    "sajda": []
@@ -1024,7 +934,6 @@
    "meaning": "Солнце",
    "ar": "الشَّمس",
    "ayahs": 15,
-   "place": "mecca",
    "page": 595,
    "juz": 30,
    "sajda": []
@@ -1035,7 +944,6 @@
    "meaning": "Ночь",
    "ar": "اللَّيل",
    "ayahs": 21,
-   "place": "mecca",
    "page": 595,
    "juz": 30,
    "sajda": []
@@ -1046,7 +954,6 @@
    "meaning": "Утро",
    "ar": "الضُّحى",
    "ayahs": 11,
-   "place": "mecca",
    "page": 596,
    "juz": 30,
    "sajda": []
@@ -1057,7 +964,6 @@
    "meaning": "Раскрытие",
    "ar": "الشَّرح",
    "ayahs": 8,
-   "place": "mecca",
    "page": 596,
    "juz": 30,
    "sajda": []
@@ -1068,7 +974,6 @@
    "meaning": "Смоковница",
    "ar": "التِّين",
    "ayahs": 8,
-   "place": "mecca",
    "page": 597,
    "juz": 30,
    "sajda": []
@@ -1079,7 +984,6 @@
    "meaning": "Сгусток крови",
    "ar": "العَلَق",
    "ayahs": 19,
-   "place": "mecca",
    "page": 597,
    "juz": 30,
    "sajda": [
@@ -1092,7 +996,6 @@
    "meaning": "Предопределение",
    "ar": "القَدر",
    "ayahs": 5,
-   "place": "mecca",
    "page": 598,
    "juz": 30,
    "sajda": []
@@ -1103,7 +1006,6 @@
    "meaning": "Ясное знамение",
    "ar": "البَينَة",
    "ayahs": 8,
-   "place": "medina",
    "page": 598,
    "juz": 30,
    "sajda": []
@@ -1114,7 +1016,6 @@
    "meaning": "Сотрясение",
    "ar": "الزَّلزَلة",
    "ayahs": 8,
-   "place": "medina",
    "page": 599,
    "juz": 30,
    "sajda": []
@@ -1125,7 +1026,6 @@
    "meaning": "Скачущие",
    "ar": "العَاديَات",
    "ayahs": 11,
-   "place": "mecca",
    "page": 599,
    "juz": 30,
    "sajda": []
@@ -1136,7 +1036,6 @@
    "meaning": "Великое бедствие",
    "ar": "القَارعَة",
    "ayahs": 11,
-   "place": "mecca",
    "page": 600,
    "juz": 30,
    "sajda": []
@@ -1147,7 +1046,6 @@
    "meaning": "Страсть к приумножению",
    "ar": "التَّكاثُر",
    "ayahs": 8,
-   "place": "mecca",
    "page": 600,
    "juz": 30,
    "sajda": []
@@ -1158,7 +1056,6 @@
    "meaning": "Предвечернее время",
    "ar": "العَصر",
    "ayahs": 3,
-   "place": "mecca",
    "page": 601,
    "juz": 30,
    "sajda": []
@@ -1169,7 +1066,6 @@
    "meaning": "Хулитель",
    "ar": "الهُمَزة",
    "ayahs": 9,
-   "place": "mecca",
    "page": 601,
    "juz": 30,
    "sajda": []
@@ -1180,7 +1076,6 @@
    "meaning": "Слон",
    "ar": "الفِيل",
    "ayahs": 5,
-   "place": "mecca",
    "page": 601,
    "juz": 30,
    "sajda": []
@@ -1191,7 +1086,6 @@
    "meaning": "Курейшиты",
    "ar": "قُرَيش",
    "ayahs": 4,
-   "place": "mecca",
    "page": 602,
    "juz": 30,
    "sajda": []
@@ -1202,7 +1096,6 @@
    "meaning": "Мелочь",
    "ar": "المَاعُون",
    "ayahs": 7,
-   "place": "mecca",
    "page": 602,
    "juz": 30,
    "sajda": []
@@ -1213,7 +1106,6 @@
    "meaning": "Изобилие",
    "ar": "الكَوثر",
    "ayahs": 3,
-   "place": "mecca",
    "page": 602,
    "juz": 30,
    "sajda": []
@@ -1224,7 +1116,6 @@
    "meaning": "Неверующие",
    "ar": "الكافِرون",
    "ayahs": 6,
-   "place": "mecca",
    "page": 603,
    "juz": 30,
    "sajda": []
@@ -1235,7 +1126,6 @@
    "meaning": "Помощь",
    "ar": "النَّصر",
    "ayahs": 3,
-   "place": "medina",
    "page": 603,
    "juz": 30,
    "sajda": []
@@ -1246,7 +1136,6 @@
    "meaning": "Пальмовые волокна",
    "ar": "المَسَد",
    "ayahs": 5,
-   "place": "mecca",
    "page": 603,
    "juz": 30,
    "sajda": []
@@ -1257,7 +1146,6 @@
    "meaning": "Очищение веры",
    "ar": "الإخلَاص",
    "ayahs": 4,
-   "place": "mecca",
    "page": 604,
    "juz": 30,
    "sajda": []
@@ -1268,7 +1156,6 @@
    "meaning": "Рассвет",
    "ar": "الفَلَق",
    "ayahs": 5,
-   "place": "mecca",
    "page": 604,
    "juz": 30,
    "sajda": []
@@ -1279,7 +1166,6 @@
    "meaning": "Люди",
    "ar": "النَّاس",
    "ayahs": 6,
-   "place": "mecca",
    "page": 604,
    "juz": 30,
    "sajda": []

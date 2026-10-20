@@ -1952,7 +1952,6 @@ const Q_ICON = {
 };
 // «аят»: 1 аят, 2 аята, 5 аятов
 const ayahWord = n => n % 10 === 1 && n % 100 !== 11 ? "аят" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "аята" : "аятов";
-const PLACE = { mecca: "мекканская", medina: "мединская" };
 // Где остановился: { s: сура, a: аят }. Закладки: [{ s, a }]. Показывать ли перевод
 let qLast = load("azkar-quran-last", null);
 let qMarks = load("azkar-quran-marks", []);
@@ -1991,7 +1990,7 @@ async function renderQuran() {
     html += `<div class="group" style="--i:${k++}"><span class="group-title">${juzTitle(j)}</span><div class="rows">` +
       list.filter(x => x.juz === j).map(x => `<button class="row q-row" data-s="${x.n}">
         <span class="lbl"><span class="dua-num q-num">${x.n}</span>
-          <span class="q-name"><span>${x.ru}</span><small>${x.ayahs} ${ayahWord(x.ayahs)} · ${PLACE[x.place]}</small></span></span>
+          <span class="q-name"><span>${x.ru}</span><small>${x.ayahs} ${ayahWord(x.ayahs)}</small></span></span>
         <span class="q-ar-name" lang="ar">${x.ar}</span></button>`).join("") + `</div></div>`;
   }
   box.innerHTML = html || `<p class="dua-empty">Ничего не найдено</p>`;
@@ -2016,7 +2015,7 @@ async function openSurah(n, ayah = 0) {
     <span class="q-head-ar" lang="ar">${x.ar}</span>
     <h1>${x.ru}</h1>
     ${x.meaning ? `<p class="q-meaning">«${x.meaning}»</p>` : ""}
-    <p>Сура ${n} · ${PLACE[x.place]} · ${x.ayahs} ${ayahWord(x.ayahs)}</p>
+    <p>Сура ${n} · ${x.ayahs} ${ayahWord(x.ayahs)}</p>
     <p>Джуз ${x.juz} · ${pages}</p>
     ${n !== 1 && n !== 9 ? `<div class="q-basmala" lang="ar">${qIndex.basmala}</div>` : ""}`;
   box.innerHTML = data.ayahs.map((a, i) => `
