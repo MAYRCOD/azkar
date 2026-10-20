@@ -74,8 +74,10 @@ python3 tools/build.py --version <следующая>
 - Тексты азкаров: azkar.ru. Номера хадисов сверены по sunnah.com.
 - Арабский шрифт: KFGQPC HAFS Uthmanic Script (Комплекс короля Фахда). Распространяется
   бесплатно, без изменений — см. `src/fonts/KFGQPC-COPYRIGHT.txt`.
-- Русский шрифт: Nexa (Fontfabric) — платный. Перед публичным распространением
-  нужна лицензия или замена на бесплатный шрифт.
+- Русский шрифт: Golos Text (Paratype) — бесплатный, лицензия SIL Open Font License 1.1:
+  можно встраивать в приложение и распространять, в том числе платно —
+  см. `src/fonts/OFL-GolosText.txt`. Файл `golos-text.woff2` сделан из
+  `GolosText[wght].ttf` репозитория google/fonts без изменений (только сжатие woff2).
 
 ## Приложение для iPhone
 

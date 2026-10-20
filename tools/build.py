@@ -26,8 +26,7 @@ SRC = ROOT / "src"
 # метка в исходнике → файл, который встраиваем вместо неё
 EMBED = {
     "__FONT__": SRC / "fonts" / "kfgqpc-hafs-uthmanic.otf",
-    "__NEXA_REGULAR__": SRC / "fonts" / "nexa-regular.otf",
-    "__NEXA_BOLD__": SRC / "fonts" / "nexa-bold.otf",
+    "__GOLOS__": SRC / "fonts" / "golos-text.woff2",
     "__IMG_MORNING__": SRC / "images" / "morning.jpg",
     "__IMG_EVENING__": SRC / "images" / "evening.jpg",
 }
