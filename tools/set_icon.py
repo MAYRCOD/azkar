@@ -4,6 +4,7 @@
     python3 tools/set_icon.py mosque    — прежняя иконка: полумесяц и мечеть
 
 Варианты лежат в src/logo/<имя>/: AppIcon-1024.png (iOS) и три иконки сайта.
+Заставка при запуске на iPhone (значок по центру) перерисовывается сама.
 После смены: собрать сайт с новой версией (tools/build.py --version N), чтобы
 телефоны обновили кэш, а для iPhone — запустить сборку TestFlight.
 """
@@ -26,3 +27,7 @@ for f, dst in TARGETS.items():
     assert img.mode == "RGB", f"{f}: App Store не принимает прозрачность"
     shutil.copyfile(src / f, ROOT / dst)
     print(f"{dst}  {img.size[0]}×{img.size[1]}")
+
+# заставка при запуске на iPhone — тот же значок по центру, рисуем заново
+import make_splash
+make_splash.main()

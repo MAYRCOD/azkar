@@ -6,3 +6,6 @@ package-lock.json
 
 # Папка для Capacitor — собирается командой npm run www
 www/
+
+# Кэш Python (появляется, когда один скрипт из tools/ подключает другой)
+__pycache__/
