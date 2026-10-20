@@ -631,10 +631,7 @@ const section = name => console.log("•", name);
     await k.click("#tab-quran"); await W(k, 800);
     check(await k.locator("#quran").isVisible() && (await k.getAttribute("#tabbar", "data-active")) === "quran", "вкладка «Коран» не открылась");
     check((await k.locator(".q-row").count()) === 114, "в списке не 114 сур");
-    // заголовки групп покрывают все 30 джузов без пропусков: «Джуз 1–2», «Джуз 3», …
-    const covered = (await k.locator("#q-list .group-title").allInnerTexts()).filter(t => /^джуз/i.test(t))
-      .flatMap(t => { const [a, b = a] = t.match(/\d+/g).map(Number); return Array.from({ length: b - a + 1 }, (_, i) => a + i); });
-    check(covered.join() === Array.from({ length: 30 }, (_, i) => i + 1).join(), "джузы в списке не 1…30 подряд: " + covered.join());
+    check(!(await k.locator("#q-list .group-title").count()), "в списке сур не должно быть заголовков джузов");
     // у каждой суры число аятов совпадает с файлом суры, перевод — у каждого аята
     const bad = await k.evaluate(async () => {
       const idx = await (await fetch("quran/index.json")).json(), out = [];
@@ -708,6 +705,7 @@ const section = name => console.log("•", name);
     await k.fill("#q-search", "");
     await k.click('#q-switch [data-view="juzs"]'); await W(k, 500);
     check((await k.locator(".q-row").count()) === 30 && !(await k.locator("#q-search").isVisible()), "в режиме «Джузы» не 30 строк или виден поиск");
+    check(!(await k.locator("#q-list .q-ar-name").count()), "в списке джузов справа не должно быть названий сур");
     await k.locator(".q-row").nth(1).click(); await W(k, 900);
     check((await k.locator(".q-head h1").innerText()) === "аль-Бакара" && await atTop(142), "джуз 2 не открыл аль-Бакара, 142");
     await k.click("#q-back"); await W(k, 500);
