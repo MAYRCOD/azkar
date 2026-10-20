@@ -630,7 +630,11 @@ const section = name => console.log("•", name);
     await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 400);
     await k.click("#tab-quran"); await W(k, 800);
     check(await k.locator("#quran").isVisible() && (await k.getAttribute("#tabbar", "data-active")) === "quran", "вкладка «Коран» не открылась");
-    check((await k.locator(".q-row").count()) === 37, "в списке не 37 сур 30-го джуза");
+    check((await k.locator(".q-row").count()) === 114, "в списке не 114 сур");
+    // заголовки групп покрывают все 30 джузов без пропусков: «Джуз 1–2», «Джуз 3», …
+    const covered = (await k.locator("#q-list .group-title").allInnerTexts()).filter(t => /^джуз/i.test(t))
+      .flatMap(t => { const [a, b = a] = t.match(/\d+/g).map(Number); return Array.from({ length: b - a + 1 }, (_, i) => a + i); });
+    check(covered.join() === Array.from({ length: 30 }, (_, i) => i + 1).join(), "джузы в списке не 1…30 подряд: " + covered.join());
     // у каждой суры число аятов совпадает с файлом суры, перевод — у каждого аята
     const bad = await k.evaluate(async () => {
       const idx = await (await fetch("quran/index.json")).json(), out = [];
@@ -641,6 +645,15 @@ const section = name => console.log("•", name);
       return out;
     });
     check(!bad.length, "суры с неполными данными: " + bad.join(", "));
+    const total = await k.evaluate(async () => (await (await fetch("quran/index.json")).json()).surahs.reduce((n, x) => n + x.ayahs, 0));
+    check(total === 6236, "всего аятов не 6236: " + total);
+    // басмалы нет перед «аль-Фатихой» (там она — первый аят) и перед «ат-Тауба»
+    for (const [n, want] of [[1, 0], [9, 0], [2, 1]]) {
+      await k.evaluate(n => openSurah(n), n); await W(k, 700);
+      check((await k.locator(".q-basmala").count()) === want, `сура ${n}: басмала ${want ? "должна быть" : "не нужна"}`);
+    }
+    check((await k.locator(".q-ayah").count()) === 286, "в аль-Бакара не 286 аятов");
+    await k.click("#q-back"); await W(k, 500);
     check(await k.evaluate(() => document.fonts.check('30px "QuranHafs"')), "шрифт мусхафа не загрузился");
     await k.click('.q-row[data-s="113"]'); await W(k, 800);
     check(await k.locator("#quran-read").isVisible() && await k.evaluate(() => document.getElementById("tabbar").classList.contains("away")),
@@ -682,6 +695,8 @@ const section = name => console.log("•", name);
     // аят с земным поклоном помечен
     await k.evaluate(() => openSurah(96)); await W(k, 800);
     check((await k.locator("#qa-19 .q-sajda").count()) === 1 && (await k.locator(".q-sajda").count()) === 1, "нет пометки земного поклона у 96:19");
+    const sajdas = await k.evaluate(async () => (await (await fetch("quran/index.json")).json()).surahs.reduce((n, x) => n + x.sajda.length, 0));
+    check(sajdas === 15, "аятов с земным поклоном не 15: " + sajdas);
     await k.click("#q-back"); await W(k, 500);
     // 5 подписей внизу помещаются на узком экране
     for (const w of [320, 390]) {

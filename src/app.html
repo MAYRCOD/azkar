@@ -1957,11 +1957,15 @@ async function renderQuran() {
         <span class="lbl"><span class="tile tile-orange" aria-hidden="true">${Q_ICON.markFill}</span><span>${qSurah(m.s).ru}, аят ${m.a}</span></span>
         <span class="value">${m.s}:${m.a}</span></button>`).join("") + `</div></div>`;
   }
-  // суры группами по джузам (джуз — по первому аяту суры)
+  // Суры группами по джузам: сура попадает в группу джуза, в котором она начинается.
+  // Некоторые джузы начинаются в середине суры (2-й джуз целиком внутри «аль-Бакара»),
+  // поэтому заголовок — диапазон до следующей группы: «Джуз 1–2», «Джуз 3»… Так видны все 30
+  const starts = [...new Set(qIndex.surahs.map(x => x.juz))];
+  const juzTitle = j => { const nx = starts[starts.indexOf(j) + 1] || 31; return nx - 1 > j ? `Джуз ${j}–${nx - 1}` : `Джуз ${j}`; };
   const list = qIndex.surahs.filter(x => !q || String(x.n) === q || low(x.ru).includes(q) || low(x.ru).replace(/^[а-я]+-/, "").includes(q));
   const juzs = [...new Set(list.map(x => x.juz))];
   for (const j of juzs) {
-    html += `<div class="group" style="--i:${k++}"><span class="group-title">Джуз ${j}</span><div class="rows">` +
+    html += `<div class="group" style="--i:${k++}"><span class="group-title">${juzTitle(j)}</span><div class="rows">` +
       list.filter(x => x.juz === j).map(x => `<button class="row q-row" data-s="${x.n}">
         <span class="lbl"><span class="dua-num q-num">${x.n}</span>
           <span class="q-name"><span>${x.ru}</span><small>${x.ayahs} ${ayahWord(x.ayahs)} · ${PLACE[x.place]}</small></span></span>
