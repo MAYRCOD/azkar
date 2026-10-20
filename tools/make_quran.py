@@ -8,6 +8,7 @@
   chapters.json     — мекканская/мединская сура, аяты с земным поклоном (из fawazahmed0/quran-api)
   kuliev.json       — перевод Э. Кулиева по аятам (как на quran.com, перевод №45)
   names-ru.json     — русские названия сур (как в остальном приложении: «аль-Ихлас»)
+  meanings-ru.json  — значение названия по-русски (с quran.com: «Весть», «Рассвет»)
 
 Пишет src/data/quran/:
   index.json  — список сур (только те, у которых есть перевод) + басмала
@@ -33,6 +34,7 @@ def main() -> None:
     chapters = {c["n"]: c for c in load("chapters.json")}
     kuliev = load("kuliev.json")
     names = load("names-ru.json")
+    meanings = load("meanings-ru.json")
     assert len(ayahs) == 6236, "в тексте должно быть 6236 аятов"
 
     by_surah = {}
@@ -40,7 +42,7 @@ def main() -> None:
         by_surah.setdefault(a["sora"], []).append(a)
 
     # Басмала перед сурами — это первый аят «аль-Фатихи» без номера в конце (сам текст не трогаем)
-    basmala = by_surah[1][0]["aya_text"].rsplit(" ", 1)[0]
+    basmala = by_surah[1][0]["aya_text"].rsplit("\u00a0", 1)[0]
     assert basmala.startswith("بِسۡمِ") and not basmala[-1].isdigit()
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -67,6 +69,7 @@ def main() -> None:
         surahs.append({
             "n": n,
             "ru": names[str(n)],
+            "meaning": meanings.get(str(n), ""),
             "ar": src[0]["sora_name_ar"],
             "ayahs": len(src),
             "place": chapters[n]["place"],

@@ -607,6 +607,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #quran h1 { font-size: 24px; }
 #q-list { display: grid; gap: 18px; }
 #quran-read { overflow-y: auto; padding-block: 16px calc(40px + env(safe-area-inset-bottom, 0px)); }   /* панели внизу нет */
+/* pan-y: вертикальную прокрутку делает браузер, а движение вбок отдаёт нам — для смахивания «назад».
+   Без этого iPhone забирал бы жест себе и отменял его (так уже было со свайпом в азкарах) */
+#quran-read { touch-action: pan-y; will-change: transform; }
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
 .q-row .q-num { width: 30px; height: 30px; font-size: 12.5px; }
@@ -626,6 +629,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .q-head .q-head-ar { font-family: var(--f-quran); font-size: 40px; line-height: 1.7; color: var(--gold); }
 .q-head h1 { margin: 0; }
 .q-head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.q-head .q-meaning { font-size: 15px; color: var(--fg); opacity: .8; margin: 0 0 4px; }
 .q-basmala { font-family: var(--f-quran); font-size: calc(28px * var(--ar-k, 1)); text-align: center; direction: rtl; margin: 6px 0 10px; line-height: 2; }
 /* Аяты — одним листом, разделены линиями: так удобнее читать подряд, чем отдельными карточками */
 .q-ayahs {
@@ -642,6 +646,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .q-ayah .q-ru { margin: 0; font-size: calc(15.5px * var(--tx-k, 1)); line-height: 1.5; }
 .q-ayahs.no-ru .q-ru { display: none; }
 .q-acts { display: flex; gap: 2px; }
+.q-num-line { display: flex; align-items: center; gap: 8px; }
+/* Аят с земным поклоном (в тексте мусхафа у него знак ۩) */
+.q-sajda { font-size: 12px; font-weight: 600; color: var(--gold); border: 1px solid currentColor; border-radius: 999px; padding: 2px 8px; }
 .q-act { border: 0; background: none; color: var(--muted); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; }
 .q-act svg { width: 19px; height: 19px; }
 .q-act:active { background: var(--press); }
@@ -1976,16 +1983,19 @@ async function openSurah(n, ayah = 0) {
   catch (e) { toast("Не получилось открыть суру. Нужен интернет"); return; }
   const x = qSurah(n);
   qOpen = n;
+  const last = data.ayahs[data.ayahs.length - 1].page;
+  const pages = last > x.page ? `страницы ${x.page}–${last}` : `страница ${x.page}`;
   document.getElementById("q-head").innerHTML = `
     <span class="q-head-ar" lang="ar">${x.ar}</span>
     <h1>${x.ru}</h1>
+    ${x.meaning ? `<p class="q-meaning">«${x.meaning}»</p>` : ""}
     <p>Сура ${n} · ${PLACE[x.place]} · ${x.ayahs} ${ayahWord(x.ayahs)}</p>
-    <p>Джуз ${x.juz} · страница ${x.page}</p>
+    <p>Джуз ${x.juz} · ${pages}</p>
     ${n !== 1 && n !== 9 ? `<div class="q-basmala" lang="ar">${qIndex.basmala}</div>` : ""}`;
   box.innerHTML = data.ayahs.map((a, i) => `
     <article class="q-ayah" id="qa-${i + 1}" data-a="${i + 1}">
       <div class="q-ayah-top">
-        <span class="dua-num">${i + 1}</span>
+        <span class="q-num-line"><span class="dua-num">${i + 1}</span>${x.sajda.includes(i + 1) ? `<span class="q-sajda">земной поклон</span>` : ""}</span>
         <span class="q-acts">
           <button class="q-act" data-act="share" aria-label="Поделиться аятом">${DUA_BTN.share}</button>
           <button class="q-act${qMarks.some(m => m.s === n && m.a === i + 1) ? " on" : ""}" data-act="mark" aria-label="Закладка">${Q_ICON.mark}</button>
@@ -2011,6 +2021,49 @@ document.getElementById("q-nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-s]"); if (b) openSurah(+b.dataset.s);
 });
 document.getElementById("q-back").addEventListener("click", () => showScreen("quran"));
+
+// Смахнуть страницу суры вправо — вернуться к списку (как «назад» в приложениях iPhone).
+// Срабатывает только на чёткий жест: движение в первые 10 px должно быть явно вбок (в 1,5 раза
+// больше, чем вниз/вверх), иначе это прокрутка и мы его не трогаем. Страница едет за пальцем;
+// отпустил — если сдвинул больше чем на треть экрана или смахнул быстро, уходим к списку, иначе страница возвращается
+(() => {
+  const page = document.getElementById("quran-read");
+  let g = null;
+  const reset = () => { page.style.transition = ""; page.style.transform = ""; page.style.opacity = ""; };
+  page.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) { g = null; return; }
+    const t = e.touches[0];
+    g = { x: t.clientX, y: t.clientY, dir: null, dx: 0, last: [t.clientX, performance.now()], v: 0 };
+  }, { passive: true });
+  page.addEventListener("touchmove", e => {
+    if (!g || e.touches.length !== 1) return;
+    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.dir) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      g.dir = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5 ? "back" : "scroll";
+    }
+    if (g.dir !== "back") return;
+    const now = performance.now();
+    g.v = (t.clientX - g.last[0]) / Math.max(1, now - g.last[1]);   // скорость последнего движения, px/мс
+    g.last = [t.clientX, now];
+    g.dx = Math.max(0, dx);
+    page.style.transition = "none";
+    page.style.transform = `translateX(${g.dx}px)`;
+    page.style.opacity = String(1 - g.dx / innerWidth * 0.4);
+  }, { passive: true });
+  const end = () => {
+    if (!g || g.dir !== "back") { g = null; return; }
+    const go = g.dx > innerWidth / 3 || (g.v > 0.5 && g.dx > 40);
+    g = null;
+    page.style.transition = "transform .2s ease-out, opacity .2s ease-out";
+    if (!go) { page.style.transform = ""; page.style.opacity = ""; setTimeout(reset, 220); return; }
+    page.style.transform = `translateX(${innerWidth}px)`; page.style.opacity = "0";
+    haptic("tap");
+    setTimeout(() => { showScreen("quran"); reset(); }, 200);
+  };
+  page.addEventListener("touchend", end);
+  page.addEventListener("touchcancel", end);
+})();
 
 // Где остановился: первый аят, который сейчас виден вверху экрана. Запоминаем при прокрутке
 function saveQLast() {

@@ -630,7 +630,17 @@ const section = name => console.log("•", name);
     await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 400);
     await k.click("#tab-quran"); await W(k, 800);
     check(await k.locator("#quran").isVisible() && (await k.getAttribute("#tabbar", "data-active")) === "quran", "вкладка «Коран» не открылась");
-    check((await k.locator(".q-row").count()) === 3, "в списке не 3 суры");
+    check((await k.locator(".q-row").count()) === 37, "в списке не 37 сур 30-го джуза");
+    // у каждой суры число аятов совпадает с файлом суры, перевод — у каждого аята
+    const bad = await k.evaluate(async () => {
+      const idx = await (await fetch("quran/index.json")).json(), out = [];
+      for (const x of idx.surahs) {
+        const d = await (await fetch(`quran/${x.n}.json`)).json();
+        if (d.ayahs.length !== x.ayahs || d.ayahs.some(a => !a.ru || !a.ar)) out.push(x.n);
+      }
+      return out;
+    });
+    check(!bad.length, "суры с неполными данными: " + bad.join(", "));
     check(await k.evaluate(() => document.fonts.check('30px "QuranHafs"')), "шрифт мусхафа не загрузился");
     await k.click('.q-row[data-s="113"]'); await W(k, 800);
     check(await k.locator("#quran-read").isVisible() && await k.evaluate(() => document.getElementById("tabbar").classList.contains("away")),
@@ -662,17 +672,52 @@ const section = name => console.log("•", name);
       const r = document.getElementById("qa-3").getBoundingClientRect(); return r.top >= -2 && r.top < 120;
     }), "закладка не привела к аяту 3");
     await k.click("#q-back"); await W(k, 600);
-    await k.fill("#q-search", "нас"); await W(k, 300);
-    check((await k.locator(".q-row").count()) === 1, "поиск «нас» нашёл не одну суру");
+    await k.fill("#q-search", "наср"); await W(k, 300);
+    check((await k.locator(".q-row").count()) === 1, "поиск «наср» нашёл не одну суру");
+    await k.fill("#q-search", "фил"); await W(k, 300);
+    check((await k.locator(".q-row").count()) === 1, "поиск без «аль-» («фил») не работает");
     await k.fill("#q-search", "112"); await W(k, 300);
     check((await k.locator(".q-row").count()) === 1, "поиск по номеру не работает");
     await k.fill("#q-search", "");
+    // аят с земным поклоном помечен
+    await k.evaluate(() => openSurah(96)); await W(k, 800);
+    check((await k.locator("#qa-19 .q-sajda").count()) === 1 && (await k.locator(".q-sajda").count()) === 1, "нет пометки земного поклона у 96:19");
+    await k.click("#q-back"); await W(k, 500);
     // 5 подписей внизу помещаются на узком экране
     for (const w of [320, 390]) {
       await k.setViewportSize({ width: w, height: 700 }); await W(k, 200);
       const over = await k.evaluate(() => [...document.querySelectorAll(".tab-item")].filter(t => t.scrollWidth > t.clientWidth + 1).length);
       check(over === 0, `${w}px: подписи вкладок не помещаются`);
     }
+    await ctx.close();
+  }
+  {
+    // Смахивание вправо на странице суры — назад к списку. Настоящие касания (как на iPhone)
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 700 }, hasTouch: true, isMobile: true });
+    const k = await ctx.newPage(); k.on("pageerror", e => errs.push(e.message));
+    await k.goto(URL); await W(k, 400);
+    const cdp = await ctx.newCDPSession(k);
+    const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
+    const gesture = async (x0, y0, dx, dy, steps = 10, pause = 16) => {
+      await touch("touchStart", x0, y0);
+      for (let i = 1; i <= steps; i++) { await touch("touchMove", x0 + dx * i / steps, y0 + dy * i / steps); await W(k, pause); }
+      await touch("touchEnd"); await W(k, 500);
+    };
+    const onSurah = () => k.locator("#quran-read").isVisible();
+    await k.click("#tab-quran"); await W(k, 700);
+    await k.click('.q-row[data-s="78"]'); await W(k, 800);
+    await gesture(60, 400, 0, -250);
+    check(await onSurah() && await k.evaluate(() => document.getElementById("quran-read").scrollTop > 100), "вертикальная прокрутка не работает или закрыла суру");
+    await gesture(60, 400, 140, 140);
+    check(await onSurah(), "косое движение (почти прокрутка) не должно закрывать суру");
+    await gesture(60, 400, 80, 0, 10, 60);
+    check(await onSurah() && await k.evaluate(() => !document.getElementById("quran-read").style.transform), "короткое медленное движение вбок не должно закрывать суру");
+    await gesture(40, 400, 260, 10);
+    check(await k.locator("#quran").isVisible() && !(await onSurah()), "чёткий свайп вправо не вернул к списку сур");
+    check(await k.evaluate(() => !document.getElementById("quran-read").style.transform), "после свайпа страница суры осталась сдвинутой");
+    await k.click('.q-row[data-s="79"]'); await W(k, 800);
+    await gesture(40, 400, -260, 0);
+    check(await onSurah(), "свайп влево не должен закрывать суру");
     await ctx.close();
   }
 
