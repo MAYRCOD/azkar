@@ -638,7 +638,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   scrollbar-width: none; padding-top: env(safe-area-inset-top, 0px);
 }
 .q-mushaf::-webkit-scrollbar { display: none; }
-.mp { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; padding: 8px 6px 4px; min-width: 0; }
+.mp { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; padding: 8px 3px 4px; min-width: 0; }
 .mp-top { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; direction: ltr; padding: 0 6px 4px; }
 .mp-top span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mp-top span:last-child { flex: none; }
@@ -657,17 +657,20 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* Заголовок суры: рамка с узором, по центру плашка с названием, написанным каллиграфией (шрифт названий сур) */
 .mh {
   position: relative; display: grid; place-items: center; height: 86%; margin-inline: 2px;
+  container-type: size;   /* размер названия считаем от высоты рамки (cqh) — так оно всегда в ней помещается */
   background: var(--mh-pat) center / 14px, var(--mh-bg); border: 1.2px solid var(--mh-line); border-radius: 4px;
   box-shadow: inset 0 0 0 2.5px var(--mh-bg), inset 0 0 0 3.3px var(--mh-line);
 }
 .mh span {
   display: grid; place-items: center; height: 76%; width: 42%; min-width: 7em; border-radius: 999px;
   background: var(--mh-pill); border: 1px solid var(--mh-line); color: var(--mh-ink);
-  font-family: "surahnames"; font-size: calc(var(--mfs, 20px) * 1.3); line-height: 1; direction: ltr;
+  /* Не больше высоты плашки: иначе Safari (iPhone) прижимает вылезающий текст к верху, и название «уезжает» вниз */
+  font-family: "surahnames"; font-size: min(calc(var(--mfs, 20px) * 1.3), 64cqh); line-height: 1; direction: ltr;
 }
 .mp.special .mh { height: calc(var(--mfs, 20px) * 1.9); margin: 0 4% 4px; }
 .mb { display: grid; place-items: center; color: var(--fg); }
-.mb svg { height: calc(var(--mfs, 20px) * 1.45); width: auto; }
+.mb { height: 100%; container-type: size; }   /* басмала — не выше своей строки (cqh — высота строки) */
+.mb svg { height: min(calc(var(--mfs, 20px) * 1.45), 92cqh); width: auto; }
 .mp-msg { flex: 0 0 100%; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; direction: ltr; }
 .q-switch { margin: 0; }
 .q-switch[data-set="juzs"]::before { transform: translateX(100%); }
