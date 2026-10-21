@@ -8,6 +8,8 @@
                       (3:92 в 4-м, 9:93 в 10-м), а у 56 аятов страница сдвинута на одну.
   pages-qurancom.json — страница, джуз, хизб каждого аята и границы джузов с quran.com
                       (одинаковы во всех мединских изданиях quran.com; сверено 21.10.2026)
+  pages-tanzil.json — то же по разметке Tanzil: независимая вторая сверка. Если хоть у одного
+                      аята страница или джуз расходятся с quran.com — сборка останавливается
   chapters.json     — аяты с земным поклоном (из fawazahmed0/quran-api; там же мекканская/мединская —
                       в приложении это не показываем, решение Майрбека 20.10.2026)
   kuliev.json       — перевод Э. Кулиева по аятам (как на quran.com, перевод №45)
@@ -16,7 +18,7 @@
 
 Пишет src/data/quran/:
   index.json  — список сур (только те, у которых есть перевод), басмала и начала 30 джузов
-  112.json …  — по файлу на суру: аяты с переводом, страница, строки, джуз
+  112.json …  — по файлу на суру: аяты с переводом, страница, джуз
 
 Сура попадает в приложение, только когда для неё есть перевод и название.
 Запуск из корня репозитория:  python3 tools/make_quran.py
@@ -42,6 +44,9 @@ def main() -> None:
     pages = load("pages-qurancom.json")
     pj = {(int(s), i + 1): v for s, rows in pages["ayahs"].items() for i, v in enumerate(rows)}   # (сура, аят) → [стр., джуз, хизб]
     assert len(pj) == 6236
+    tanzil = load("pages-tanzil.json")["ayahs"]
+    diff = [f"{s}:{i + 1}" for s, rows in tanzil.items() for i, (p, j) in enumerate(rows) if pj[(int(s), i + 1)][:2] != [p, j]]
+    assert not diff, "страница/джуз расходятся с Tanzil: " + ", ".join(diff[:20])
     assert len(ayahs) == 6236, "в тексте должно быть 6236 аятов"
 
     by_surah = {}
