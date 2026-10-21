@@ -1,10 +1,13 @@
 """
 Готовит данные раздела «Коран» из источников в src/quran-src/:
 
-  hafsData_v18.json — текст Мединского мусхафа от Комплекса короля Фахда (KFGQPC), версия 18:
-                      аят, номер страницы и строк в печатном мединском издании, джуз.
+  hafsData_v18.json — текст Мединского мусхафа от Комплекса короля Фахда (KFGQPC), версия 18.
                       Текст берём КАК ЕСТЬ, ни одного символа не меняем (условие Комплекса).
                       Номер аята (١, ٢…) уже стоит в конце текста — шрифт рисует его в узорном кружке.
+                      Страницы и джузы оттуда НЕ берём: джузы там поделены не по мединскому мусхафу
+                      (3:92 в 4-м, 9:93 в 10-м), а у 56 аятов страница сдвинута на одну.
+  pages-qurancom.json — страница, джуз, хизб каждого аята и границы джузов с quran.com
+                      (одинаковы во всех мединских изданиях quran.com; сверено 21.10.2026)
   chapters.json     — аяты с земным поклоном (из fawazahmed0/quran-api; там же мекканская/мединская —
                       в приложении это не показываем, решение Майрбека 20.10.2026)
   kuliev.json       — перевод Э. Кулиева по аятам (как на quran.com, перевод №45)
@@ -36,6 +39,9 @@ def main() -> None:
     kuliev = load("kuliev.json")
     names = load("names-ru.json")
     meanings = load("meanings-ru.json")
+    pages = load("pages-qurancom.json")
+    pj = {(int(s), i + 1): v for s, rows in pages["ayahs"].items() for i, v in enumerate(rows)}   # (сура, аят) → [стр., джуз, хизб]
+    assert len(pj) == 6236
     assert len(ayahs) == 6236, "в тексте должно быть 6236 аятов"
 
     by_surah = {}
@@ -61,9 +67,8 @@ def main() -> None:
             "ayahs": [{
                 "ar": a["aya_text"],
                 "ru": ru[i],
-                "page": a["page"],
-                "lines": [a["line_start"], a["line_end"]],
-                "juz": a["jozz"],
+                "page": pj[(n, i + 1)][0],
+                "juz": pj[(n, i + 1)][1],
             } for i, a in enumerate(src)],
         }
         (OUT / f"{n}.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -73,17 +78,22 @@ def main() -> None:
             "meaning": meanings.get(str(n), ""),
             "ar": src[0]["sora_name_ar"],
             "ayahs": len(src),
-            "page": src[0]["page"],
-            "juz": src[0]["jozz"],
+            "page": pj[(n, 1)][0],
+            "juz": pj[(n, 1)][1],
             "sajda": chapters[n]["sajda"],
         })
 
     # Где начинается каждый из 30 джузов (сура, аят, страница) — для перехода по джузам
     juzs = []
     for a in ayahs:
-        if not juzs or juzs[-1]["n"] != a["jozz"]:
-            juzs.append({"n": a["jozz"], "s": a["sora"], "a": a["aya_no"], "page": a["page"]})
+        p, j, _ = pj[(a["sora"], a["aya_no"])]
+        if not juzs or juzs[-1]["n"] != j:
+            juzs.append({"n": j, "s": a["sora"], "a": a["aya_no"], "page": p})
     assert [j["n"] for j in juzs] == list(range(1, 31)), "джузы должны идти 1…30 подряд"
+    # Проверка: начало каждого джуза совпадает с границами джузов quran.com (verse_mapping)
+    for j, qj in zip(juzs, pages["juzs"]):
+        first = next(iter(qj["verse_mapping"].items()))
+        assert (j["s"], j["a"]) == (int(first[0]), int(first[1].split("-")[0])), f"джуз {j['n']} не совпадает с quran.com"
 
     index = {"basmala": basmala, "surahs": surahs, "juzs": juzs}
     (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
