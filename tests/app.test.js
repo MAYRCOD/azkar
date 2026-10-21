@@ -768,6 +768,48 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  {
+    // Режим «Мусхаф»: страницы как в печатном мусхафе, листание касаниями, «К аяту», выбор режима запоминается
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true });
+    const k = await ctx.newPage(); k.on("pageerror", e => errs.push(e.message));
+    await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 400);
+    const cdp = await ctx.newCDPSession(k);
+    const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
+    const swipe = async dx => { await touch("touchStart", 195 - dx / 2, 420); for (let i = 1; i <= 10; i++) { await touch("touchMove", 195 - dx / 2 + dx * i / 10, 421); await W(k, 16); } await touch("touchEnd"); await W(k, 900); };
+    const page = () => k.evaluate(() => mCurrent() && mCurrent().dataset.page);
+    await k.click("#tab-quran"); await W(k, 700);
+    await k.click('.q-row[data-s="104"]'); await W(k, 800);
+    await k.click('#q-mode [data-mode="mushaf"]'); await W(k, 1500);
+    check(await k.locator("#q-mushaf").isVisible() && !(await k.locator("#q-ayahs").isVisible()), "режим «Мусхаф» не включился");
+    check(await page() === "601", "аль-Хумаза должна открыться на странице 601, а не " + await page());
+    const p601 = await k.evaluate(() => { const el = document.querySelector('.mp[data-page="601"]');
+      return { lines: el.querySelectorAll(".mp-lines > *").length, heads: [...el.querySelectorAll(".mh")].map(h => h.textContent.trim()), bas: el.querySelectorAll(".mb").length,
+        over: [...el.querySelectorAll(".ml")].filter(l => l.scrollWidth > l.clientWidth + 2).length,
+        font: getComputedStyle(el.querySelector(".mp-lines")).fontFamily, fontOk: document.fonts.check("20px qcf-p601") }; });
+    check(p601.lines === 15 && p601.heads.length === 3 && p601.bas === 3, "на стр. 601 не 15 строк / 3 заголовка / 3 басмалы: " + JSON.stringify(p601));
+    check(p601.over === 0, "строки страницы 601 вылезают за край: " + p601.over);
+    check(p601.fontOk && p601.font.includes("qcf-p601"), "шрифт страницы 601 не загрузился");
+    await swipe(240);
+    check(await page() === "602", "свайп вправо должен открыть следующую страницу (602), а открыл " + await page());
+    check(await k.locator("#quran-read").isVisible(), "свайп в мусхафе не должен закрывать суру");
+    await swipe(-240);
+    check(await page() === "601", "свайп влево должен вернуть на страницу 601");
+    await k.click("#q-go"); await W(k, 400);
+    await k.fill("#q-go-input", "5"); await k.press("#q-go-input", "Enter"); await W(k, 900);
+    check(await page() === "601", "«К аяту» 104:5 должен остаться на странице 601");
+    await k.evaluate(() => mOpen(1, 1)); await W(k, 900);
+    const p1 = await k.evaluate(() => { const el = document.querySelector('.mp[data-page="1"]'); const h = el.querySelector(".mh");
+      return { lines: el.querySelectorAll(".mp-lines > *").length, special: el.classList.contains("special"), headH: h.getBoundingClientRect().height }; });
+    check(p1.lines === 8 && p1.special && p1.headH > 24, "страница 1: не 8 строк или сплющен заголовок: " + JSON.stringify(p1));
+    await k.click("#q-back"); await W(k, 600);
+    check(await k.evaluate(() => localStorage.getItem("azkar-quran-mode")) === '"mushaf"', "режим «Мусхаф» не запомнился");
+    await k.click('.q-row[data-s="114"]'); await W(k, 1200);
+    check(await k.locator("#q-mushaf").isVisible() && await page() === "604", "сура должна открываться сразу в мусхафе на своей странице (604)");
+    await k.click('#q-mode [data-mode="text"]'); await W(k, 800);
+    check(await k.locator("#q-ayahs").isVisible() && (await k.locator(".q-head h1").innerText()) === "ан-Нас", "из мусхафа в текст не вернулось на ан-Нас");
+    await ctx.close();
+  }
+
   section("Напоминания: только в приложении, разрешение, расписание на 30 дней, без напоминания после прочтения");
   {
     // На сайте раздела нет

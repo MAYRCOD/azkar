@@ -632,6 +632,33 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #quran-read { touch-action: pan-y; will-change: transform; }
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
+/* ---------- Мусхаф ---------- */
+.q-mode { margin: 4px auto 12px; }
+.q-mode[data-set="mushaf"]::before { transform: translateX(100%); }
+#quran-read.mushaf { overflow: hidden; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+#quran-read.mushaf .q-text, #quran-read.mushaf #q-ru-toggle { display: none; }
+.q-mushaf {
+  flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  scrollbar-width: none; margin-inline: -16px;
+}
+.q-mushaf::-webkit-scrollbar { display: none; }
+.mp { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; padding: 4px 14px 2px; min-width: 0; }
+.mp-top, .mp-num { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; direction: ltr; }
+.mp-num { justify-content: center; font-variant-numeric: tabular-nums; padding-top: 4px; }
+.mp-lines { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(15, 1fr); align-items: center; color: var(--fg); }
+.mp.special .mp-lines { grid-template-rows: none; align-content: center; gap: 4px; }
+.ml { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; font-size: var(--mfs, 20px); line-height: 1.6; }
+.mp.special .ml { justify-content: center; gap: .3em; }
+.mp.special .mh { height: calc(var(--mfs, 20px) * 2); margin: 0 12% 6px; }   /* на 1-й и 2-й странице строки «по содержимому» */
+.ml span.on { color: var(--accent-ink); }   /* аят, к которому перешли, — на мгновение зелёный */
+.mh {
+  display: grid; place-items: center; font-family: var(--f-quran); font-size: calc(var(--mfs, 20px) * .95); color: var(--gold);
+  border: 1.5px solid currentColor; border-radius: 10px; height: 82%; margin-inline: 4%;
+  box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 4px currentColor;   /* двойная рамка, как у заголовков в мусхафе */
+}
+.mb { text-align: center; font-family: var(--f-quran); font-size: calc(var(--mfs, 20px) * 1.05); line-height: 1.6; }
+.mp-msg { flex: 0 0 100%; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; direction: ltr; }
 .q-switch { margin: 0; }
 .q-switch[data-set="juzs"]::before { transform: translateX(100%); }
 .q-top-acts { display: flex; gap: 6px; }
@@ -843,7 +870,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <input type="search" id="q-search" placeholder="Сура или аят: «Ясин», «2:255»" autocomplete="off" enterkeyhint="search">
   </label>
   <div id="q-list"></div>
-  <p class="q-credits">Текст — Мединский мусхаф (Комплекс короля Фахда, риваят Хафса).<br>Перевод смыслов — Э. Кулиев.</p>
+  <p class="q-credits">Текст — Мединский мусхаф (Комплекс короля Фахда, риваят Хафса).<br>Шрифты страниц мусхафа — Комплекс короля Фахда, через Quran Foundation.<br>Перевод смыслов — Э. Кулиев.</p>
 </main>
 
 <!-- Страница суры -->
@@ -855,9 +882,18 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
       <button class="q-toggle" id="q-ru-toggle" aria-pressed="true">Перевод</button>
     </span>
   </div>
-  <header class="q-head" id="q-head"></header>
-  <div class="q-ayahs" id="q-ayahs"></div>
-  <nav class="q-nav" id="q-nav"></nav>
+  <!-- Как читать: текст с переводом или страницы мусхафа -->
+  <div class="set-switch q-switch q-mode" id="q-mode" role="radiogroup" aria-label="Как читать">
+    <button class="set-opt" role="radio" data-mode="text">Текст</button>
+    <button class="set-opt" role="radio" data-mode="mushaf">Мусхаф</button>
+  </div>
+  <div class="q-text" id="q-text">
+    <header class="q-head" id="q-head"></header>
+    <div class="q-ayahs" id="q-ayahs"></div>
+    <nav class="q-nav" id="q-nav"></nav>
+  </div>
+  <!-- Страницы мусхафа: листаются пальцем, следующая — слева, как в книге -->
+  <div class="q-mushaf" id="q-mushaf" hidden></div>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -2101,6 +2137,8 @@ async function openSurah(n, ayah = 0) {
     (prev ? `<button class="prev" data-s="${prev.n}"><small>‹ Предыдущая</small>${prev.ru}</button>` : "<span></span>") +
     (next ? `<button class="next" data-s="${next.n}"><small>Следующая ›</small>${next.ru}</button>` : "<span></span>");
   showScreen("quran-read");
+  applyQMode();
+  if (qMode === "mushaf") { if (!(await mOpen(n, ayah || 1))) { qMode = "text"; applyQMode(); } return; }
   if (ayah > 1) qJump(ayah);
   saveQLast();
 }
@@ -2130,7 +2168,7 @@ function qGoSubmit() {
     h.classList.add("bad"); haptic("tap"); return;
   }
   qGoInput.blur(); closeSheet(qGoSheet);
-  setTimeout(() => { qJump(a); saveQLast(); }, 230);   // после того как окно уехало и клавиатура спряталась
+  setTimeout(() => { if (qMode === "mushaf") mOpen(qOpen, a); else { qJump(a); saveQLast(); } }, 230);   // после того как окно уехало и клавиатура спряталась
 }
 document.getElementById("q-go-yes").addEventListener("click", qGoSubmit);
 qGoInput.addEventListener("keydown", e => { if (e.key === "Enter") qGoSubmit(); });
@@ -2149,7 +2187,7 @@ document.getElementById("q-back").addEventListener("click", () => showScreen("qu
   let g = null;
   const reset = () => { page.style.transition = ""; page.style.transform = ""; page.style.opacity = ""; };
   page.addEventListener("touchstart", e => {
-    if (e.touches.length !== 1) { g = null; return; }
+    if (e.touches.length !== 1 || qMode === "mushaf") { g = null; return; }   // в мусхафе вбок листают страницы
     const t = e.touches[0];
     g = { x: t.clientX, y: t.clientY, dir: null, dx: 0, last: [t.clientX, performance.now()], v: 0 };
   }, { passive: true });
@@ -2185,7 +2223,7 @@ document.getElementById("q-back").addEventListener("click", () => showScreen("qu
 
 // Где остановился: первый аят, который сейчас виден вверху экрана. Запоминаем при прокрутке
 function saveQLast() {
-  if (!qOpen) return;
+  if (!qOpen || qMode === "mushaf") return;
   const top = document.getElementById("quran-read").getBoundingClientRect().top + 60;
   const all = [...document.querySelectorAll(".q-ayah")];
   const cur = all.find(el => el.getBoundingClientRect().bottom > top) || all[0];
@@ -2230,6 +2268,126 @@ document.getElementById("q-ayahs").addEventListener("click", async e => {
   }
 });
 
+
+/* ================================================================
+   МУСХАФ — страницы как в печатном Мединском мусхафе (604 страницы, 15 строк)
+   quran/mushaf/N.json — строки страницы N (готовит tools/make_mushaf.py), quran/mushaf/pN.woff2 —
+   шрифт этой страницы (QCF V2, Комплекс короля Фахда, через Quran Foundation). Слово хранится как
+   символ этого шрифта: шрифт рисует его точно как в печатном издании. Страница — 15 строк по ширине
+   экрана; пустые строки в данных — заголовки сур (рамка) и басмала
+   ================================================================ */
+let qMode = load("azkar-quran-mode", "text") === "mushaf" ? "mushaf" : "text";
+let mIndex = null;                    // какие страницы есть: [{page, s, a}] — с какого аята начинается
+const mFonts = {};                    // загруженные шрифты страниц
+const mPageFont = n => {
+  if (!mFonts[n]) mFonts[n] = new FontFace(`qcf-p${n}`, `url(quran/mushaf/p${n}.woff2)`).load()
+    .then(f => { document.fonts.add(f); }).catch(() => { delete mFonts[n]; });
+  return mFonts[n];
+};
+const arDigits = n => String(n).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
+// на какой странице аят: последняя страница, которая начинается не позже него
+function mPageOf(s, a) {
+  let best = mIndex.pages[0];
+  for (const p of mIndex.pages) if (p.s < s || (p.s === s && p.a <= a)) best = p;
+  return best.page;
+}
+function mFit() {   // размер шрифта страницы: строка по ширине, но не выше своей строки
+  const box = document.getElementById("q-mushaf"), lines = box.querySelector(".mp:not(.special) .mp-lines");
+  if (!lines) return;   // пока нарисованы только особые страницы 1–2 — подстроим позже
+  const w = lines.clientWidth, h = lines.clientHeight / 15;
+  if (!w || !h) return;
+  box.style.setProperty("--mfs", Math.max(12, Math.min(w / 17.2, h * 0.62)).toFixed(1) + "px");
+}
+async function mRender(el) {   // нарисовать страницу, когда она рядом
+  if (el.dataset.done) return;
+  el.dataset.done = "1";
+  const n = +el.dataset.page;
+  try {
+    const [d] = await Promise.all([qGet(`mushaf/${n}`), mPageFont(n)]);
+    const top = d.lines.find(l => l.t === "w");
+    const x = qSurah(top.w[0][1]);
+    el.classList.toggle("special", n <= 2);
+    el.innerHTML = `<div class="mp-top"><span>${x.ru}</span><span>Джуз ${d.juz}</span></div>
+      <div class="mp-lines" style="font-family: 'qcf-p${n}'">${d.lines.map(l =>
+        l.t === "w" ? `<div class="ml">${l.w.map(w => `<span data-k="${w[1]}:${w[2]}">${w[0]}</span>`).join("")}</div>`
+        : l.t === "h" ? `<div class="mh" lang="ar">سُورَةُ ${qSurah(l.s).ar}</div>`
+        : l.t === "b" ? `<div class="mb" lang="ar">${qIndex.basmala}</div>` : `<div></div>`).join("")}</div>
+      <div class="mp-num">${n}</div>`;
+    mFit();
+  } catch (e) { el.dataset.done = ""; el.innerHTML = `<p class="mp-msg">Не получилось открыть страницу ${n}. Нужен интернет</p>`; }
+}
+function mCurrent() {   // какая страница сейчас на экране
+  const box = document.getElementById("q-mushaf"), w = box.clientWidth || 1;
+  return box.children[Math.round(Math.abs(box.scrollLeft) / w)];
+}
+function mRenderNear() {
+  const cur = mCurrent(); if (!cur) return;
+  [cur.previousElementSibling, cur, cur.nextElementSibling].forEach(el => el && el.dataset.page && mRender(el));
+}
+async function mShowPage(n, k) {   // открыть страницу n; k — «сура:аят», который подсветить
+  const box = document.getElementById("q-mushaf");
+  const el = box.querySelector(`.mp[data-page="${n}"]`);
+  if (!el) return;
+  box.style.scrollSnapType = "none";
+  el.scrollIntoView({ block: "nearest", inline: "start" });
+  box.style.scrollSnapType = "";
+  await mRender(el); mRenderNear();
+  if (k) {
+    const ws = el.querySelectorAll(`[data-k="${k}"]`);
+    ws.forEach(w => w.classList.add("on"));
+    setTimeout(() => ws.forEach(w => w.classList.remove("on")), 1600);
+  }
+}
+async function mOpen(s, a) {   // включить режим «Мусхаф» на странице с аятом s:a
+  try { mIndex = mIndex || await qGet("mushaf/index"); }
+  catch (e) { toast("Не получилось открыть мусхаф. Нужен интернет"); return false; }
+  const box = document.getElementById("q-mushaf");
+  if (!box.children.length) {
+    box.innerHTML = mIndex.pages.map(p => `<section class="mp" data-page="${p.page}" aria-label="Страница ${p.page}"></section>`).join("");
+  }
+  // страница аята — из данных суры (сверены с quran.com и Tanzil)
+  let want = mPageOf(s, a);
+  try { want = (await qGet(String(s))).ayahs[a - 1].page; } catch (e) {}
+  if (!mIndex.pages.some(p => p.page === want)) {
+    const near = mIndex.pages.reduce((b, p) => Math.abs(p.page - want) < Math.abs(b.page - want) ? p : b);
+    toast(`Страницы ${want} пока нет в примере`);
+    want = near.page;
+  }
+  await mShowPage(want, a > 1 ? `${s}:${a}` : "");
+  return true;
+}
+function applyQMode() {
+  const page = document.getElementById("quran-read");
+  page.classList.toggle("mushaf", qMode === "mushaf");
+  document.getElementById("q-mushaf").hidden = qMode !== "mushaf";
+  document.getElementById("q-mode").dataset.set = qMode;
+  document.querySelectorAll("#q-mode .set-opt").forEach(o => o.setAttribute("aria-checked", o.dataset.mode === qMode ? "true" : "false"));
+}
+document.querySelectorAll("#q-mode .set-opt").forEach(o => o.addEventListener("click", async () => {
+  if (qMode === o.dataset.mode) return;
+  if (o.dataset.mode === "mushaf") {
+    const cur = qLast && qLast.s === qOpen ? qLast.a : 1;   // откуда читали в тексте
+    qMode = "mushaf"; applyQMode();
+    if (!(await mOpen(qOpen, cur))) { qMode = "text"; applyQMode(); return; }
+  } else {
+    // из мусхафа в текст: если открытая сура есть на этой странице — к её первому аяту здесь,
+    // иначе к первому аяту страницы
+    const cur = mCurrent(), w = cur && (cur.querySelector(`[data-k^="${qOpen}:"]`) || cur.querySelector("[data-k]"));
+    qMode = "text"; applyQMode();
+    if (w) { const [s, a] = w.dataset.k.split(":").map(Number); if (s !== qOpen) await openSurah(s, a); else qJump(a); }
+  }
+  store("azkar-quran-mode", qMode); haptic("tap");
+}));
+let mScrollTimer;
+document.getElementById("q-mushaf").addEventListener("scroll", () => {
+  clearTimeout(mScrollTimer);
+  mScrollTimer = setTimeout(() => {
+    mRenderNear();
+    const w = mCurrent()?.querySelector("[data-k]");   // запоминаем место чтения
+    if (w) { const [s, a] = w.dataset.k.split(":").map(Number); qLast = { s, a }; store("azkar-quran-last", qLast); }
+  }, 120);
+});
+addEventListener("resize", () => { if (qMode === "mushaf") mFit(); });
 /* ================================================================
    СТАРТ
    ================================================================ */

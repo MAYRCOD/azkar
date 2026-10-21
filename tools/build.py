@@ -48,6 +48,11 @@ DATA = {
 QURAN_DATA = SRC / "data" / "quran"
 QURAN_FONT = SRC / "fonts" / "kfgqpc-hafs-v18.ttf"
 QURAN_OUT = ROOT / "quran"
+# Режим «Мусхаф»: страницы (готовит tools/make_mushaf.py) и шрифты страниц QCF V2 — в quran/mushaf/.
+# На сайте их не сохраняем заранее (604 шрифта — десятки МБ): страница кэшируется, когда её открыли.
+# В приложении для iPhone они внутри сборки целиком
+MUSHAF_DATA = SRC / "data" / "quran" / "mushaf"
+MUSHAF_FONTS = SRC / "mushaf-fonts"
 
 PWA_TAIL = """
 <script>
@@ -79,6 +84,12 @@ def copy_quran() -> list:
         names.append(p.name)
     shutil.copyfile(QURAN_FONT, QURAN_OUT / "hafs18.ttf")   # шрифт — без изменений (условие KFGQPC)
     names.append("hafs18.ttf")
+    mus = QURAN_OUT / "mushaf"
+    mus.mkdir()
+    for f in sorted(MUSHAF_DATA.glob("*.json")):
+        (mus / f.name).write_text(json.dumps(json.loads(f.read_text(encoding="utf-8")), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    for f in sorted(MUSHAF_FONTS.glob("p*.woff2")):
+        shutil.copyfile(f, mus / f.name)   # шрифты страниц — без изменений
     return ["./quran/" + n for n in names]
 
 
