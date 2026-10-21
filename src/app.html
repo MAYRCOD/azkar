@@ -602,7 +602,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 /* ---------- Коран ---------- */
 /* Шрифт мусхафа (KFGQPC Hafs v18) подгружается при первом открытии раздела — см. qFont() */
-:root { --f-quran: "QuranHafs", var(--f-arabic); }
+:root { --f-quran: "QuranHafs", var(--f-arabic); --mh-bg: #f6f0e1; --mh-edge: #ece0c3; --mh-line: #c7a76a; }
+:root[data-theme="dark"] { --mh-bg: #1c1d17; --mh-edge: #2a2618; --mh-line: #8c7442; }
 #quran { overflow-y: auto; padding-block: 32px 100px; gap: 18px; font-size: 15px; }   /* как у «Дуа» */
 #quran h1 { font-size: 24px; }
 #q-list { display: grid; gap: 18px; }
@@ -615,29 +616,53 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* ---------- Мусхаф ---------- */
 .q-mode { margin: 4px auto 12px; }
 .q-mode[data-set="mushaf"]::before { transform: translateX(100%); }
-#quran-read.mushaf { overflow: hidden; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+/* Чтение на весь экран: кнопки сверху прячутся, нажатие на страницу их показывает (плашкой поверх) */
+#quran-read.mushaf { overflow: hidden; padding: 0 0 env(safe-area-inset-bottom, 0px); position: relative; }
 #quran-read.mushaf .q-text, #quran-read.mushaf #q-ru-toggle { display: none; }
+#quran-read.mushaf .topbar, #quran-read.mushaf .q-mode {
+  position: absolute; z-index: 5; left: 0; right: 0; transition: opacity .2s ease, transform .2s ease;
+}
+#quran-read.mushaf .topbar {
+  top: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 8px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+#quran-read.mushaf .q-mode { top: calc(56px + env(safe-area-inset-top, 0px)); margin: 0 auto; }
+#quran-read.mushaf:not(.ctl) .topbar, #quran-read.mushaf:not(.ctl) .q-mode { opacity: 0; transform: translateY(-8px); pointer-events: none; }
 .q-mushaf {
   flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
-  scrollbar-width: none; margin-inline: -16px;
+  scrollbar-width: none; padding-top: env(safe-area-inset-top, 0px);
 }
 .q-mushaf::-webkit-scrollbar { display: none; }
-.mp { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; padding: 4px 14px 2px; min-width: 0; }
-.mp-top, .mp-num { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; direction: ltr; }
-.mp-num { justify-content: center; font-variant-numeric: tabular-nums; padding-top: 4px; }
+.mp { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; padding: 8px 6px 4px; min-width: 0; }
+.mp-top { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; direction: ltr; padding: 0 6px 4px; }
+.mp-top span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-top span:last-child { flex: none; }
+.mp-num { align-self: center; margin-top: 4px; padding: 2px 12px; border-radius: 999px; background: var(--press); color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .mp-lines { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(15, 1fr); align-items: center; color: var(--fg); }
-.mp.special .mp-lines { grid-template-rows: none; align-content: center; gap: 4px; }
-.ml { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; font-size: var(--mfs, 20px); line-height: 1.6; }
-.mp.special .ml { justify-content: center; gap: .3em; }
-.mp.special .mh { height: calc(var(--mfs, 20px) * 2); margin: 0 12% 6px; }   /* на 1-й и 2-й странице строки «по содержимому» */
+.mp.special .mp-lines { grid-template-rows: none; align-content: center; gap: 2px; }
+/* Строка мусхафа. Полная строка — по всей ширине (как в книге); короткая (конец суры) — плотно по центру,
+   без дыр между словами. Какая строка «полная», решает mLines(): по её естественной ширине */
+.ml { display: flex; justify-content: center; gap: .14em; align-items: center; white-space: nowrap; font-size: var(--mfs, 20px); line-height: 1.6; }
+.ml.full { justify-content: space-between; gap: 0; }
 .ml span.on { color: var(--accent-ink); }   /* аят, к которому перешли, — на мгновение зелёный */
+/* Заголовок суры: плашка с орнаментом по краям, название по центру */
 .mh {
-  display: grid; place-items: center; font-family: var(--f-quran); font-size: calc(var(--mfs, 20px) * .95); color: var(--gold);
-  border: 1.5px solid currentColor; border-radius: 10px; height: 82%; margin-inline: 4%;
-  box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 4px currentColor;   /* двойная рамка, как у заголовков в мусхафе */
+  position: relative; display: grid; place-items: center; height: 84%; margin-inline: 2px;
+  font-family: var(--f-quran); font-size: calc(var(--mfs, 20px) * .92); color: var(--gold);
+  background: linear-gradient(90deg, var(--mh-edge), var(--mh-bg) 18%, var(--mh-bg) 82%, var(--mh-edge));
+  border: 1px solid var(--mh-line); border-radius: 6px;
+  box-shadow: inset 0 0 0 2px var(--mh-bg), inset 0 0 0 3px var(--mh-line);
 }
-.mb { text-align: center; font-family: var(--f-quran); font-size: calc(var(--mfs, 20px) * 1.05); line-height: 1.6; }
+.mh::before, .mh::after {   /* ромбы-розетки на концах плашки */
+  content: ""; position: absolute; top: 50%; width: .9em; height: .9em; translate: 0 -50%; rotate: 45deg;
+  border: 1.5px solid var(--mh-line); background: var(--mh-bg);
+  box-shadow: inset 0 0 0 2px var(--mh-bg), inset 0 0 0 4px var(--mh-line);
+}
+.mh::before { left: .7em; } .mh::after { right: .7em; }
+.mh span { line-height: 1; padding-bottom: .25em; }
+.mp.special .mh { height: calc(var(--mfs, 20px) * 1.9); margin: 0 6% 4px; }
+.mb { text-align: center; font-family: var(--f-quran); font-size: calc(var(--mfs, 20px) * .95); line-height: 1.6; }
 .mp-msg { flex: 0 0 100%; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; direction: ltr; }
 .q-switch { margin: 0; }
 .q-switch[data-set="juzs"]::before { transform: translateX(100%); }
@@ -2268,12 +2293,35 @@ function mPageOf(s, a) {
   for (const p of mIndex.pages) if (p.s < s || (p.s === s && p.a <= a)) best = p;
   return best.page;
 }
-function mFit() {   // размер шрифта страницы: строка по ширине, но не выше своей строки
-  const box = document.getElementById("q-mushaf"), lines = box.querySelector(".mp:not(.special) .mp-lines");
-  if (!lines) return;   // пока нарисованы только особые страницы 1–2 — подстроим позже
-  const w = lines.clientWidth, h = lines.clientHeight / 15;
+// Размер шрифта: самая длинная строка страницы — ровно по ширине экрана, но буквы не выше своей строки.
+// Меряем один раз по первой нарисованной обычной странице и дальше держим один размер, чтобы страницы не «прыгали»
+let mFs = 0;
+function mFit() {
+  const box = document.getElementById("q-mushaf"), pg = box.querySelector(".mp:not(.special)[data-done] .mp-lines");
+  if (!pg || !pg.querySelector(".ml span")) return;
+  const w = pg.clientWidth, h = pg.clientHeight / 15;
   if (!w || !h) return;
-  box.style.setProperty("--mfs", Math.max(12, Math.min(w / 17.2, h * 0.62)).toFixed(1) + "px");
+  box.style.setProperty("--mfs", "20px");
+  let widest = 0;
+  pg.querySelectorAll(".ml").forEach(l => { widest = Math.max(widest, mNatural(l)); });
+  const fs = Math.max(12, Math.min(20 * (w - 2) / widest, h * 0.66));
+  mFs = fs;
+  box.style.setProperty("--mfs", fs.toFixed(2) + "px");
+  box.querySelectorAll(".mp[data-done]").forEach(mLines);
+}
+// Естественная ширина строки — слова без растяжки (с обычным промежутком)
+function mNatural(l) {
+  const sp = l.querySelectorAll("span"); let w = 0;
+  sp.forEach(x => { w += x.getBoundingClientRect().width; });
+  return w + (sp.length - 1) * parseFloat(getComputedStyle(l).fontSize) * .14;
+}
+// Полная строка (≥ 90% ширины) — растягиваем по ширине, короткую оставляем по центру
+function mLines(el) {
+  if (el.classList.contains("special")) return;
+  el.querySelectorAll(".ml").forEach(l => {
+    l.classList.remove("full");
+    l.classList.toggle("full", mNatural(l) >= l.clientWidth * 0.9);
+  });
 }
 async function mRender(el) {   // нарисовать страницу, когда она рядом
   if (el.dataset.done) return;
@@ -2281,16 +2329,16 @@ async function mRender(el) {   // нарисовать страницу, ког�
   const n = +el.dataset.page;
   try {
     const [d] = await Promise.all([qGet(`mushaf/${n}`), mPageFont(n)]);
-    const top = d.lines.find(l => l.t === "w");
-    const x = qSurah(top.w[0][1]);
+    // вверху — все суры, которые есть на странице (как в мусхафе: «Курайш, аль-Ма'ун, аль-Каусар»)
+    const ids = [...new Set(d.lines.filter(l => l.t === "w").flatMap(l => l.w.map(w => w[1])))];
     el.classList.toggle("special", n <= 2);
-    el.innerHTML = `<div class="mp-top"><span>${x.ru}</span><span>Джуз ${d.juz}</span></div>
+    el.innerHTML = `<div class="mp-top"><span>${ids.map(s => qSurah(s).ru).join(", ")}</span><span>Джуз ${d.juz}</span></div>
       <div class="mp-lines" style="font-family: 'qcf-p${n}'">${d.lines.map(l =>
         l.t === "w" ? `<div class="ml">${l.w.map(w => `<span data-k="${w[1]}:${w[2]}">${w[0]}</span>`).join("")}</div>`
-        : l.t === "h" ? `<div class="mh" lang="ar">سُورَةُ ${qSurah(l.s).ar}</div>`
+        : l.t === "h" ? `<div class="mh" lang="ar"><span>سُورَةُ ${qSurah(l.s).ar}</span></div>`
         : l.t === "b" ? `<div class="mb" lang="ar">${qIndex.basmala}</div>` : `<div></div>`).join("")}</div>
       <div class="mp-num">${n}</div>`;
-    mFit();
+    mFit(); mLines(el);
   } catch (e) { el.dataset.done = ""; el.innerHTML = `<p class="mp-msg">Не получилось открыть страницу ${n}. Нужен интернет</p>`; }
 }
 function mCurrent() {   // какая страница сейчас на экране
@@ -2336,6 +2384,7 @@ async function mOpen(s, a) {   // включить режим «Мусхаф» �
 function applyQMode() {
   const page = document.getElementById("quran-read");
   page.classList.toggle("mushaf", qMode === "mushaf");
+  if (qMode === "mushaf") mControls(true);   // при входе кнопки видны, потом прячутся
   document.getElementById("q-mushaf").hidden = qMode !== "mushaf";
   document.getElementById("q-mode").dataset.set = qMode;
   document.querySelectorAll("#q-mode .set-opt").forEach(o => o.setAttribute("aria-checked", o.dataset.mode === qMode ? "true" : "false"));
@@ -2365,6 +2414,17 @@ document.getElementById("q-mushaf").addEventListener("scroll", () => {
   }, 120);
 });
 addEventListener("resize", () => { if (qMode === "mushaf") mFit(); });
+// Нажатие на страницу — показать или спрятать кнопки сверху («‹ Коран», «К аяту», «Текст | Мусхаф»)
+let mCtlTimer;
+function mControls(show) {
+  const page = document.getElementById("quran-read");
+  page.classList.toggle("ctl", show);
+  clearTimeout(mCtlTimer);
+  if (show) mCtlTimer = setTimeout(() => page.classList.remove("ctl"), 4000);   // сами прячутся через 4 с
+}
+document.getElementById("q-mushaf").addEventListener("click", () => {
+  mControls(!document.getElementById("quran-read").classList.contains("ctl"));
+});
 /* ================================================================
    СТАРТ
    ================================================================ */

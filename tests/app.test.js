@@ -794,6 +794,18 @@ const section = name => console.log("•", name);
     check(await k.locator("#quran-read").isVisible(), "свайп в мусхафе не должен закрывать суру");
     await swipe(-240);
     check(await page() === "601", "свайп влево должен вернуть на страницу 601");
+    // Кнопки сверху прячутся сами и появляются по нажатию на страницу
+    await W(k, 4300);
+    check(await k.evaluate(() => getComputedStyle(document.querySelector("#quran-read .topbar")).opacity) === "0", "кнопки над мусхафом не спрятались через 4 с");
+    await k.tap(".q-mushaf", { position: { x: 195, y: 420 } }); await W(k, 300);
+    check(await k.evaluate(() => getComputedStyle(document.querySelector("#quran-read .topbar")).opacity) === "1", "нажатие на страницу не показало кнопки");
+    // Короткая строка (конец суры) — по центру без растяжки, полная — по ширине
+    const ln = await k.evaluate(() => [...document.querySelectorAll('.mp[data-page="602"] .ml')].map(l => {
+      const sp = [...l.querySelectorAll("span")].map(x => x.getBoundingClientRect()), r = l.getBoundingClientRect();
+      return { full: l.classList.contains("full"), left: Math.min(...sp.map(x => x.left)) - r.left, right: r.right - Math.max(...sp.map(x => x.right)) }; }));
+    check(ln.some(l => !l.full) && ln.filter(l => !l.full).every(l => Math.abs(l.left - l.right) < 3),
+      "короткие строки стр. 602 не по центру: " + JSON.stringify(ln.filter(l => !l.full)));
+    check(ln.filter(l => l.full).every(l => l.left < 4 && l.right < 4), "полные строки стр. 602 не от края до края: " + JSON.stringify(ln.filter(l => l.full)));
     await k.click("#q-go"); await W(k, 400);
     await k.fill("#q-go-input", "5"); await k.press("#q-go-input", "Enter"); await W(k, 900);
     check(await page() === "601", "«К аяту» 104:5 должен остаться на странице 601");
@@ -801,6 +813,7 @@ const section = name => console.log("•", name);
     const p1 = await k.evaluate(() => { const el = document.querySelector('.mp[data-page="1"]'); const h = el.querySelector(".mh");
       return { lines: el.querySelectorAll(".mp-lines > *").length, special: el.classList.contains("special"), headH: h.getBoundingClientRect().height }; });
     check(p1.lines === 8 && p1.special && p1.headH > 24, "страница 1: не 8 строк или сплющен заголовок: " + JSON.stringify(p1));
+    await k.evaluate(() => mControls(true)); await W(k, 300);
     await k.click("#q-back"); await W(k, 600);
     check(await k.evaluate(() => localStorage.getItem("azkar-quran-mode")) === '"mushaf"', "режим «Мусхаф» не запомнился");
     await k.click('.q-row[data-s="114"]'); await W(k, 1200);
