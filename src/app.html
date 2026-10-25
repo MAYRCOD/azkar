@@ -614,7 +614,15 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
 /* ---------- Мусхаф ---------- */
-#quran-read .q-mode { margin: 12px auto 14px; }   /* с id — иначе общее .q-switch { margin: 0 } обнуляет отступ и переключатель наезжает на кнопки */
+#quran-read .q-mode { margin: 12px auto 14px; }
+/* Текст: блок кнопок прилипает к верху; когда суру прокрутили (.float), он спрятан и показывается
+   нажатием на экран (.ctl, сам прячется через 4 с) — как в мусхафе */
+#quran-read:not(.mushaf) .q-ctl {
+  position: sticky; top: -16px; z-index: 6; margin: -16px -16px 0; padding: 16px 16px 1px;
+  background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+#quran-read:not(.mushaf).float:not(.ctl) .q-ctl { opacity: 0; transform: translateY(-8px); pointer-events: none; }   /* с id — иначе общее .q-switch { margin: 0 } обнуляет отступ и переключатель наезжает на кнопки */
 .q-mode[data-set="mushaf"]::before { transform: translateX(100%); }
 /* Чтение на весь экран: кнопки сверху прячутся, нажатие на страницу их показывает (плашкой поверх) */
 #quran-read.mushaf { overflow: hidden; padding: 0 0 env(safe-area-inset-bottom, 0px); position: relative; }
@@ -682,6 +690,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .q-toggle {
   border: 0; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 600;
   background: var(--press); color: var(--accent-ink); transition: background .2s ease, color .2s ease;
+}
+/* Узкий экран (iPhone SE 1-го поколения, 320 px): три кнопки рядом с «‹ Коран» — компактнее, в одну строку */
+@media (max-width: 359px) {
+  .q-top-acts { gap: 4px; }
+  .q-toggle { padding: 6px 8px; font-size: 12px; white-space: nowrap; }
+  #quran-read .back { font-size: 15px; white-space: nowrap; }
 }
 .q-toggle[aria-pressed="false"] { background: none; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
 /* Заголовок суры */
@@ -874,9 +888,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- Страница суры -->
 <main class="screen" id="quran-read" hidden>
+  <!-- Кнопки сверху. В тексте, когда прокрутили вниз, прилипают к верху и показываются по нажатию на экран -->
+  <div class="q-ctl" id="q-ctl">
   <div class="topbar">
     <button class="back" id="q-back">‹ Коран</button>
     <span class="q-top-acts">
+      <button class="q-toggle" id="q-page" aria-haspopup="dialog">Страница</button>
       <button class="q-toggle" id="q-go" aria-haspopup="dialog">К аяту</button>
       <button class="q-toggle" id="q-ru-toggle" aria-pressed="true">Перевод</button>
     </span>
@@ -885,6 +902,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   <div class="set-switch q-switch q-mode" id="q-mode" role="radiogroup" aria-label="Как читать">
     <button class="set-opt" role="radio" data-mode="text">Текст</button>
     <button class="set-opt" role="radio" data-mode="mushaf">Мусхаф</button>
+  </div>
   </div>
   <div class="q-text" id="q-text">
     <header class="q-head" id="q-head"></header>
@@ -2150,17 +2168,44 @@ function qJump(a) {
   setTimeout(() => el.classList.remove("flash"), 1700);
 }
 
-// Кнопка «К аяту»: окно с номером. Неверный номер — подсказка красным, окно не закрывается
+// Кнопки «К аяту» и «Страница»: одно окно с номером (qGoKind — что вводим).
+// Неверный номер — подсказка красным, окно не закрывается
 const qGoSheet = document.getElementById("q-go-sheet"), qGoInput = document.getElementById("q-go-input");
-const qGoHint = () => { const x = qSurah(qOpen); return `${x.ru}: аяты 1–${x.ayahs}`; };
-document.getElementById("q-go").addEventListener("click", () => {
-  const h = document.getElementById("q-go-hint");
-  h.textContent = qGoHint(); h.classList.remove("bad");
-  qGoInput.value = ""; qGoInput.max = qSurah(qOpen).ayahs;
+const M_PAGES = 604;
+let qGoKind = "ayah";
+function qGoOpen(kind) {
+  qGoKind = kind;
+  const x = qSurah(qOpen), h = document.getElementById("q-go-hint");
+  document.getElementById("q-go-title").textContent = kind === "page" ? "Перейти к странице" : "Перейти к аяту";
+  h.textContent = kind === "page" ? `Мусхаф: страницы 1–${M_PAGES}` : `${x.ru}: аяты 1–${x.ayahs}`;
+  h.classList.remove("bad");
+  qGoInput.value = ""; qGoInput.max = kind === "page" ? M_PAGES : x.ayahs;
   qGoSheet.hidden = false;
   setTimeout(() => qGoInput.focus(), 50);   // сразу открыть клавиатуру с цифрами
-});
+}
+document.getElementById("q-go").addEventListener("click", () => qGoOpen("ayah"));
+document.getElementById("q-page").addEventListener("click", () => qGoOpen("page"));
+// Страница n: в мусхафе — сама страница; в тексте — сура и аят, с которых она начинается (по раскладке мусхафа)
+async function qGoPage(n) {
+  try { mIndex = mIndex || await qGet("mushaf/index"); }
+  catch (e) { toast("Не получилось открыть страницу. Нужен интернет"); return; }
+  const p = mIndex.pages.find(x => x.page === n);
+  if (!p) return;
+  if (qMode === "mushaf") { await mShowPage(n, ""); return; }
+  if (p.s !== qOpen) await openSurah(p.s);
+  qJump(p.a); saveQLast();
+}
 function qGoSubmit() {
+  if (qGoKind === "page") {
+    const n = +qGoInput.value, h = document.getElementById("q-go-hint");
+    if (!Number.isInteger(n) || n < 1 || n > M_PAGES) {
+      h.textContent = `В мусхафе ${M_PAGES} страницы — введите число от 1 до ${M_PAGES}`;
+      h.classList.add("bad"); haptic("tap"); return;
+    }
+    qGoInput.blur(); closeSheet(qGoSheet);
+    setTimeout(() => qGoPage(n), 230);
+    return;
+  }
   const a = +qGoInput.value, x = qSurah(qOpen), h = document.getElementById("q-go-hint");
   if (!Number.isInteger(a) || a < 1 || a > x.ayahs) {
     h.textContent = `В суре ${x.ru} ${x.ayahs} ${ayahWord(x.ayahs)} — введите число от 1 до ${x.ayahs}`;
@@ -2176,6 +2221,18 @@ document.getElementById("q-nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-s]"); if (b) openSurah(+b.dataset.s);
 });
 document.getElementById("q-back").addEventListener("click", () => showScreen("quran"));
+// Текст: когда прокрутили ниже кнопок — они прячутся (.float); нажатие на экран показывает их (mControls)
+document.getElementById("quran-read").addEventListener("scroll", e => {
+  const page = e.currentTarget;
+  if (qMode === "mushaf") return;
+  const float = page.scrollTop > document.getElementById("q-ctl").offsetHeight;
+  if (float !== page.classList.contains("float")) { page.classList.toggle("float", float); if (float) page.classList.remove("ctl"); }
+}, { passive: true });
+document.querySelector("#quran-read .q-text").addEventListener("click", e => {
+  if (qMode === "mushaf" || !document.getElementById("quran-read").classList.contains("float")) return;
+  if (e.target.closest("button, a, input, .q-act") || String(getSelection())) return;   // кнопки и выделение текста — не трогаем
+  mControls(!document.getElementById("quran-read").classList.contains("ctl"));
+});
 
 // Смахнуть страницу суры вправо — вернуться к списку (как «назад» в приложениях iPhone).
 // Срабатывает только на чёткий жест: движение в первые 10 px должно быть явно вбок (в 1,5 раза

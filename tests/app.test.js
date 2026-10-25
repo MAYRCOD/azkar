@@ -651,7 +651,7 @@ const section = name => console.log("•", name);
     }
     check((await k.locator(".q-ayah").count()) === 286, "в аль-Бакара не 286 аятов");
     check((await k.locator(".q-head").innerText()).includes("Джузы 1–3 · страницы 2–49"), "у аль-Бакара в заголовке не «Джузы 1–3 · страницы 2–49»");
-    await k.click("#q-back"); await W(k, 500);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 500);
     check(await k.evaluate(() => document.fonts.check('30px "QuranHafs"')), "шрифт мусхафа не загрузился");
     await k.click('.q-row[data-s="113"]'); await W(k, 800);
     check(await k.locator("#quran-read").isVisible() && await k.evaluate(() => document.getElementById("tabbar").classList.contains("away")),
@@ -664,9 +664,9 @@ const section = name => console.log("•", name);
     });
     check(same, "арабский текст на экране отличается от данных мусхафа");
     check(await k.locator(".q-basmala").isVisible(), "нет басмалы перед сурой");
-    await k.click("#q-ru-toggle"); await W(k, 200);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-ru-toggle"); await W(k, 200);
     check(!(await k.locator(".q-ru").first().isVisible()), "перевод не прячется");
-    await k.click("#q-ru-toggle"); await W(k, 200);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-ru-toggle"); await W(k, 200);
     check(await k.locator(".q-ru").first().isVisible(), "перевод не возвращается");
     await k.click('#qa-3 [data-act="mark"]'); await W(k, 200);
     check(await k.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem("azkar-quran-marks"))) === '[{"s":113,"a":3}]'), "закладка не сохранилась");
@@ -674,7 +674,7 @@ const section = name => console.log("•", name);
     check(await k.evaluate(() => JSON.parse(localStorage.getItem("azkar-quran-last")).a >= 3), "место чтения не запоминается при прокрутке");
     await k.click(".q-nav .next"); await W(k, 800);
     check((await k.locator(".q-head h1").innerText()) === "ан-Нас", "кнопка «Следующая» не открыла ан-Нас");
-    await k.click("#q-back"); await W(k, 800);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 800);
     check(!(await k.evaluate(() => document.getElementById("tabbar").classList.contains("away"))), "после «‹ Коран» нижняя панель не вернулась");
     const rows = await k.locator("#q-list .row:not(.q-row)").allInnerTexts();
     check(rows.length === 2 && rows[0].includes("Продолжить") && rows[1].includes("аль-Фаляк, аят 3"), "нет «Продолжить чтение» или закладки: " + JSON.stringify(rows));
@@ -682,7 +682,7 @@ const section = name => console.log("•", name);
     check((await k.locator(".q-head h1").innerText()) === "аль-Фаляк" && await k.evaluate(() => {
       const r = document.getElementById("qa-3").getBoundingClientRect(); return r.top >= -2 && r.top < 120;
     }), "закладка не привела к аяту 3");
-    await k.click("#q-back"); await W(k, 600);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 600);
     await k.fill("#q-search", "наср"); await W(k, 300);
     check((await k.locator(".q-row").count()) === 1, "поиск «наср» нашёл не одну суру");
     await k.fill("#q-search", "фил"); await W(k, 300);
@@ -696,12 +696,12 @@ const section = name => console.log("•", name);
     check((await k.locator(".q-jump").innerText()).includes("Перейти к аяту 255"), "поиск «2:255» не предлагает перейти");
     await k.click(".q-jump"); await W(k, 900);
     check((await k.locator(".q-head h1").innerText()) === "аль-Бакара" && await atTop(255), "переход к 2:255 не сработал");
-    await k.click("#q-back"); await W(k, 500);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 500);
     await k.fill("#q-search", "2 300"); await W(k, 300);
     check((await k.locator(".q-jump.soon").innerText()).includes("286"), "для 2:300 нет подсказки, что в суре 286 аятов");
     await k.fill("#q-search", "36:1"); await k.press("#q-search", "Enter"); await W(k, 900);
     check((await k.locator(".q-head h1").innerText()) === "Йа Син", "Enter в поиске «36:1» не открыл суру");
-    await k.click("#q-back"); await W(k, 500);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 500);
     await k.fill("#q-search", "");
     await k.click('#q-switch [data-view="juzs"]'); await W(k, 500);
     check((await k.locator(".q-row").count()) === 30 && !(await k.locator("#q-search").isVisible()), "в режиме «Джузы» не 30 строк или виден поиск");
@@ -713,23 +713,23 @@ const section = name => console.log("•", name);
     check((await k.locator(".q-row").nth(8).innerText()).replace(/\s+/g, " ").includes("Джуз 9 7:88 · Стр. 162"), "строка джуза 9 должна быть «Джуз 9 · 7:88 · Стр. 162»");
     await k.locator(".q-row").nth(1).click(); await W(k, 900);
     check((await k.locator(".q-head h1").innerText()) === "аль-Бакара" && await atTop(142), "джуз 2 не открыл аль-Бакара, 142");
-    await k.click("#q-back"); await W(k, 500);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 500);
     check(await k.evaluate(() => localStorage.getItem("azkar-quran-view")) === '"juzs"', "выбор «Джузы» не запомнился");
     await k.click('#q-switch [data-view="surahs"]'); await W(k, 500);
     await k.click('.q-row[data-s="2"]'); await W(k, 900);
-    await k.click("#q-go"); await W(k, 400);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-go"); await W(k, 400);
     check(await k.locator("#q-go-sheet").isVisible() && (await k.locator("#q-go-hint").innerText()).includes("1–286"), "окно «К аяту» не открылось");
     await k.fill("#q-go-input", "999"); await k.click("#q-go-yes"); await W(k, 300);
     check(await k.locator("#q-go-sheet").isVisible() && await k.locator("#q-go-hint.bad").isVisible(), "неверный номер должен оставить окно и показать подсказку");
     await k.fill("#q-go-input", "100"); await k.press("#q-go-input", "Enter"); await W(k, 700);
     check(!(await k.locator("#q-go-sheet").isVisible()) && await atTop(100), "«К аяту» 100 не прокрутил к аяту");
-    await k.click("#q-back"); await W(k, 500);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 500);
     // аят с земным поклоном помечен
     await k.evaluate(() => openSurah(96)); await W(k, 800);
     check((await k.locator("#qa-19 .q-sajda").count()) === 1 && (await k.locator(".q-sajda").count()) === 1, "нет пометки земного поклона у 96:19");
     const sajdas = await k.evaluate(async () => (await (await fetch("quran/index.json")).json()).surahs.reduce((n, x) => n + x.sajda.length, 0));
     check(sajdas === 15, "аятов с земным поклоном не 15: " + sajdas);
-    await k.click("#q-back"); await W(k, 500);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 500);
     // 5 подписей внизу помещаются на узком экране
     for (const w of [320, 390]) {
       await k.setViewportSize({ width: w, height: 700 }); await W(k, 200);
@@ -813,20 +813,39 @@ const section = name => console.log("•", name);
     check(ln.some(l => !l.full) && ln.filter(l => !l.full).every(l => Math.abs(l.left - l.right) < 3),
       "короткие строки стр. 602 не по центру: " + JSON.stringify(ln.filter(l => !l.full)));
     check(ln.filter(l => l.full).every(l => l.left < 4 && l.right < 4), "полные строки стр. 602 не от края до края: " + JSON.stringify(ln.filter(l => l.full)));
-    await k.click("#q-go"); await W(k, 400);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-go"); await W(k, 400);
     await k.fill("#q-go-input", "5"); await k.press("#q-go-input", "Enter"); await W(k, 900);
     check(await page() === "601", "«К аяту» 104:5 должен остаться на странице 601");
     await k.evaluate(() => mOpen(1, 1)); await W(k, 900);
     const p1 = await k.evaluate(() => { const el = document.querySelector('.mp[data-page="1"]'); const h = el.querySelector(".mh");
       return { lines: el.querySelectorAll(".mp-lines > *").length, special: el.classList.contains("special"), headH: h.getBoundingClientRect().height }; });
     check(p1.lines === 8 && p1.special && p1.headH > 24, "страница 1: не 8 строк или сплющен заголовок: " + JSON.stringify(p1));
-    await k.evaluate(() => mControls(true)); await W(k, 300);
-    await k.click("#q-back"); await W(k, 600);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-back"); await W(k, 600);
     check(await k.evaluate(() => localStorage.getItem("azkar-quran-mode")) === '"mushaf"', "режим «Мусхаф» не запомнился");
     await k.click('.q-row[data-s="114"]'); await W(k, 1200);
     check(await k.locator("#q-mushaf").isVisible() && await page() === "604", "сура должна открываться сразу в мусхафе на своей странице (604)");
     await k.click('#q-mode [data-mode="text"]'); await W(k, 800);
     check(await k.locator("#q-ayahs").isVisible() && (await k.locator(".q-head h1").innerText()) === "ан-Нас", "из мусхафа в текст не вернулось на ан-Нас");
+    // «Страница» в тексте: открывает суру и аят, с которых начинается страница (по раскладке мусхафа), и подсвечивает его
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-page"); await W(k, 400);
+    check((await k.locator("#q-go-title").innerText()) === "Перейти к странице", "кнопка «Страница» не открыла окно страницы");
+    await k.fill("#q-go-input", "605"); await k.press("#q-go-input", "Enter"); await W(k, 300);
+    check(await k.locator("#q-go-hint.bad").isVisible(), "страница 605 должна дать подсказку об ошибке");
+    await k.fill("#q-go-input", "300"); await k.press("#q-go-input", "Enter"); await W(k, 1500);
+    const p300 = await k.evaluate(() => ({ h: document.querySelector(".q-head h1").innerText, f: document.querySelector(".q-ayah.flash")?.id }));
+    check(p300.h === "аль-Кахф" && p300.f === "qa-54", "«Страница 300» в тексте должна открыть аль-Кахф, аят 54: " + JSON.stringify(p300));
+    // Текст прокручен: кнопки сверху спрятаны, нажатие на экран показывает их
+    const ctlOp = () => k.evaluate(() => getComputedStyle(document.getElementById("q-ctl")).opacity);
+    await k.evaluate(() => { mControls(false); document.getElementById("quran-read").scrollBy(0, 400); }); await W(k, 500);
+    check(await ctlOp() === "0", "в прокрученном тексте кнопки сверху не спрятались");
+    await k.tap("#q-ayahs", { position: { x: 120, y: 200 } }); await W(k, 400);
+    check(await ctlOp() === "1", "нажатие на текст не показало кнопки сверху");
+    // «Страница» в мусхафе
+    await k.click('#q-mode [data-mode="mushaf"]'); await W(k, 1500);
+    await k.evaluate(() => mControls(true)); await W(k, 300);
+    await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-page"); await W(k, 400);
+    await k.fill("#q-go-input", "450"); await k.press("#q-go-input", "Enter"); await W(k, 2000);
+    check(await page() === "450", "«Страница 450» в мусхафе открыла " + await page());
     await ctx.close();
   }
 
