@@ -1,28 +1,33 @@
 """
-Готовит страницы режима «Мусхаф» — 604 страницы, как в печатном Мединском мусхафе.
+Готовит страницы режима «Мусхаф» — 604 страницы, как в печатном Мединском мусхафе издания 1441 г.
 
 Источники:
-  src/quran-src/mushaf/words.json — для каждой страницы слова по порядку:
-        [глиф, сура, аят, строка, тип]; тип "w" — слово, "e" — знак конца аята с номером.
-        Глиф — символ из шрифта этой страницы (QCF V2, Комплекс короля Фахда, через Quran Foundation:
-        api.quran.com /verses/by_page?mushaf=1, поле code_v2). Строка — 1…15, как в печатном издании.
-  src/mushaf-fonts/pN.woff2 — шрифт страницы N (verses.quran.foundation/fonts/quran/hafs/v2/woff2/pN.woff2).
-        Шрифты встраиваются только как часть приложения, при активном аккаунте разработчика
-        Quran Foundation и с указанием источника (их условия). Файлы не меняем.
+  src/quran-src/mushaf/layout-v4.json — раскладка «KFGQPC V4 layout (1441H print)» с qul.tarteel.ai
+        (resources/mushaf-layout/19): для каждой страницы 15 строк.
+          [номер, "h", сура]                 — заголовок суры
+          [номер, "b"]                       — басмала
+          [номер, "w", центр, [[глиф, "сура:аят:слово", тип], …]] — строка слов;
+                центр = 1 — строка стоит по центру (короткая), 0 — от края до края;
+                тип "w" — слово, "e" — знак конца аята с номером.
+        Глиф — символ шрифта этой страницы (QCF V4, Комплекс короля Фахда).
+        Почему 1441, а не 1421 (V2): так выглядят современные приложения и новые печатные мусхафы —
+        например, на стр. 602 знак 5-го аята аль-Ма'ун стоит в конце 10-й строки (в 1421 — в начале 11-й).
+  src/mushaf-fonts/pN.woff2 — шрифт страницы N (verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/pN.woff2).
+        Файлы не меняем. Встраиваются только как часть приложения, с указанием источника (условия Quran Foundation).
   src/quran-src/pages-tanzil.json — джуз для подписи страницы.
 
 Пишет src/data/quran/mushaf/:
   index.json — какие страницы есть и с какого аята начинается каждая
-  N.json     — 15 строк страницы: {"t":"w","w":[[глиф, сура, аят, тип], …]} — строка слов,
-               {"t":"h","s":сура} — заголовок суры, {"t":"b"} — басмала.
-
-Пустые строки в данных — это заголовки сур и басмала: перед первой строкой суры идут
-заголовок и басмала (у 9-й суры — только заголовок; у 1-й басмала — первый аят).
-Если сура начинается в самом верху страницы, её заголовок стоит внизу предыдущей.
+  N.json     — строки страницы: {"t":"w","c":0|1,"w":[[глиф, сура, аят, тип], …]}, {"t":"h","s":сура}, {"t":"b"}.
+               На страницах 1–2 — только 8 строк (пустые хвостовые строки раскладки отброшены).
+Проверки: на каждой странице 15 строк; каждая строка слов не пустая; аяты идут по порядку без пропусков;
+все глифы есть в шрифте страницы.
 Запуск: python3 tools/make_mushaf.py
 """
 import json
 import pathlib
+
+from fontTools.ttLib import TTFont
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "src" / "quran-src"
@@ -30,58 +35,44 @@ OUT = ROOT / "src" / "data" / "quran" / "mushaf"
 
 
 def main() -> None:
-    words = json.loads((SRC / "mushaf" / "words.json").read_text(encoding="utf-8"))
+    layout = json.loads((SRC / "mushaf" / "layout-v4.json").read_text(encoding="utf-8"))
     tanzil = json.loads((SRC / "pages-tanzil.json").read_text(encoding="utf-8"))["ayahs"]
     juz_of = {(int(s), i + 1): pj[1] for s, rows in tanzil.items() for i, pj in enumerate(rows)}
-    page_of = {(int(s), i + 1): pj[0] for s, rows in tanzil.items() for i, pj in enumerate(rows)}
-    fonts = {int(p.stem[1:]) for p in (ROOT / "src" / "mushaf-fonts").glob("p*.woff2")}
 
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.json"):
         old.unlink()
-    pages = sorted(int(p) for p in words)
-    index = []
-    for n in pages:
-        assert n in fonts, f"нет шрифта для страницы {n}"
-        ws = words[str(n)]
-        # страница слов должна совпасть со страницей аята по Tanzil (кроме переноса аята на следующую страницу)
-        assert page_of[(ws[0][1], ws[0][2])] in (n, n - 1), f"страница {n}: первый аят {ws[0][1]}:{ws[0][2]} не отсюда"
-        lines = {}
-        for c, s, a, l, t in ws:
-            lines.setdefault(l, []).append([c, s, a, t])
-        out = [None] * 16
-        for l, row in lines.items():
-            out[l] = {"t": "w", "w": row}
-        # Заголовок и басмала перед каждой сурой, первый аят которой начинается на этой странице
-        starts = {}
-        for c, s, a, l, t in ws:
-            if a == 1 and s not in starts:
-                starts[s] = l
-        for s, l in starts.items():
-            if page_of[(s, 1)] != n:
-                continue   # первый аят начался на прошлой странице — заголовок там
-            need = ["h"] if s in (1, 9) else ["h", "b"]
-            for slot, kind in zip(range(l - len(need), l), need):
-                if slot >= 1:
-                    assert out[slot] is None, f"страница {n}: строка {slot} занята"
-                    out[slot] = {"t": kind, "s": s} if kind == "h" else {"t": "b"}
-        # Пустые строки в конце страницы — заголовок (и басмала) суры, которая начинается на следующей
-        last = max(lines)
-        # (кроме страниц 1 и 2: на них по 8 строк посередине, в рамке)
-        if n > 2 and last < 15 and n < 604 and str(n + 1) in words:
-            nxt = words[str(n + 1)][0][1]
-            tail = ["h"] if nxt == 9 else ["h", "b"]
-            for slot, kind in zip(range(last + 1, 16), tail):
-                out[slot] = {"t": kind, "s": nxt} if kind == "h" else {"t": "b"}
-        empty = [l for l in range(1, 16) if out[l] is None]
-        if n > 2:
-            assert not empty, f"страница {n}: непонятные пустые строки {empty}"
-        rows = out[1:9] if n <= 2 else out[1:]   # на 1-й и 2-й странице только 8 строк
-        page = {"page": n, "juz": juz_of[(ws[0][1], ws[0][2])], "lines": [x or {"t": "x"} for x in rows]}
-        (OUT / f"{n}.json").write_text(json.dumps(page, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        index.append({"page": n, "s": ws[0][1], "a": ws[0][2]})
-    (OUT / "index.json").write_text(json.dumps({"pages": index}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"Мусхаф: {len(pages)} стр. — " + ", ".join(map(str, pages)))
+    pages, prev = [], None
+    for p in sorted(layout, key=int):
+        n = int(p)
+        rows = layout[p]
+        assert [r[0] for r in rows] == list(range(1, 16)), f"стр. {n}: должно быть 15 строк"
+        cmap = TTFont(ROOT / "src" / "mushaf-fonts" / f"p{n}.woff2").getBestCmap()
+        lines, first = [], None
+        for r in rows:
+            if r[1] == "h":
+                lines.append({"t": "h", "s": r[2]})
+            elif r[1] == "b":
+                lines.append({"t": "b"})
+            elif r[3]:
+                ws = []
+                for g, loc, t in r[3]:
+                    s, a, _ = map(int, loc.split(":"))
+                    assert all(ord(ch) in cmap for ch in g), f"стр. {n}: глифа {g!r} нет в шрифте"
+                    if prev and (s, a) != prev:   # аяты по порядку: тот же или следующий
+                        assert (s, a) in ((prev[0], prev[1] + 1), (prev[0] + 1, 1)) or n in (1, 2, 600), f"стр. {n}: пропуск после {prev}"
+                    prev = (s, a)
+                    first = first or (s, a)
+                    ws.append([g, s, a, t])
+                lines.append({"t": "w", "c": r[2], "w": ws})
+            else:
+                assert n <= 2, f"стр. {n}, строка {r[0]}: пустая строка"
+        s, a = first
+        (OUT / f"{n}.json").write_text(json.dumps({"page": n, "juz": juz_of[(s, a)], "lines": lines},
+                                                  ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        pages.append({"page": n, "s": s, "a": a})
+    (OUT / "index.json").write_text(json.dumps({"pages": pages}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print("Мусхаф: страницы", ", ".join(str(x["page"]) for x in pages))
 
 
 if __name__ == "__main__":

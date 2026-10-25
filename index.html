@@ -666,8 +666,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .mp-lines { width: var(--mw, 100%); height: calc(var(--mw, 100%) * 15 / 9.3); display: grid;
   grid-template-rows: repeat(15, minmax(0, 1fr)); align-items: center; color: var(--fg); }
 .mp.special .mp-lines { grid-template-rows: repeat(8, calc(var(--mw) / 9.3)); align-content: center; }
+.mp-lines { font-palette: var(--pl); }
+:root[data-theme="dark"] .mp-lines { font-palette: var(--pd); }
 .ml { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; font-size: var(--mfs, 20px); line-height: 1; }
-.ml.c { justify-content: center; }   /* короткая последняя строка суры */
+.ml.c { justify-content: center; }   /* короткая строка — по центру, как в печатном издании */
 .ml span.on { color: var(--accent-ink); }   /* аят, к которому перешли, — на мгновение зелёный */
 /* Заголовок суры — шрифт заголовков Комплекса короля Фахда (QCF Surah Header): вся рамка с названием — один знак.
    Высота строки = высота ряда, иначе браузер ставит знак не по центру */
@@ -2296,9 +2298,16 @@ document.getElementById("q-ayahs").addEventListener("click", async e => {
 let qMode = load("azkar-quran-mode", "text") === "mushaf" ? "mushaf" : "text";
 let mIndex = null;                    // какие страницы есть: [{page, s, a}] — с какого аята начинается
 const mFonts = {};                    // загруженные шрифты страниц
+const mPalCss = document.head.appendChild(document.createElement("style"));
 const mPageFont = n => {
   if (!mFonts[n]) mFonts[n] = Promise.all([new FontFace(`qcf-p${n}`, `url(quran/mushaf/p${n}.woff2)`).load(), mHeaderFont()])
-    .then(([f]) => { document.fonts.add(f); }).catch(() => { delete mFonts[n]; });
+    .then(([f]) => {
+      document.fonts.add(f);
+      // В шрифте V4 6 палитр: №0 — таджвид (цветные буквы), №3 — чёрный текст, №4 — белый (тёмная тема).
+      // Таджвид не показываем. 10–12 — цвета кружка с номером аята
+      mPalCss.append(`@font-palette-values --qp${n} { font-family: "qcf-p${n}"; base-palette: 3; override-colors: 10 #8a7a52, 11 #8a7a52, 12 #ffffff00; }
+@font-palette-values --qd${n} { font-family: "qcf-p${n}"; base-palette: 4; override-colors: 10 #c8a95e, 11 #c8a95e, 12 #ffffff00; }\n`);
+    }).catch(() => { delete mFonts[n]; });
   return mFonts[n];
 };
 // Шрифт заголовков сур (QCF Surah Header): рамка с названием суры N — один знак, M_HDR[N-1]
@@ -2316,16 +2325,13 @@ function mPageOf(s, a) {
   return best.page;
 }
 // Размер страницы. Как в книге: ширина строки W, 15 строк с шагом W/9.3. Страница целиком влезает в экран
-// (по ширине или по высоте — что меньше). Шрифт один на все страницы: W / 15.75 em — столько занимает
-// самая длинная строка шрифта QCF V2 (полные строки 15,05–15,74 em). Остаток делится между словами
-const M_EM = 15.75;
+// (по ширине или по высоте — что меньше)
 function mFit() {
   const box = document.getElementById("q-mushaf");
   const w = box.clientWidth - 10, h = box.clientHeight - 8 - 2 * 26;   // 26 — подписи сверху и снизу
   if (w <= 0 || h <= 0) return;
   const W = Math.floor(Math.min(w, h * 9.3 / 15));
   box.style.setProperty("--mw", W + "px");
-  box.style.setProperty("--mfs", (W / M_EM).toFixed(2) + "px");
   box.querySelectorAll(".mp[data-done]").forEach(mLines);
 }
 // Естественная ширина строки — слова вплотную, без растяжки
@@ -2333,17 +2339,19 @@ function mNatural(l) {
   let w = 0; l.querySelectorAll("span").forEach(x => { w += x.getBoundingClientRect().width; });
   return w;
 }
-// Полные строки — от края до края. Короткую строку (меньше 90% ширины) не растягиваем, а ставим по центру —
-// как в печатном мусхафе (например, «يُوَسْوِسُ فِي صُدُورِ ٱلنَّاسِ» на стр. 604). Страницы 1–2 — всё по центру.
-// Если строка вдруг длиннее страницы — чуть уменьшаем именно её
+// Размер шрифта страницы: самая длинная полная строка — ровно по ширине W (полные строки шрифта V4
+// в раскладке 1441 г. почти одной ширины, ±2%, поэтому промежутки между словами маленькие).
+// Какие строки по центру, а какие от края до края — как в печатном издании (поле «c» в данных страницы)
+const M_EM = 16.2;   // обычная ширина полной строки, em — чтобы на страницах без полных строк шрифт был тот же
 function mLines(el) {
-  const special = el.classList.contains("special");
-  el.querySelectorAll(".ml").forEach(l => {
-    l.style.fontSize = "";
-    const nat = mNatural(l), W = l.clientWidth;
-    if (nat > W + 1) l.style.fontSize = `calc(var(--mfs) * ${(W / nat).toFixed(4)})`;
-    l.classList.toggle("c", special || nat < W * 0.9);
-  });
+  const lines = el.querySelector(".mp-lines");
+  if (!lines) return;
+  const W = parseFloat(getComputedStyle(document.getElementById("q-mushaf")).getPropertyValue("--mw")) || lines.clientWidth;
+  const base = W / M_EM;
+  lines.style.setProperty("--mfs", base + "px");
+  let widest = 0;
+  lines.querySelectorAll(".ml:not(.c)").forEach(l => { widest = Math.max(widest, mNatural(l)); });
+  if (widest) lines.style.setProperty("--mfs", (base * W / widest).toFixed(3) + "px");
 }
 async function mRender(el) {   // нарисовать страницу, когда она рядом
   if (el.dataset.done) return;
@@ -2355,10 +2363,9 @@ async function mRender(el) {   // нарисовать страницу, ког�
     const ids = [...new Set(d.lines.filter(l => l.t === "w").flatMap(l => l.w.map(w => w[1])))];
     el.classList.toggle("special", n <= 2);
     el.innerHTML = `<div class="mp-top"><span>${ids.map(s => qSurah(s).ru).join(", ")}</span><span>Джуз ${d.juz}</span></div>
-      <div class="mp-lines" style="font-family: 'qcf-p${n}'">${d.lines.map(l => {
+      <div class="mp-lines" style="font-family: 'qcf-p${n}'; --pl: --qp${n}; --pd: --qd${n}">${d.lines.map(l => {
         if (l.t === "w") {
-          const z = l.w[l.w.length - 1], end = z[3] === "e" && z[2] === qSurah(z[1]).ayahs;   // строка кончается сурой
-          return `<div class="ml"${end ? " data-end" : ""}>${l.w.map(w => `<span data-k="${w[1]}:${w[2]}">${w[0]}</span>`).join("")}</div>`;
+          return `<div class="ml${l.c ? " c" : ""}">${l.w.map(w => `<span data-k="${w[1]}:${w[2]}">${w[0]}</span>`).join("")}</div>`;
         }
         return l.t === "h" ? `<div class="mh" role="heading" aria-label="Сура ${qSurah(l.s).ru}">${M_HDR[l.s - 1]}</div>`
           : l.t === "b" ? `<div class="mb" aria-label="Басмала">${M_BSML}</div>` : `<div></div>`;

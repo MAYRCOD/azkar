@@ -96,12 +96,16 @@
 
 ## Режим «Мусхаф» (ветка mushaf2, пример — страницы 1, 2, 600–604)
 
-- `src/mushaf-fonts/pN.woff2` — шрифт страницы N, QCF V2 (Комплекс короля Фахда, через Quran Foundation,
-  verses.quran.foundation/fonts/quran/hafs/v2/woff2/). Выбран V2, а не V4: полные строки в V2 почти одной
-  ширины (15,05–15,74 em на стр. 601–604), в V4 разброс до 7% — отсюда были дыры между словами.
-- `src/fonts/surah-header.woff2` — заголовки сур, QCF Surah Header (Комплекс короля Фахда; файл с
-  static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.woff2, страница qul.tarteel.ai/resources/font/458).
-  Рамка с названием суры — один знак (список знаков — M_HDR в app.html). Лицензия на сайте QUL не указана —
-  уточнить до App Store.
+- Раскладка — издание 1441 г. («KFGQPC V4 layout (1441H print)», qul.tarteel.ai/resources/mushaf-layout/19):
+  `src/quran-src/mushaf/layout-v4.json`, сборка — `tools/make_mushaf.py`. В раскладке отмечено, какие строки
+  стоят по центру. Издание 1421 г. (V2) отличается переносами: например, на стр. 602 знак 5-го аята аль-Ма'ун
+  там в начале следующей строки. Майрбек сверяет со своим приложением — у него 1441.
+- `src/mushaf-fonts/pN.woff2` — шрифт страницы, QCF V4 (verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/pN.woff2).
+  Внутри COLR v0 (понимает iPhone), палитры: №0 таджвид, №3 чёрный текст, №4 белый. Коды глифов как в раскладке.
+  Шрифт V4 подходит ТОЛЬКО к раскладке 1441 (с переносами 1421 строки разной ширины — отсюда были дыры).
+  Полные строки 15,5–16,2 em (стр. 601–604), размер шрифта страницы — по самой длинной полной строке.
+- `src/fonts/surah-header.woff2` — заголовки сур, QCF Surah Header (static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/
+  QCF_SurahHeader_COLOR-Regular.woff2, qul.tarteel.ai/resources/font/458). Рамка с названием — один знак (M_HDR в app.html).
+  Лицензия на QUL не указана — уточнить до App Store.
 - Басмала — SVG с quran.com (M_BSML в app.html).
-- Раскладка как в книге: ширина строки W, 15 строк с шагом W/9.3, шрифт W/15.75 на всех страницах.
+- Раскладка на экране: ширина строки W, 15 строк с шагом W/9.3 (пропорции книги), страница целиком влезает в экран.
