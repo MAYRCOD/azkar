@@ -2468,17 +2468,18 @@ function mCurrent() {   // какая страница сейчас на экр�
   const box = document.getElementById("q-mushaf"), w = box.clientWidth || 1;
   return box.children[Math.round(Math.abs(box.scrollLeft) / w)];
 }
-// Рисуем только текущую страницу и по одной с каждой стороны; дальние стираем — иначе при быстром листании
-// в памяти копятся все страницы с цветными шрифтами, и телефон закрывает вкладку (серый экран)
+// Рисуем текущую страницу и по две с каждой стороны (чтобы при быстром листании следующая уже была готова);
+// дальние стираем — иначе в памяти копятся все страницы с цветными шрифтами, и телефон закрывает вкладку (серый экран)
 function mRenderNear() {
   const cur = mCurrent(); if (!cur) return;
   const box = document.getElementById("q-mushaf"), i = [...box.children].indexOf(cur);
+  // сначала ближние, потом через одну — чтобы соседняя страница была готова первой
+  [0, 1, -1, 2, -2].forEach(d => { const el = box.children[i + d]; if (el) mRender(el); });
   [...box.children].forEach((el, j) => {
-    if (Math.abs(j - i) <= 1) mRender(el);
-    else if (Math.abs(j - i) > 2 && el.dataset.done) { el.innerHTML = ""; delete el.dataset.done; }
+    if (Math.abs(j - i) > 3 && el.dataset.done) { el.innerHTML = ""; delete el.dataset.done; }
   });
-  // шрифты страниц дальше трёх от текущей — выгружаем (при возврате файл берётся из кэша, это быстро)
-  const near = new Set([...box.children].slice(Math.max(0, i - 3), i + 4).map(el => +el.dataset.page));
+  // шрифты страниц дальше четырёх от текущей — выгружаем (при возврате файл берётся из кэша, это быстро)
+  const near = new Set([...box.children].slice(Math.max(0, i - 4), i + 5).map(el => +el.dataset.page));
   for (const n in mFontFaces) if (!near.has(+n)) { document.fonts.delete(mFontFaces[n]); delete mFontFaces[n]; delete mFonts[n]; }
   const packs = new Set([...near].map(n => Math.ceil(n / 20)));   // блоки шрифтов, которые не нужны рядом, — из памяти
   for (const k in mPacks) if (!packs.has(+k)) delete mPacks[k];
@@ -2540,6 +2541,11 @@ document.querySelectorAll("#q-mode .set-opt").forEach(o => o.addEventListener("c
   store("azkar-quran-mode", qMode); haptic("tap");
 }));
 let mScrollTimer;
+// Во время листания готовим соседние страницы сразу (не дожидаясь остановки) — раз в кадр
+let mScrollFrame = 0;
+document.getElementById("q-mushaf").addEventListener("scroll", () => {
+  if (!mScrollFrame) mScrollFrame = requestAnimationFrame(() => { mScrollFrame = 0; mRenderNear(); });
+}, { passive: true });
 document.getElementById("q-mushaf").addEventListener("scroll", () => {
   clearTimeout(mScrollTimer);
   mScrollTimer = setTimeout(() => {
