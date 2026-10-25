@@ -622,13 +622,16 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   background: var(--bg); box-shadow: 0 1px 0 var(--line);   /* плотная подложка: сквозь полупрозрачную текст просвечивал и кнопки казались размытыми */
   transition: opacity .2s ease, transform .2s ease;
 }
-#quran-read:not(.mushaf).float .q-ctl { top: calc(var(--edge-gap) - 16px); }   /* прилипшие кнопки — ниже системного размытия у края */
+#quran-read:not(.mushaf).float .q-ctl { top: calc(var(--edge-gap) - 16px); }
+:root.native #quran-read:not(.mushaf).float .q-ctl { top: -16px; }   /* в приложении размытия у края нет — кнопки вплотную к верху, без просвета */   /* прилипшие кнопки — ниже системного размытия у края */
 #quran-read:not(.mushaf).float:not(.ctl) .q-ctl { opacity: 0; transform: translateY(-8px); pointer-events: none; }
 .q-mode[data-set="mushaf"]::before { transform: translateX(100%); }
 /* Чтение на весь экран: кнопки сверху прячутся, нажатие на страницу их показывает (плашкой поверх) */
-/* iOS сама мягко размывает полосу под часами и батареей (это делает система, не наш код). Подпись страницы
-   и кнопки мусхафа ставим ниже этой полосы, иначе они выглядят размытыми */
+/* На сайте (с иконки «Домой») iOS сама мягко размывает полосу под часами и батареей — это делает система.
+   Подпись страницы и кнопки ставим ниже этой полосы, иначе они выглядят размытыми. В приложении полосы
+   размытия нет — отступ не нужен (класс native ставит код ниже). Отступ под сами часы уже есть у <html> */
 :root { --edge-gap: 32px; }
+:root.native { --edge-gap: 6px; }
 #quran-read.mushaf { overflow: hidden; padding: 0 0 env(safe-area-inset-bottom, 0px); position: relative; }
 #quran-read.mushaf .q-text, #quran-read.mushaf #q-ru-toggle { display: none; }
 #quran-read.mushaf .topbar, #quran-read.mushaf .q-mode {
@@ -636,14 +639,14 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 #quran-read.mushaf .topbar {
   /* плотная подложка под кнопками и переключателем (без размытия): снизу она закрывает и место под переключателем */
-  top: 0; padding: calc(var(--edge-gap) + env(safe-area-inset-top, 0px)) 16px 64px; background: var(--bg); box-shadow: 0 1px 0 var(--line);
+  top: 0; padding: var(--edge-gap) 16px 64px; background: var(--bg); box-shadow: 0 1px 0 var(--line);
 }
-#quran-read.mushaf .q-mode { top: calc(var(--edge-gap) + 46px + env(safe-area-inset-top, 0px)); margin: 0 auto; }
+#quran-read.mushaf .q-mode { top: calc(var(--edge-gap) + 46px); margin: 0 auto; }
 #quran-read.mushaf:not(.ctl) .topbar, #quran-read.mushaf:not(.ctl) .q-mode { opacity: 0; transform: translateY(-8px); pointer-events: none; }
 .q-mushaf {
   flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
-  scrollbar-width: none; padding-top: calc(var(--edge-gap) + env(safe-area-inset-top, 0px));
+  scrollbar-width: none; padding-top: var(--edge-gap);
 }
 .q-mushaf::-webkit-scrollbar { display: none; }
 /* Страница мусхафа: 15 строк одной высоты на весь экран, строки — от края до края, как в книге.
@@ -1888,6 +1891,7 @@ const hapticLabel = (() => {
 // На сайте — щелчок переключателя (iOS 18) или navigator.vibrate (Android)
 const HAPTICS = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
   ? window.Capacitor.Plugins.Haptics : null;
+if (HAPTICS) document.documentElement.classList.add("native");   // в приложении для iPhone (для стилей)
 function haptic(kind = "tap") {
   if (HAPTICS) { HAPTICS.impact({ style: kind === "done" ? "MEDIUM" : "LIGHT" }).catch(() => {}); return; }
   if (navigator.vibrate) navigator.vibrate(kind === "done" ? 30 : 8);
