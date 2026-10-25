@@ -650,7 +650,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 :root[data-theme="dark"] .mp-lines { font-palette: var(--pd); }
 .ml { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; font-size: var(--mfs, 20px); line-height: 1; }
 .ml.c { justify-content: center; }   /* короткая строка — по центру, как в печатном издании */
-.ml span.on { color: var(--accent-ink); }   /* аят, к которому перешли, — на мгновение зелёный */
+.ml span.on { border-radius: 4px; }
 /* Заголовок суры — шрифт заголовков Комплекса короля Фахда (QCF Surah Header): вся рамка с названием — один знак.
    Высота строки = высота ряда, иначе браузер ставит знак не по центру */
 .mh { font-family: "qcf-header"; font-size: calc(var(--mw) / 3.62); height: calc(var(--mw) / 9.3); line-height: calc(var(--mw) / 9.3);
@@ -715,8 +715,11 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .q-act.on { color: var(--accent-ink); }
 .q-act.on svg { fill: currentColor; }
 /* «Продолжить» привёл к аяту — он на мгновение подсвечивается */
-.q-ayah.flash { animation: q-flash 1.6s ease; }
-@keyframes q-flash { 0%, 40% { background: var(--press); } 100% { background: transparent; } }
+/* Аят, к которому перешли («К аяту», продолжить чтение), — секунду подсвечен зелёным и плавно гаснет.
+   Так же в мусхафе (.ml span.on) — там цвет букв задаёт палитра шрифта, поэтому подсвечиваем фоном */
+.q-ayah.flash, .ml span.on { animation: q-flash 1.6s ease; }
+@keyframes q-flash { 0%, 60% { background: var(--flash); } 100% { background: transparent; } }
+:root { --flash: color-mix(in srgb, var(--accent) 24%, transparent); }
 .q-ayah.flash { margin-inline: -16px; padding-inline: 16px; }
 .q-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
 .q-nav button {
@@ -2164,7 +2167,7 @@ function qGoSubmit() {
     h.classList.add("bad"); haptic("tap"); return;
   }
   qGoInput.blur(); closeSheet(qGoSheet);
-  setTimeout(() => { if (qMode === "mushaf") mOpen(qOpen, a); else { qJump(a); saveQLast(); } }, 230);   // после того как окно уехало и клавиатура спряталась
+  setTimeout(() => { if (qMode === "mushaf") mOpen(qOpen, a, true); else { qJump(a); saveQLast(); } }, 230);   // после того как окно уехало и клавиатура спряталась
 }
 document.getElementById("q-go-yes").addEventListener("click", qGoSubmit);
 qGoInput.addEventListener("keydown", e => { if (e.key === "Enter") qGoSubmit(); });
@@ -2399,11 +2402,12 @@ async function mShowPage(n, k) {   // открыть страницу n; k — �
   await mRender(el); mRenderNear();
   if (k) {
     const ws = el.querySelectorAll(`[data-k="${k}"]`);
+    ws.forEach(w => w.classList.remove("on")); void el.offsetWidth;   // перезапуск, если подсветка ещё не погасла
     ws.forEach(w => w.classList.add("on"));
-    setTimeout(() => ws.forEach(w => w.classList.remove("on")), 1600);
+    setTimeout(() => ws.forEach(w => w.classList.remove("on")), 1700);
   }
 }
-async function mOpen(s, a) {   // включить режим «Мусхаф» на странице с аятом s:a
+async function mOpen(s, a, flash = a > 1) {   // flash — подсветить аят (после «К аяту» — всегда, даже 1-й)   // включить режим «Мусхаф» на странице с аятом s:a
   try { mIndex = mIndex || await qGet("mushaf/index"); }
   catch (e) { toast("Не получилось открыть мусхаф. Нужен интернет"); return false; }
   const box = document.getElementById("q-mushaf");
@@ -2418,7 +2422,7 @@ async function mOpen(s, a) {   // включить режим «Мусхаф» �
     toast(`Страницы ${want} пока нет в примере`);
     want = near.page;
   }
-  await mShowPage(want, a > 1 ? `${s}:${a}` : "");
+  await mShowPage(want, flash ? `${s}:${a}` : "");
   return true;
 }
 function applyQMode() {
