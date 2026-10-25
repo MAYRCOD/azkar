@@ -634,7 +634,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
 /* ---------- Мусхаф ---------- */
-.q-mode { margin: 4px auto 12px; }
+#quran-read .q-mode { margin: 12px auto 14px; }   /* с id — иначе общее .q-switch { margin: 0 } обнуляет отступ и переключатель наезжает на кнопки */
 .q-mode[data-set="mushaf"]::before { transform: translateX(100%); }
 /* Чтение на весь экран: кнопки сверху прячутся, нажатие на страницу их показывает (плашкой поверх) */
 #quran-read.mushaf { overflow: hidden; padding: 0 0 env(safe-area-inset-bottom, 0px); position: relative; }
@@ -2319,9 +2319,10 @@ const mPageFont = n => {
     .then(([f]) => {
       document.fonts.add(f); mFontFaces[n] = f;
       // В шрифте V4 6 палитр: №0 — таджвид (цветные буквы), №3 — чёрный текст, №4 — белый (тёмная тема).
-      // Таджвид не показываем. 10–12 — цвета кружка с номером аята
-      if (!mPalDone.has(n)) mPalDone.add(n), mPalCss.append(`@font-palette-values --qp${n} { font-family: "qcf-p${n}"; base-palette: 3; override-colors: 10 #8a7a52, 11 #8a7a52, 12 #ffffff00; }
-@font-palette-values --qd${n} { font-family: "qcf-p${n}"; base-palette: 4; override-colors: 10 #c8a95e, 11 #c8a95e, 12 #ffffff00; }\n`);
+      // Таджвид не показываем. 10–12 — цвета кружка с номером аята; 14 — рамки и овалы пометок таджвида
+      // вокруг некоторых знаков (в тёмной теме были видны белыми прямоугольниками) — делаем прозрачными
+      if (!mPalDone.has(n)) mPalDone.add(n), mPalCss.append(`@font-palette-values --qp${n} { font-family: "qcf-p${n}"; base-palette: 3; override-colors: 10 #8a7a52, 11 #8a7a52, 12 #ffffff00, 14 #ffffff00; }
+@font-palette-values --qd${n} { font-family: "qcf-p${n}"; base-palette: 4; override-colors: 10 #c8a95e, 11 #c8a95e, 12 #ffffff00, 14 #ffffff00; }\n`);
     }).catch(() => { delete mFonts[n]; });
   return mFonts[n];
 };
