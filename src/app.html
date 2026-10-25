@@ -2310,7 +2310,8 @@ function mNatural(l) {
   let w = 0; l.querySelectorAll("span").forEach(x => { w += x.getBoundingClientRect().width; });
   return w;
 }
-// Все строки — от края до края. По центру — только короткая последняя строка суры (и всё на страницах 1–2).
+// Полные строки — от края до края. Короткую строку (меньше 90% ширины) не растягиваем, а ставим по центру —
+// как в печатном мусхафе (например, «يُوَسْوِسُ فِي صُدُورِ ٱلنَّاسِ» на стр. 604). Страницы 1–2 — всё по центру.
 // Если строка вдруг длиннее страницы — чуть уменьшаем именно её
 function mLines(el) {
   const special = el.classList.contains("special");
@@ -2318,7 +2319,7 @@ function mLines(el) {
     l.style.fontSize = "";
     const nat = mNatural(l), W = l.clientWidth;
     if (nat > W + 1) l.style.fontSize = `calc(var(--mfs) * ${(W / nat).toFixed(4)})`;
-    l.classList.toggle("c", special || ("end" in l.dataset && nat < W * 0.9));
+    l.classList.toggle("c", special || nat < W * 0.9);
   });
 }
 async function mRender(el) {   // нарисовать страницу, когда она рядом
