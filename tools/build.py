@@ -86,10 +86,26 @@ def copy_quran() -> list:
     names.append("hafs18.ttf")
     mus = QURAN_OUT / "mushaf"
     mus.mkdir()
-    for f in sorted(MUSHAF_DATA.glob("*.json")):
-        (mus / f.name).write_text(json.dumps(json.loads(f.read_text(encoding="utf-8")), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    for f in sorted(MUSHAF_FONTS.glob("p*.woff2")):
-        shutil.copyfile(f, mus / f.name)   # шрифты страниц — без изменений
+    # Страницы мусхафа — блоками по 20 (pages-1.json = стр. 1–20 …): 31 файл вместо 604, меньше запросов
+    (mus / "index.json").write_text(json.dumps(json.loads((MUSHAF_DATA / "index.json").read_text(encoding="utf-8")),
+                                               ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    blocks = {}
+    for f in MUSHAF_DATA.glob("[0-9]*.json"):
+        n = int(f.stem)
+        blocks.setdefault((n - 1) // 20 + 1, {})[n] = json.loads(f.read_text(encoding="utf-8"))
+    # Шрифты страниц — тоже блоками: fonts-K.bin = файлы pN.woff2 этого блока подряд, без изменений;
+    # где какой шрифт лежит (смещение, длина) — в pages-K.json, поле "_f"
+    for k, pages in blocks.items():
+        out, pos, where = bytearray(), 0, {}
+        for n in sorted(pages):
+            font = (MUSHAF_FONTS / f"p{n}.woff2").read_bytes()
+            where[str(n)] = [pos, len(font)]
+            out += font
+            pos += len(font)
+        (mus / f"fonts-{k}.bin").write_bytes(bytes(out))
+        data = {str(n): pages[n] for n in sorted(pages)}
+        data["_f"] = where
+        (mus / f"pages-{k}.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     shutil.copyfile(SRC / "fonts" / "surah-header.woff2", mus / "surah-header.woff2")   # заголовки сур (QCF Surah Header)
     return ["./quran/" + n for n in names]
 

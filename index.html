@@ -2299,10 +2299,23 @@ let qMode = load("azkar-quran-mode", "text") === "mushaf" ? "mushaf" : "text";
 let mIndex = null;                    // какие страницы есть: [{page, s, a}] — с какого аята начинается
 const mFonts = {};                    // загруженные шрифты страниц
 const mPalCss = document.head.appendChild(document.createElement("style"));
+// Страница мусхафа: файлы лежат блоками по 20 страниц (pages-1.json — стр. 1–20 …), см. tools/build.py
+const mPage = n => qGet(`mushaf/pages-${Math.ceil(n / 20)}`).then(b => b[n]);
+// Шрифты страниц лежат блоками: fonts-K.bin — шрифты 20 страниц подряд, где чей — в pages-K.json (поле "_f").
+// Блок держим в памяти, пока читают его страницы или соседние (см. mRenderNear)
+const mPacks = {};
+const mPack = k => mPacks[k] || (mPacks[k] = fetch(`quran/mushaf/fonts-${k}.bin`)
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+  .catch(e => { delete mPacks[k]; throw e; }));
+async function mFontData(n) {
+  const k = Math.ceil(n / 20), [block, buf] = await Promise.all([qGet(`mushaf/pages-${k}`), mPack(k)]);
+  const [off, len] = block._f[n];
+  return buf.slice(off, off + len);
+}
 const mPalDone = new Set();   // для каких страниц правила палитр уже добавлены
 const mFontFaces = {};   // загруженные шрифты страниц (FontFace) — дальние выгружаем, см. mRenderNear()
 const mPageFont = n => {
-  if (!mFonts[n]) mFonts[n] = Promise.all([new FontFace(`qcf-p${n}`, `url(quran/mushaf/p${n}.woff2)`).load(), mHeaderFont()])
+  if (!mFonts[n]) mFonts[n] = Promise.all([mFontData(n).then(b => new FontFace(`qcf-p${n}`, b).load()), mHeaderFont()])
     .then(([f]) => {
       document.fonts.add(f); mFontFaces[n] = f;
       // В шрифте V4 6 палитр: №0 — таджвид (цветные буквы), №3 — чёрный текст, №4 — белый (тёмная тема).
@@ -2362,7 +2375,7 @@ async function mRender(el) {   // нарисовать страницу, ког�
   el.dataset.done = "1";
   const n = +el.dataset.page;
   try {
-    const [d] = await Promise.all([qGet(`mushaf/${n}`), mPageFont(n)]);
+    const [d] = await Promise.all([mPage(n), mPageFont(n)]);
     // вверху — все суры, которые есть на странице (как в мусхафе: «Курайш, аль-Ма'ун, аль-Каусар»)
     const ids = [...new Set(d.lines.filter(l => l.t === "w").flatMap(l => l.w.map(w => w[1])))];
     el.classList.toggle("special", n <= 2);
@@ -2395,6 +2408,8 @@ function mRenderNear() {
   // шрифты страниц дальше трёх от текущей — выгружаем (при возврате файл берётся из кэша, это быстро)
   const near = new Set([...box.children].slice(Math.max(0, i - 3), i + 4).map(el => +el.dataset.page));
   for (const n in mFontFaces) if (!near.has(+n)) { document.fonts.delete(mFontFaces[n]); delete mFontFaces[n]; delete mFonts[n]; }
+  const packs = new Set([...near].map(n => Math.ceil(n / 20)));   // блоки шрифтов, которые не нужны рядом, — из памяти
+  for (const k in mPacks) if (!packs.has(+k)) delete mPacks[k];
 }
 async function mShowPage(n, k) {   // открыть страницу n; k — «сура:аят», который подсветить
   const box = document.getElementById("q-mushaf");
