@@ -634,15 +634,15 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
 /* ---------- Мусхаф ---------- */
-#quran-read .q-mode { margin: 12px auto 14px; }
+#quran-read .q-mode { margin: 12px auto 14px; }   /* с id — иначе общее .q-switch { margin: 0 } обнуляет отступ и переключатель наезжает на кнопки */
 /* Текст: блок кнопок прилипает к верху; когда суру прокрутили (.float), он спрятан и показывается
    нажатием на экран (.ctl, сам прячется через 4 с) — как в мусхафе */
 #quran-read:not(.mushaf) .q-ctl {
   position: sticky; top: -16px; z-index: 6; margin: -16px -16px 0; padding: 16px 16px 1px;
-  background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  background: var(--bg); box-shadow: 0 1px 0 var(--line);   /* плотная подложка: сквозь полупрозрачную текст просвечивал и кнопки казались размытыми */
   transition: opacity .2s ease, transform .2s ease;
 }
-#quran-read:not(.mushaf).float:not(.ctl) .q-ctl { opacity: 0; transform: translateY(-8px); pointer-events: none; }   /* с id — иначе общее .q-switch { margin: 0 } обнуляет отступ и переключатель наезжает на кнопки */
+#quran-read:not(.mushaf).float:not(.ctl) .q-ctl { opacity: 0; transform: translateY(-8px); pointer-events: none; }
 .q-mode[data-set="mushaf"]::before { transform: translateX(100%); }
 /* Чтение на весь экран: кнопки сверху прячутся, нажатие на страницу их показывает (плашкой поверх) */
 #quran-read.mushaf { overflow: hidden; padding: 0 0 env(safe-area-inset-bottom, 0px); position: relative; }
@@ -651,8 +651,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   position: absolute; z-index: 5; left: 0; right: 0; transition: opacity .2s ease, transform .2s ease;
 }
 #quran-read.mushaf .topbar {
-  top: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 8px; background: color-mix(in srgb, var(--bg) 88%, transparent);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  /* плотная подложка под кнопками и переключателем (без размытия): снизу она закрывает и место под переключателем */
+  top: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 64px; background: var(--bg); box-shadow: 0 1px 0 var(--line);
 }
 #quran-read.mushaf .q-mode { top: calc(56px + env(safe-area-inset-top, 0px)); margin: 0 auto; }
 #quran-read.mushaf:not(.ctl) .topbar, #quran-read.mushaf:not(.ctl) .q-mode { opacity: 0; transform: translateY(-8px); pointer-events: none; }
@@ -662,29 +662,28 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   scrollbar-width: none; padding-top: env(safe-area-inset-top, 0px);
 }
 .q-mushaf::-webkit-scrollbar { display: none; }
-/* Страница — как в печатном Мединском мусхафе: 15 строк одной высоты, ширина строки W, шаг строк W/9.3
-   (пропорции книги). W считает mFit(): страница целиком помещается в экран, ничего не растягивается по высоте.
-   Размер шрифта один на все страницы (--mfs), строки — от края до края, как в книге */
+/* Страница мусхафа: 15 строк одной высоты на весь экран, строки — от края до края, как в книге.
+   Размеры (--mw, --mrh) считает mFit(), размер шрифта страницы (--mfs) — mLines() */
 .mp { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; min-width: 0; padding: 4px 0; }
-.mp-top { width: var(--mw, 100%); display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; direction: ltr; margin-bottom: 6px; }
+  align-items: center; justify-content: center; min-width: 0; padding: 2px 0 4px; }
+.mp-top { width: var(--mw, 100%); display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; direction: ltr; margin-bottom: 2px; }
 .mp-top span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mp-top span:last-child { flex: none; }
-.mp-num { margin-top: 6px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-.mp-lines { width: var(--mw, 100%); height: calc(var(--mw, 100%) * 15 / 9.3); display: grid;
-  grid-template-rows: repeat(15, minmax(0, 1fr)); align-items: center; color: var(--fg); }
-.mp.special .mp-lines { grid-template-rows: repeat(8, calc(var(--mw) / 9.3)); align-content: center; }
+.mp-num { margin-top: 2px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+/* 15 строк делят всю высоту экрана (--mrh — высота строки), ширина строки — --mw (см. mFit) */
+.mp-lines { width: var(--mw, 100%); display: grid; grid-template-rows: repeat(15, var(--mrh, 40px)); align-items: center; color: var(--fg); }
+.mp.special .mp-lines { grid-template-rows: repeat(8, var(--mrh, 40px)); align-content: center; height: calc(var(--mrh, 40px) * 15); }
 .mp-lines { font-palette: var(--pl); }
 :root[data-theme="dark"] .mp-lines { font-palette: var(--pd); }
 .ml { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; font-size: var(--mfs, 20px); line-height: 1; }
 .ml.c { justify-content: center; }   /* короткая строка — по центру, как в печатном издании */
 .ml span.on { border-radius: 4px; }
-/* Заголовок суры — шрифт заголовков Комплекса короля Фахда (QCF Surah Header): вся рамка с названием — один знак.
-   Высота строки = высота ряда, иначе браузер ставит знак не по центру */
-.mh { font-family: "qcf-header"; font-size: calc(var(--mw) / 3.62); height: calc(var(--mw) / 9.3); line-height: calc(var(--mw) / 9.3);
+/* Заголовок суры — шрифт заголовков Комплекса короля Фахда (QCF Surah Header): вся рамка с названием — один знак
+   (высота знака 0,39 em). По ширине строки, но не выше своей строки. Высота строки = высота ряда, иначе знак не по центру */
+.mh { font-family: "qcf-header"; font-size: min(calc(var(--mw) / 3.62), calc(var(--mrh) / .44)); height: var(--mrh); line-height: var(--mrh);
   text-align: center; direction: rtl; color: var(--mh-ink); overflow: visible; }
 .mb { display: grid; place-items: center; min-height: 0; color: var(--fg); }
-.mb svg { height: calc(var(--mw) / 9.3 * .78); width: auto; }
+.mb svg { height: min(calc(var(--mrh) * .72), calc(var(--mw) / 12)); width: auto; }
 .mp-msg { flex: 0 0 100%; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; direction: ltr; }
 .q-switch { margin: 0; }
 .q-switch[data-set="juzs"]::before { transform: translateX(100%); }
@@ -2402,14 +2401,16 @@ function mPageOf(s, a) {
   for (const p of mIndex.pages) if (mCmp(p.s, p.a, s, a) <= 0 && mCmp(s, a, p.es, p.ea) <= 0) best = p;
   return best ? best.page : 0;
 }
-// Размер страницы. Как в книге: ширина строки W, 15 строк с шагом W/9.3. Страница целиком влезает в экран
-// (по ширине или по высоте — что меньше)
+// Размер страницы — как в приложениях-мусхафах: строка во всю ширину экрана (W), а 15 строк делят всю высоту
+// (высота строки RH), без пустых полос сверху и снизу. На низком экране (или телефоне боком) строки не теснее
+// W/12 — тогда уже уменьшаем ширину
 function mFit() {
   const box = document.getElementById("q-mushaf");
-  const w = box.clientWidth - 10, h = box.clientHeight - 8 - 2 * 26;   // 26 — подписи сверху и снизу
+  const w = box.clientWidth - 10, h = box.clientHeight - 6 - 2 * 20;   // 20 — подписи сверху и снизу
   if (w <= 0 || h <= 0) return;
-  const W = Math.floor(Math.min(w, h * 9.3 / 15));
+  const RH = Math.floor(h / 15 * 10) / 10, W = Math.floor(Math.min(w, RH * 12));
   box.style.setProperty("--mw", W + "px");
+  box.style.setProperty("--mrh", RH + "px");
   box.querySelectorAll(".mp[data-done]").forEach(mLines);
 }
 // Естественная ширина строки — слова вплотную, без растяжки
