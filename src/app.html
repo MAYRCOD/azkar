@@ -2278,10 +2278,10 @@ const mFonts = {};                    // загруженные шрифты с�
 const mPalCss = document.head.appendChild(document.createElement("style"));
 // Страница мусхафа: файлы лежат блоками по 20 страниц (pages-1.json — стр. 1–20 …), см. tools/build.py
 const mPage = n => qGet(`mushaf/pages-${Math.ceil(n / 20)}`).then(b => b[n]);
-// Шрифты страниц лежат блоками: fonts-K.bin — шрифты 20 страниц подряд, где чей — в pages-K.json (поле "_f").
+// Шрифты страниц лежат блоками: fonts-K.woff2 — шрифты 20 страниц подряд (склейка), где чей — в pages-K.json (поле "_f").
 // Блок держим в памяти, пока читают его страницы или соседние (см. mRenderNear)
 const mPacks = {};
-const mPack = k => mPacks[k] || (mPacks[k] = fetch(`quran/mushaf/fonts-${k}.bin`)
+const mPack = k => mPacks[k] || (mPacks[k] = fetch(`quran/mushaf/fonts-${k}.woff2`)
   .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
   .catch(e => { delete mPacks[k]; throw e; }));
 async function mFontData(n) {

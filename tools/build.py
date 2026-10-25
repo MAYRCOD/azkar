@@ -93,7 +93,8 @@ def copy_quran() -> list:
     for f in MUSHAF_DATA.glob("[0-9]*.json"):
         n = int(f.stem)
         blocks.setdefault((n - 1) // 20 + 1, {})[n] = json.loads(f.read_text(encoding="utf-8"))
-    # Шрифты страниц — тоже блоками: fonts-K.bin = файлы pN.woff2 этого блока подряд, без изменений;
+    # Шрифты страниц — тоже блоками: fonts-K.woff2 = файлы pN.woff2 этого блока подряд, без изменений (это не один
+    # шрифт, а склейка; расширение .woff2 — чтобы любой сервер, и предпросмотр в Claude, отдавал файл как шрифт);
     # где какой шрифт лежит (смещение, длина) — в pages-K.json, поле "_f"
     for k, pages in blocks.items():
         out, pos, where = bytearray(), 0, {}
@@ -102,7 +103,7 @@ def copy_quran() -> list:
             where[str(n)] = [pos, len(font)]
             out += font
             pos += len(font)
-        (mus / f"fonts-{k}.bin").write_bytes(bytes(out))
+        (mus / f"fonts-{k}.woff2").write_bytes(bytes(out))
         data = {str(n): pages[n] for n in sorted(pages)}
         data["_f"] = where
         (mus / f"pages-{k}.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
