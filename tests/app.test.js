@@ -789,6 +789,8 @@ const section = name => console.log("•", name);
     check(p601.lines === 15 && p601.heads.length === 3 && p601.bas === 3, "на стр. 601 не 15 строк / 3 заголовка / 3 басмалы: " + JSON.stringify(p601));
     check(p601.over === 0, "строки страницы 601 вылезают за край: " + p601.over);
     check(p601.fontOk && p601.font.includes("qcf-p601"), "шрифт страницы 601 не загрузился");
+    const numFit = await k.evaluate(() => { const r = document.querySelector('.mp[data-page="601"] .mp-num').getBoundingClientRect(); return r.bottom <= innerHeight && r.height > 0; });
+    check(numFit, "номер страницы внизу мусхафа не помещается на экран");
     await swipe(240);
     check(await page() === "602", "свайп вправо должен открыть следующую страницу (602), а открыл " + await page());
     check(await k.locator("#quran-read").isVisible(), "свайп в мусхафе не должен закрывать суру");

@@ -2410,7 +2410,9 @@ function mPageOf(s, a) {
 // W/12 — тогда уже уменьшаем ширину
 function mFit() {
   const box = document.getElementById("q-mushaf");
-  const w = box.clientWidth - 10, h = box.clientHeight - 6 - 2 * 20;   // 20 — подписи сверху и снизу
+  // clientHeight включает отступы ленты (сверху — место под системным размытием у края), их вычитаем
+  const cs = getComputedStyle(box), pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const w = box.clientWidth - 10, h = box.clientHeight - pad - 6 - 2 * 20;   // 20 — подписи сверху и снизу
   if (w <= 0 || h <= 0) return;
   const RH = Math.floor(h / 15 * 10) / 10, W = Math.floor(Math.min(w, RH * 12));
   box.style.setProperty("--mw", W + "px");
