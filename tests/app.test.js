@@ -802,7 +802,7 @@ const section = name => console.log("•", name);
     // Короткая строка (конец суры) — по центру без растяжки, полная — по ширине
     const ln = await k.evaluate(() => [...document.querySelectorAll('.mp[data-page="602"] .ml')].map(l => {
       const sp = [...l.querySelectorAll("span")].map(x => x.getBoundingClientRect()), r = l.getBoundingClientRect();
-      return { full: l.classList.contains("full"), left: Math.min(...sp.map(x => x.left)) - r.left, right: r.right - Math.max(...sp.map(x => x.right)) }; }));
+      return { full: !l.classList.contains("c"), left: Math.min(...sp.map(x => x.left)) - r.left, right: r.right - Math.max(...sp.map(x => x.right)) }; }));
     check(ln.some(l => !l.full) && ln.filter(l => !l.full).every(l => Math.abs(l.left - l.right) < 3),
       "короткие строки стр. 602 не по центру: " + JSON.stringify(ln.filter(l => !l.full)));
     check(ln.filter(l => l.full).every(l => l.left < 4 && l.right < 4), "полные строки стр. 602 не от края до края: " + JSON.stringify(ln.filter(l => l.full)));

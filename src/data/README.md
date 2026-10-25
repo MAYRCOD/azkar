@@ -94,14 +94,14 @@
 Сборка `tools/build.py` кладёт их в папку `quran/` рядом с index.html: приложение берёт файл суры,
 только когда её открыли.
 
-## Режим «Мусхаф» (ветка mushaf, пример — страницы 1, 2, 600–604)
+## Режим «Мусхаф» (ветка mushaf2, пример — страницы 1, 2, 600–604)
 
-- `src/mushaf-fonts/pN.woff2` — шрифт страницы N, QCF V4 (издание 1441 г.), Комплекс короля Фахда, через
-  Quran Foundation (verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/). Несмотря на «colrv1» в адресе,
-  внутри цветной формат COLR версии 0 — его понимает и iPhone. В шрифте 6 палитр: №0 — таджвид (цветные буквы),
-  №3 — чёрный текст, №4 — белый (тёмная тема). Приложение берёт №3/№4, таджвид не показывает.
-  Коды слов те же, что у V2 (`code_v2` в API quran.com): все глифы страниц проверены по шрифтам.
-- `src/fonts/surah-names.woff2` — каллиграфия названий сур (quran.com/fonts/quran/surah-names/v1/sura_names.woff2):
-  текст «106surah» шрифт рисует как «سورة قريش». Номер — всегда три цифры.
-- `src/fonts/bismillah.svg` — басмала каллиграфией (картинка с quran.com), вставлена в app.html.
-Условия Quran Foundation: шрифты — только внутри приложения, со ссылкой на источник (строка в «О приложении»).
+- `src/mushaf-fonts/pN.woff2` — шрифт страницы N, QCF V2 (Комплекс короля Фахда, через Quran Foundation,
+  verses.quran.foundation/fonts/quran/hafs/v2/woff2/). Выбран V2, а не V4: полные строки в V2 почти одной
+  ширины (15,05–15,74 em на стр. 601–604), в V4 разброс до 7% — отсюда были дыры между словами.
+- `src/fonts/surah-header.woff2` — заголовки сур, QCF Surah Header (Комплекс короля Фахда; файл с
+  static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.woff2, страница qul.tarteel.ai/resources/font/458).
+  Рамка с названием суры — один знак (список знаков — M_HDR в app.html). Лицензия на сайте QUL не указана —
+  уточнить до App Store.
+- Басмала — SVG с quran.com (M_BSML в app.html).
+- Раскладка как в книге: ширина строки W, 15 строк с шагом W/9.3, шрифт W/15.75 на всех страницах.
