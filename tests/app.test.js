@@ -794,6 +794,13 @@ const section = name => console.log("•", name);
     check(await k.locator("#quran-read").isVisible(), "свайп в мусхафе не должен закрывать суру");
     await swipe(-240);
     check(await page() === "601", "свайп влево должен вернуть на страницу 601");
+    // Быстрое листание: в памяти только ближние страницы и их шрифты (иначе на телефоне вкладка падает — серый экран)
+    for (let i = 0; i < 12; i++) { await k.evaluate(() => { const b = document.getElementById("q-mushaf"); b.scrollBy({ left: b.clientWidth, behavior: "instant" }); }); await W(k, 100); }
+    await W(k, 1500);
+    const mem = await k.evaluate(() => ({ done: document.querySelectorAll(".mp[data-done]").length, fonts: [...document.fonts].filter(f => f.family.startsWith("qcf-p")).length }));
+    check(mem.done <= 4 && mem.fonts <= 7, "после быстрого листания в памяти лишние страницы: " + JSON.stringify(mem));
+    await k.evaluate(() => mOpen(104, 1)); await W(k, 1200);
+    check(await page() === "601", "после листания «аль-Хумаза» не открылась на 601");
     // Кнопки сверху прячутся сами и появляются по нажатию на страницу
     await W(k, 4300);
     check(await k.evaluate(() => getComputedStyle(document.querySelector("#quran-read .topbar")).opacity) === "0", "кнопки над мусхафом не спрятались через 4 с");

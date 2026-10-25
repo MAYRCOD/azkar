@@ -2276,13 +2276,15 @@ let qMode = load("azkar-quran-mode", "text") === "mushaf" ? "mushaf" : "text";
 let mIndex = null;                    // какие страницы есть: [{page, s, a}] — с какого аята начинается
 const mFonts = {};                    // загруженные шрифты страниц
 const mPalCss = document.head.appendChild(document.createElement("style"));
+const mPalDone = new Set();   // для каких страниц правила палитр уже добавлены
+const mFontFaces = {};   // загруженные шрифты страниц (FontFace) — дальние выгружаем, см. mRenderNear()
 const mPageFont = n => {
   if (!mFonts[n]) mFonts[n] = Promise.all([new FontFace(`qcf-p${n}`, `url(quran/mushaf/p${n}.woff2)`).load(), mHeaderFont()])
     .then(([f]) => {
-      document.fonts.add(f);
+      document.fonts.add(f); mFontFaces[n] = f;
       // В шрифте V4 6 палитр: №0 — таджвид (цветные буквы), №3 — чёрный текст, №4 — белый (тёмная тема).
       // Таджвид не показываем. 10–12 — цвета кружка с номером аята
-      mPalCss.append(`@font-palette-values --qp${n} { font-family: "qcf-p${n}"; base-palette: 3; override-colors: 10 #8a7a52, 11 #8a7a52, 12 #ffffff00; }
+      if (!mPalDone.has(n)) mPalDone.add(n), mPalCss.append(`@font-palette-values --qp${n} { font-family: "qcf-p${n}"; base-palette: 3; override-colors: 10 #8a7a52, 11 #8a7a52, 12 #ffffff00; }
 @font-palette-values --qd${n} { font-family: "qcf-p${n}"; base-palette: 4; override-colors: 10 #c8a95e, 11 #c8a95e, 12 #ffffff00; }\n`);
     }).catch(() => { delete mFonts[n]; });
   return mFonts[n];
@@ -2350,16 +2352,26 @@ async function mRender(el) {   // нарисовать страницу, ког�
           : l.t === "b" ? `<div class="mb" aria-label="Басмала">${M_BSML}</div>` : `<div></div>`;
       }).join("")}</div>
       <div class="mp-num">${n}</div>`;
-    mFit(); mLines(el);
+    // размеры страницы (--mw) считаем один раз; новая страница подстраивает только себя, а не все нарисованные
+    if (!document.getElementById("q-mushaf").style.getPropertyValue("--mw")) mFit(); else mLines(el);
   } catch (e) { el.dataset.done = ""; el.innerHTML = `<p class="mp-msg">Не получилось открыть страницу ${n}. Нужен интернет</p>`; }
 }
 function mCurrent() {   // какая страница сейчас на экране
   const box = document.getElementById("q-mushaf"), w = box.clientWidth || 1;
   return box.children[Math.round(Math.abs(box.scrollLeft) / w)];
 }
+// Рисуем только текущую страницу и по одной с каждой стороны; дальние стираем — иначе при быстром листании
+// в памяти копятся все страницы с цветными шрифтами, и телефон закрывает вкладку (серый экран)
 function mRenderNear() {
   const cur = mCurrent(); if (!cur) return;
-  [cur.previousElementSibling, cur, cur.nextElementSibling].forEach(el => el && el.dataset.page && mRender(el));
+  const box = document.getElementById("q-mushaf"), i = [...box.children].indexOf(cur);
+  [...box.children].forEach((el, j) => {
+    if (Math.abs(j - i) <= 1) mRender(el);
+    else if (Math.abs(j - i) > 2 && el.dataset.done) { el.innerHTML = ""; delete el.dataset.done; }
+  });
+  // шрифты страниц дальше трёх от текущей — выгружаем (при возврате файл берётся из кэша, это быстро)
+  const near = new Set([...box.children].slice(Math.max(0, i - 3), i + 4).map(el => +el.dataset.page));
+  for (const n in mFontFaces) if (!near.has(+n)) { document.fonts.delete(mFontFaces[n]); delete mFontFaces[n]; delete mFonts[n]; }
 }
 async function mShowPage(n, k) {   // открыть страницу n; k — «сура:аят», который подсветить
   const box = document.getElementById("q-mushaf");
