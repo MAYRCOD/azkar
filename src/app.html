@@ -654,6 +654,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* Окно «Слушать» */
 #q-listen-sheet .sheet { max-height: 86vh; overflow-y: auto; }
 .ql-h { margin: 8px 6px 0; font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+#q-listen-sheet .choice-row small:empty { display: none; }
+#ql-dl .choice-row .txt { color: var(--accent-ink); }
+#ql-dl .choice-row small { color: var(--muted); }
 .ql-range { display: inline-flex; align-items: center; gap: 6px; }
 .ql-range select { font: inherit; font-size: 15px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 /* Панель во время чтения — внизу экрана (вне экрана суры: у него transform, и fixed внутри «уезжал» бы вместе с ним) */
@@ -1006,6 +1009,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     </div>
     <div class="ql-h">Чтец</div>
     <div id="ql-reciters"></div>
+    <div class="ql-h">Без интернета</div>
+    <div id="ql-dl"></div>
     <button class="sheet-btn q-go-yes" id="ql-go">Слушать</button>
   </div>
 </div>
@@ -2292,11 +2297,13 @@ document.getElementById("q-nav").addEventListener("click", e => {
 document.getElementById("q-back").addEventListener("click", () => { qPlayStop(); showScreen("quran"); });
 
 /* ================================================================
-   ЧТЕЦЫ (пробно: сура ан-Нас, 5 чтецов)
-   quran/audio/reciters.json — список чтецов и сур, у которых есть записи;
-   quran/audio/<чтец>/<сура>.mp3 — запись всей суры, <сура>.json — когда звучит каждый аят и слово (мс):
-   ayahs[i] = [начало, конец, [[слово, начало, конец], …]]. Источник — Quran Foundation (api.quran.com,
+   ЧТЕЦЫ
+   quran/audio/reciters.json — чтецы (size — сколько весят записи всего Корана) и суры, у которых есть разметка;
+   quran/audio/<чтец>/<сура>.json — {url: запись всей суры на сервере чтецов, size: её размер, ayahs},
+   ayahs[i] = [начало, конец, [[слово, начало, конец], …]] (мс). Разметка — Quran Foundation (api.quran.com,
    chapter_recitations с segments), записи — download.quranicaudio.com.
+   Записи играют прямо с сервера. Человек может скачать суру или весь Коран выбранного чтеца — тогда запись
+   лежит в памяти телефона (IndexedDB «azkar-audio», ключ «чтец/сура» → {blob, data}) и играет без интернета.
    Слушать: аят, всю суру или аяты с … по …. Звучащий аят подсвечен (в мусхафе — и слово)
    ================================================================ */
 let qRec = null;   // reciters.json
@@ -2307,6 +2314,136 @@ async function qAudioHas(s) {
 const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, w: 0, raf: 0, src: "" };
 const qListen = { s: 0, a: 1, what: "ayah" };
 const qLS = document.getElementById("q-listen-sheet");
+
+// --- Скачанные записи (IndexedDB) ---
+const qDb = { p: null, keys: new Set() };   // keys — что уже скачано: «чтец/сура»
+function qDbOpen() {
+  if (!qDb.p) {
+    qDb.p = new Promise((ok, no) => {
+      const r = indexedDB.open("azkar-audio", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("files");
+      r.onerror = () => no(r.error);
+      r.onsuccess = () => {
+        const db = r.result, k = db.transaction("files").objectStore("files").getAllKeys();
+        k.onsuccess = () => { k.result.forEach(x => qDb.keys.add(x)); ok(db); };
+        k.onerror = () => no(k.error);
+      };
+    });
+    qDb.p.catch(() => { qDb.p = null; });
+  }
+  return qDb.p;
+}
+// Одно действие с хранилищем: fn получает его и возвращает запрос; результат — ответ на этот запрос
+function qDbDo(mode, fn) {
+  return qDbOpen().then(db => new Promise((ok, no) => {
+    const tx = db.transaction("files", mode), req = fn(tx.objectStore("files"));
+    tx.oncomplete = () => ok(req && req.result);
+    tx.onerror = tx.onabort = () => no(tx.error);
+  }));
+}
+
+// --- Подготовка: разметка и откуда играть. Готовим заранее (когда открыли окно и выбрали чтеца),
+// чтобы по «Слушать» звук включился сразу: iPhone даёт включить звук только в момент нажатия ---
+const qReady = new Map(), qReadyP = new Map();   // «чтец/сура» → {data, src}
+function qPrep(rec, s) {
+  const key = `${rec}/${s}`;
+  if (!qReadyP.has(key)) {
+    const p = (async () => {
+      let saved = null;
+      try { await qDbOpen(); if (qDb.keys.has(key)) saved = await qDbDo("readonly", st => st.get(key)); } catch (e) {}
+      const data = saved ? saved.data : await qGet(`audio/${rec}/${s}`);
+      const r = { data, src: saved ? URL.createObjectURL(saved.blob) : data.url };
+      qReady.set(key, r);
+      return r;
+    })();
+    p.catch(() => qReadyP.delete(key));
+    qReadyP.set(key, p);
+  }
+  return qReadyP.get(key);
+}
+// Забыть подготовленное (после скачивания или удаления — в следующий раз возьмём из нового места)
+function qUnprep(key) {
+  const r = qReady.get(key);
+  if (r && r.src.startsWith("blob:") && qPlay.src !== r.src) URL.revokeObjectURL(r.src);
+  qReady.delete(key); qReadyP.delete(key);
+}
+const qSelRec = () => document.querySelector('#ql-reciters [aria-checked="true"]')?.dataset.rec || qRec.reciters[0].id;
+const qMB = b => b >= 1e9 ? `${(b / 1073741824).toFixed(1).replace(".", ",")} ГБ`
+  : `${(b / 1048576).toFixed(b < 1e7 ? 1 : 0).replace(".", ",")} МБ`;
+
+// --- Скачать для прослушивания без интернета: одну суру или весь Коран выбранного чтеца ---
+const qDl = { rec: "", all: false, s: 0, done: 0, total: 0, stop: false };   // идёт скачивание (одно за раз)
+let qDelArm = "";   // «удалить» нажали один раз — ждём второе нажатие
+async function qDownload(rec, list) {
+  if (qDl.rec) { toast("Дождитесь, пока закончится скачивание"); return; }
+  try { await qDbOpen(); } catch (e) { toast("Телефон не даёт сохранить записи"); return; }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});   // чтобы браузер не стёр сам
+  const todo = list.filter(s => !qDb.keys.has(`${rec}/${s}`));
+  Object.assign(qDl, { rec, all: list.length > 1, s: list[0], done: list.length - todo.length, total: list.length, stop: false });
+  qDlRender();
+  let err = null;
+  for (const s of todo) {
+    const key = `${rec}/${s}`;
+    try {
+      const data = await qGet(`audio/${rec}/${s}`);
+      const res = await fetch(data.url);
+      if (!res.ok) throw new Error(res.status);
+      const blob = await res.blob();
+      if (qDl.stop) break;
+      await qDbDo("readwrite", st => st.put({ blob, data }, key));
+      qDb.keys.add(key); qUnprep(key);
+    } catch (e) { err = e; break; }
+    qDl.done++; qDlRender();
+    if (qDl.stop) break;
+  }
+  const { all, done, total, stop } = qDl, r = qRec.reciters.find(x => x.id === rec);
+  qDl.rec = ""; qDlRender(); qPrepAgain();
+  if (err) toast(err.name === "QuotaExceededError" ? "Не хватает места в телефоне" : `Скачивание прервалось (${done} из ${total}). Нужен интернет`);
+  else if (!stop) toast(all ? `${r.name}: весь Коран скачан` : "Сура скачана — можно слушать без интернета");
+}
+async function qDlDelete(rec, list) {
+  await qDbDo("readwrite", st => { let q; list.forEach(s => { q = st.delete(`${rec}/${s}`); }); return q; });
+  list.forEach(s => { qDb.keys.delete(`${rec}/${s}`); qUnprep(`${rec}/${s}`); });
+  qDlRender(); qPrepAgain();
+}
+// Окно «Слушать» открыто — заново готовим выбранного чтеца (теперь из скачанного или с сервера)
+function qPrepAgain() { if (qListen.s && !qLS.hidden) qPrep(qSelRec(), qListen.s).then(qDlRender, () => {}); }
+// Строки «Без интернета» в окне «Слушать» и пометки «скачано» у чтецов
+function qDlRender() {
+  if (!qRec || !qListen.s) return;
+  const rec = qSelRec(), s = qListen.s, r = qRec.reciters.find(x => x.id === rec), all = qRec.surahs.length;
+  const count = id => qRec.surahs.filter(x => qDb.keys.has(`${id}/${x}`)).length;
+  const n = count(rec), size = qReady.get(`${rec}/${s}`)?.data.size, job = qDl.rec === rec;
+  const row = (dl, t, sub) => `<button class="choice-row" data-dl="${dl}"><span class="txt">${t}<small>${sub || ""}</small></span></button>`;
+  const del = (d, t, what) => row(d, t, qDelArm === d ? `Нажмите ещё раз — удалю ${what} из телефона` : "Нажмите, чтобы удалить");
+  document.getElementById("ql-dl").innerHTML =
+    (qDb.keys.has(`${rec}/${s}`) ? del("del1", "Эта сура скачана ✓", "её")
+      : job && !qDl.all && qDl.s === s ? row("", "Скачиваю суру…")
+      : row("one", "Скачать эту суру", size ? qMB(size) : "")) +
+    (job && qDl.all ? row("stop", `Скачиваю весь Коран: ${qDl.done} из ${qDl.total}`, "Нажмите, чтобы остановить")
+      : n === all ? del("delall", "Весь Коран скачан ✓", "все записи этого чтеца")
+      : row("all", "Скачать весь Коран", qMB(r.size) + (n ? ` · уже скачано сур: ${n}` : "")));
+  document.querySelectorAll("#ql-reciters [data-rec]").forEach(b => {
+    const k = count(b.dataset.rec);
+    b.querySelector("small").textContent = k === all ? "Скачан весь Коран" : k ? `Скачано сур: ${k}` : "";
+  });
+}
+document.getElementById("ql-dl").addEventListener("click", e => {
+  const b = e.target.closest("[data-dl]"), d = b && b.dataset.dl;
+  if (!d) return;
+  const rec = qSelRec(), s = qListen.s;
+  if (d === "one") qDownload(rec, [s]);
+  else if (d === "all") qDownload(rec, qRec.surahs);
+  else if (d === "stop") { qDl.stop = true; b.querySelector("small").textContent = "Останавливаю…"; }
+  else if (qDelArm !== d) {   // удаление — только со второго нажатия
+    qDelArm = d; qDlRender();
+    setTimeout(() => { if (qDelArm === d) { qDelArm = ""; qDlRender(); } }, 3000);
+  } else {
+    qDelArm = "";
+    qDlDelete(rec, d === "del1" ? [s] : qRec.surahs).then(() => toast("Удалено"), () => toast("Не получилось удалить"));
+  }
+});
+
 // Открыть окно «Слушать»: сура s, аят a, что выбрано сразу
 function qListenOpen(s, a, what) {
   const x = qSurah(s);
@@ -2316,10 +2453,15 @@ function qListenOpen(s, a, what) {
   const opts = Array.from({ length: x.ayahs }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
   const from = document.getElementById("ql-from"), to = document.getElementById("ql-to");
   from.innerHTML = opts; to.innerHTML = opts; from.value = a; to.value = x.ayahs;
-  const saved = load("azkar-reciter", qRec.reciters[0].id);
+  let saved = load("azkar-reciter", qRec.reciters[0].id);
+  if (!qRec.reciters.some(r => r.id === saved)) saved = qRec.reciters[0].id;
   document.getElementById("ql-reciters").innerHTML = qRec.reciters.map(r =>
-    `<button class="choice-row" role="radio" data-rec="${r.id}" aria-checked="${r.id === saved}"><span class="txt">${r.name}</span><span class="check">✓</span></button>`).join("");
+    `<button class="choice-row" role="radio" data-rec="${r.id}" aria-checked="${r.id === saved}"><span class="txt">${r.name}<small></small></span><span class="check">✓</span></button>`).join("");
   qListenWhat(what);
+  qDelArm = "";
+  qDlRender();
+  qDbOpen().then(qDlRender, () => {});
+  qPrep(saved, s).then(qDlRender, () => {});
   qLS.hidden = false;
 }
 function qListenWhat(what) {
@@ -2338,10 +2480,13 @@ document.getElementById("ql-what").addEventListener("click", e => {
 document.getElementById("ql-reciters").addEventListener("click", e => {
   const b = e.target.closest("[data-rec]"); if (!b) return;
   document.querySelectorAll("#ql-reciters .choice-row").forEach(x => x.setAttribute("aria-checked", x === b));
+  qDelArm = "";
+  qDlRender();
+  qPrep(b.dataset.rec, qListen.s).then(qDlRender, () => {});
 });
 qLS.addEventListener("click", e => { if (e.target === qLS) closeSheet(qLS); });
 document.getElementById("ql-go").addEventListener("click", () => {
-  const rec = document.querySelector('#ql-reciters [aria-checked="true"]')?.dataset.rec || qRec.reciters[0].id;
+  const rec = qSelRec();
   store("azkar-reciter", rec);
   const n = qSurah(qListen.s).ayahs;
   const [from, to] = qListen.what === "ayah" ? [qListen.a, qListen.a] : qListen.what === "surah" ? [1, n]
@@ -2349,19 +2494,25 @@ document.getElementById("ql-go").addEventListener("click", () => {
   closeSheet(qLS);
   qPlayStart(qListen.s, from, to, rec);
 });
-// Начать: сура s, аяты from…to, чтец rec
-async function qPlayStart(s, from, to, rec) {
-  let data;
-  try { data = await qGet(`audio/${rec}/${s}`); }
-  catch (e) { toast("Не получилось загрузить чтеца. Нужен интернет"); return; }
-  const src = `quran/audio/${rec}/${s}.mp3`;
+// Начать: сура s, аяты from…to, чтец rec. Всё до el.play() — без ожиданий, прямо в нажатии
+function qPlayStart(s, from, to, rec) {
+  const ready = qReady.get(`${rec}/${s}`);
+  if (!ready) {   // ещё не подготовили (медленный интернет) — дождёмся; если iPhone не включит звук сам, нажмут ▶
+    qPrep(rec, s).then(() => qPlayStart(s, from, to, rec), () => toast("Не получилось загрузить чтеца. Нужен интернет"));
+    return;
+  }
+  const { data, src } = ready;
   if (!qPlay.el || qPlay.src !== src) {
-    if (qPlay.el) { qPlay.el.pause(); qPlay.el.src = ""; }
-    qPlay.el = new Audio(src); qPlay.src = src;
-    qPlay.el.addEventListener("pause", qPlayUi);
-    qPlay.el.addEventListener("play", qPlayUi);
-    qPlay.el.addEventListener("ended", () => qPlayStop());
-    qPlay.el.addEventListener("error", () => { toast("Не получилось загрузить чтеца. Нужен интернет"); qPlayStop(); });
+    if (qPlay.el) { qPlay.el.pause(); qPlay.el.removeAttribute("src"); qPlay.el.load(); }
+    const el = qPlay.el = new Audio(src); qPlay.src = src;
+    el.preload = "auto";
+    el.addEventListener("pause", qPlayUi);
+    el.addEventListener("play", qPlayUi);
+    el.addEventListener("ended", () => { if (qPlay.el === el) qPlayStop(); });
+    el.addEventListener("error", () => {
+      if (qPlay.el !== el || !el.getAttribute("src")) return;
+      toast("Не получилось загрузить чтеца. Нужен интернет"); qPlayStop();
+    });
   }
   Object.assign(qPlay, { data, s, from, to, rec, a: 0, w: 0 });
   document.getElementById("q-player").hidden = false;
@@ -2372,10 +2523,10 @@ async function qPlayStart(s, from, to, rec) {
   const el = qPlay.el, start = data.ayahs[from - 1][0] / 1000;
   const seek = () => {
     el.currentTime = start;
-    // Некоторые серверы не отдают файл по частям — тогда перемотка не срабатывает. Запасной путь:
-    // загрузить запись целиком (сотни КБ) и играть из памяти — там перематывать можно всегда
+    // Некоторые серверы не отдают файл по частям — тогда перемотка не срабатывает. Запасной путь (для
+    // небольших записей): загрузить запись целиком и играть из памяти — там перематывать можно всегда
     setTimeout(async () => {
-      if (Math.abs(el.currentTime - start) < 1 || qPlay.el !== el) { el.muted = false; return; }
+      if (Math.abs(el.currentTime - start) < 1 || qPlay.el !== el || (data.size || 0) > 8e6) { el.muted = false; return; }
       try {
         const url = URL.createObjectURL(await (await fetch(qPlay.src)).blob());
         el.addEventListener("loadedmetadata", () => { el.currentTime = start; el.muted = false; el.play(); qPlayLoop(); }, { once: true });
@@ -2385,8 +2536,11 @@ async function qPlayStart(s, from, to, rec) {
   };
   el.muted = true;   // до перемотки — без звука
   if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, { once: true });
-  try { await el.play(); } catch (e) { toast("Не получилось включить звук"); qPlayStop(); return; }
-  qPlayLoop();
+  el.play().then(qPlayLoop, e => {
+    if (qPlay.el !== el) return;
+    if (e.name === "NotAllowedError") { qPlayUi(); toast("Нажмите ▶, чтобы начать"); return; }   // iPhone не дал звук без нажатия
+    if (e.name !== "AbortError") { toast("Не получилось включить звук"); qPlayStop(); }
+  });
 }
 function qPlayUi() {
   if (!qPlay.el || !qPlay.s) return;
@@ -2420,7 +2574,7 @@ function qPlayMark(a, w) {
   document.querySelectorAll(".q-ayah.playing").forEach(e => e.classList.remove("playing"));
   document.querySelectorAll(".ml span.pa, .ml span.pw").forEach(e => e.classList.remove("pa", "pw"));
   if (newAyah) qPlayUi();
-  if (!a || s !== qOpen) return;
+  if (!a || (qMode !== "mushaf" && s !== qOpen)) return;   // в мусхафе на странице бывает несколько сур
   if (qMode === "mushaf") {
     const page = mIndex && mPageOf(s, a);
     if (newAyah && page && mCurrent() && +mCurrent().dataset.page !== page) mShowPage(page, "");
@@ -2467,6 +2621,11 @@ const mPressCancel = () => { if (mPress) { clearTimeout(mPress.t); mPress = null
 mq.addEventListener("pointermove", e => { if (mPress && Math.hypot(e.clientX - mPress.x, e.clientY - mPress.y) > 8) mPressCancel(); });
 ["pointerup", "pointercancel", "scroll"].forEach(ev => mq.addEventListener(ev, mPressCancel, { passive: true }));
 mq.addEventListener("contextmenu", e => e.preventDefault());
+// Палец отпустили после долгого нажатия — этот «клик» не должен нажать строку открывшегося под пальцем окна
+window.addEventListener("pointerup", () => { if (mPressFired) setTimeout(() => { mPressFired = false; }, 60); }, true);
+window.addEventListener("click", e => {
+  if (mPressFired && qLS.contains(e.target)) { e.preventDefault(); e.stopPropagation(); mPressFired = false; }
+}, true);
 // Текст: когда прокрутили ниже кнопок — они прячутся (.float); нажатие на экран показывает их (mControls)
 document.getElementById("quran-read").addEventListener("scroll", e => {
   const page = e.currentTarget;

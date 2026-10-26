@@ -851,6 +851,63 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  section("Чтецы: кнопки на всех сурах, аят / сура / аяты с…по, долгое нажатие в мусхафе, скачать и слушать без интернета");
+  {
+    // Сервер чтецов подменяем записью ан-Нас (Хусари) из tests/fixtures — она же настоящая для husary/114
+    const MP3 = require("fs").readFileSync(require("path").join(__dirname, "fixtures", "husary-114.mp3"));
+    const browser2 = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--autoplay-policy=no-user-gesture-required"] });
+    const ctx = await browser2.newContext({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true });
+    let offline = false;
+    await ctx.route("https://download.quranicaudio.com/**", r => offline ? r.abort()
+      : r.fulfill({ status: 200, headers: { "content-type": "audio/mpeg", "access-control-allow-origin": "*" }, body: MP3 }));
+    const k = await ctx.newPage();
+    k.on("pageerror", e => errs.push(e.message));
+    await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 500);
+    await k.click("#tab-quran"); await W(k, 600);
+    await k.click('.q-row[data-s="2"]'); await W(k, 1200);
+    check(await k.locator('[data-act="listen"]').count() === 286 && await k.locator("#q-listen-surah").isVisible(), "у аль-Бакары нет кнопок «Слушать»");
+    await k.evaluate(() => mControls(true)); await k.click("#q-back"); await W(k, 500);
+    await k.click('.q-row[data-s="114"]'); await W(k, 900);
+    // аят 3 — Хусари: играет с сервера, подсвечен, после аята — стоп
+    await k.click('#qa-3 [data-act="listen"]'); await W(k, 500);
+    await k.click('[data-rec="husary"]'); await W(k, 400);
+    await k.click("#ql-go"); await W(k, 1500);
+    const a3 = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src, hl: document.querySelector(".q-ayah.playing")?.id }));
+    check(a3.a === 3 && a3.hl === "qa-3" && a3.src.startsWith("https://download.quranicaudio.com/"), "аят 3 не играет с сервера чтецов: " + JSON.stringify(a3));
+    await W(k, 5000);
+    check(await k.evaluate(() => qPlay.s === 0 && document.getElementById("q-player").hidden), "после конца аята 3 чтение не остановилось");
+    check(await k.evaluate(() => localStorage.getItem("azkar-reciter")) === '"husary"', "выбранный чтец не запомнился");
+    // скачать суру → без интернета играет из памяти телефона
+    await k.click('#qa-1 [data-act="listen"]'); await W(k, 500);
+    await k.click('[data-dl="one"]'); await W(k, 1500);
+    check((await k.locator("#ql-dl").innerText()).includes("Эта сура скачана"), "сура не скачалась");
+    offline = true;
+    await k.click("#ql-go"); await W(k, 1500);
+    const off = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src.slice(0, 5), paused: qPlay.el.paused }));
+    check(off.a === 1 && off.src === "blob:" && !off.paused, "скачанная сура не играет без интернета: " + JSON.stringify(off));
+    await k.click("#qp-stop"); offline = false;
+    // удалить — со второго нажатия
+    await k.click('#qa-1 [data-act="listen"]'); await W(k, 500);
+    await k.click('[data-dl="del1"]'); await W(k, 200);
+    check(await k.evaluate(() => qDb.keys.size) === 1, "сура удалилась с первого нажатия");
+    await k.click('[data-dl="del1"]'); await W(k, 600);
+    check(await k.evaluate(() => qDb.keys.size) === 0 && (await k.locator("#ql-dl").innerText()).includes("Скачать эту суру"), "сура не удалилась");
+    await k.mouse.click(200, 30); await W(k, 400);
+    // мусхаф: долгое нажатие на аль-Фаляк 2 (на одной странице с ан-Нас), диапазон 2–4
+    await k.evaluate(() => mControls(true)); await k.click('#q-mode [data-mode="mushaf"]'); await W(k, 2500);
+    const box = await k.locator('.mp[data-page="604"] [data-k="113:2"]').first().boundingBox();
+    const cdp = await ctx.newCDPSession(k);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }] }); await W(k, 700);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await W(k, 400);
+    check(await k.locator("#q-listen-sheet").isVisible() && (await k.locator("#ql-ayah-t").innerText()) === "Аят 2", "долгое нажатие в мусхафе не открыло окно с аятом 2");
+    check(await k.locator('#ql-reciters [aria-checked="true"]').getAttribute("data-rec") === "husary", "палец, отпущенный после долгого нажатия, сменил чтеца");
+    await k.selectOption("#ql-to", "4"); await W(k, 200);
+    await k.click("#ql-go"); await W(k, 1500);
+    const m = await k.evaluate(() => ({ s: qPlay.s, from: qPlay.from, to: qPlay.to, pa: document.querySelector(".ml span.pa")?.dataset.k }));
+    check(m.s === 113 && m.from === 2 && m.to === 4 && m.pa === "113:2", "аяты 2–4 аль-Фаляк в мусхафе: " + JSON.stringify(m));
+    await browser2.close();
+  }
+
   section("Напоминания: только в приложении, разрешение, расписание на 30 дней, без напоминания после прочтения");
   {
     // На сайте раздела нет

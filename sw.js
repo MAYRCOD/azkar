@@ -15,6 +15,8 @@ self.addEventListener("activate", e => {
 });
 // Сначала пробуем интернет (чтобы получать обновления), без интернета — берём сохранённое
 self.addEventListener("fetch", e => {
+  // Записи чтецов (чужой сервер) и запросы «кусок файла» не трогаем — их браузер грузит сам
+  if (new URL(e.request.url).origin !== location.origin || e.request.headers.has("range")) return;
   e.respondWith(
     fetch(e.request)
       .then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return res; })

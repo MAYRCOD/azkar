@@ -108,8 +108,8 @@ def copy_quran() -> list:
         data["_f"] = where
         (mus / f"pages-{k}.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     shutil.copyfile(SRC / "fonts" / "surah-header.woff2", mus / "surah-header.woff2")   # заголовки сур (QCF Surah Header)
-    # Чтецы (пробно): записи сур и разметка времени аятов и слов (Quran Foundation, quranicaudio.com).
-    # В sw.js заранее не сохраняем — запись сохраняется, когда её послушали
+    # Чтецы: разметка времени аятов и слов (Quran Foundation); сами записи — на сервере чтецов (quranicaudio.com).
+    # В sw.js заранее не сохраняем — разметка сохраняется, когда суру послушали
     if (SRC / "quran-audio").exists():
         shutil.copytree(SRC / "quran-audio", QURAN_OUT / "audio")
     return ["./quran/" + n for n in names]
