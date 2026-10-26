@@ -2537,6 +2537,8 @@ function qPlayStart(s, from, to, rec) {
       if (qPlay.el === el && Math.abs(el.currentTime - qPlay.start) > 1) el.currentTime = qPlay.start;
     });
     el.addEventListener("playing", () => qPlayCheckSeek(el));
+    // Экран погас или приложение свёрнуто — кадры не рисуются, но запись идёт: следим за концом по её времени
+    el.addEventListener("timeupdate", () => { if (qPlay.el === el && document.hidden) qPlayTick(); });
     el.addEventListener("ended", () => { if (qPlay.el === el) qPlayEnd("конец записи"); });
     el.addEventListener("error", () => {
       if (qPlay.el !== el || !el.getAttribute("src")) return;
@@ -2570,7 +2572,7 @@ function qPlayCheckSeek(el) {
 // Запись кончилась. Если сразу после начала — что-то не так: пишем, что именно (чтобы найти причину)
 function qPlayEnd(why) {
   const el = qPlay.el;
-  if (Date.now() - qPlay.t0 < 4000 && el) toast(`Чтение оборвалось: ${why}, ${el.currentTime.toFixed(1)} из ${(el.duration || 0).toFixed(0)} с`);
+  if (el && Date.now() - qPlay.t0 < 4000 && el.currentTime - qPlay.start < 0.5) toast(`Чтение оборвалось: ${why}, ${el.currentTime.toFixed(1)} из ${(el.duration || 0).toFixed(0)} с`);
   qPlayStop();
 }
 function qPlayUi() {
@@ -2585,17 +2587,19 @@ function qPlayUi() {
 // Раз в кадр: какой аят и слово звучат; дошли до конца выбранного — стоп
 function qPlayLoop() {
   cancelAnimationFrame(qPlay.raf);
-  const step = () => {
-    if (!qPlay.el || qPlay.el.paused) return;
-    const t = qPlay.el.currentTime * 1000, A = qPlay.data.ayahs;
-    if (t >= A[qPlay.to - 1][1]) { qPlayEnd("дошли до конца аятов"); return; }
-    let a = 0, w = 0;
-    for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
-    if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
-    if (a !== qPlay.a || w !== qPlay.w) qPlayMark(a, w);
-    qPlay.raf = requestAnimationFrame(step);
-  };
+  const step = () => { if (qPlayTick()) qPlay.raf = requestAnimationFrame(step); };
   qPlay.raf = requestAnimationFrame(step);
+}
+// Один шаг: false — читать больше нечего (пауза или конец выбранных аятов)
+function qPlayTick() {
+  if (!qPlay.el || qPlay.el.paused || !qPlay.s) return false;
+  const t = qPlay.el.currentTime * 1000, A = qPlay.data.ayahs;
+  if (t >= A[qPlay.to - 1][1]) { qPlayEnd("дошли до конца аятов"); return false; }
+  let a = 0, w = 0;
+  for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
+  if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
+  if (a !== qPlay.a || w !== qPlay.w) qPlayMark(a, w);
+  return true;
 }
 // Подсветить аят a (в мусхафе и слово w); 0 — снять
 function qPlayMark(a, w) {
