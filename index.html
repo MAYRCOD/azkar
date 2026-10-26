@@ -663,6 +663,25 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 #quran-read.mushaf .q-mode { top: calc(var(--edge-gap) + 46px); margin: 0 auto; }
 #quran-read.mushaf:not(.ctl) .topbar, #quran-read.mushaf:not(.ctl) .q-mode { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+/* Кнопка чтеца внизу по центру. В мусхафе видна вместе с кнопками сверху или пока идёт чтение */
+.q-play {
+  position: fixed; z-index: 7; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); translate: -50% 0;
+  display: flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 10px 18px 10px 14px;
+  background: var(--accent); color: #fff; font: inherit; font-size: 15px; font-weight: 600; white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18); transition: opacity .2s ease, transform .2s ease;
+}
+.q-play svg { width: 20px; height: 20px; fill: currentColor; }
+.q-play .i-pause, .q-play.on .i-play { display: none; }
+.q-play.on .i-pause { display: block; }
+#quran-read.mushaf:not(.ctl) .q-play:not(.on) { opacity: 0; transform: translateY(8px); pointer-events: none; }
+/* В мусхафе кнопка маленькая и круглая, слева на уровне номера страницы — чтобы не закрывать строки */
+#quran-read.mushaf .q-play { left: 10px; translate: none; bottom: calc(2px + env(safe-area-inset-bottom, 0px)); padding: 7px; }
+#quran-read.mushaf .q-play span { display: none; }
+#quran-read.mushaf .q-play svg { width: 18px; height: 18px; }
+/* Звучащий аят: в тексте — карточка, в мусхафе — аят слегка, звучащее слово ярче */
+.q-ayah.playing { background: var(--flash); margin-inline: -16px; padding-inline: 16px; transition: background .3s ease; }
+.ml span.pa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.ml span.pw { background: color-mix(in srgb, var(--accent) 34%, transparent); border-radius: 4px; }
 .q-mushaf {
   flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
@@ -940,6 +959,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   </div>
   <!-- Страницы мусхафа: листаются пальцем, следующая — слева, как в книге -->
   <div class="q-mushaf" id="q-mushaf" hidden></div>
+  <!-- Чтец (пробно — пока только сура ан-Нас): слушать, звучащий аят подсвечен -->
+  <button class="q-play" id="q-play" hidden aria-label="Слушать суру">
+    <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+    <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>
+    <span id="q-play-t">Слушать</span>
+  </button>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -2147,6 +2172,7 @@ document.querySelectorAll("#q-switch .set-opt").forEach(o => o.addEventListener(
 
 let qOpen = 0;   // открытая сура
 async function openSurah(n, ayah = 0) {
+  if (qPlay.s && qPlay.s !== n) qPlayStop();
   const screen = document.getElementById("quran-read");
   const box = document.getElementById("q-ayahs");
   let data;
@@ -2250,7 +2276,82 @@ qGoSheet.addEventListener("click", e => { if (e.target === qGoSheet) closeSheet(
 document.getElementById("q-nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-s]"); if (b) openSurah(+b.dataset.s);
 });
-document.getElementById("q-back").addEventListener("click", () => showScreen("quran"));
+document.getElementById("q-back").addEventListener("click", () => { qPlayStop(); showScreen("quran"); });
+
+/* ================================================================
+   ЧТЕЦ (пробно: сура ан-Нас, Мишари Рашид аль-Афаси)
+   quran/audio/afasy/114.mp3 — запись всей суры, quran/audio/afasy/114.json — когда звучит каждый аят
+   и каждое слово (мс): ayahs[i] = [начало, конец, [[слово, начало, конец], …]]. Источник — Quran Foundation
+   (api.quran.com, chapter_recitations, segments), запись — download.quranicaudio.com
+   ================================================================ */
+const Q_AUDIO = { 114: "afasy/114" };   // какие суры можно слушать
+const qPlay = { el: null, data: null, s: 0, a: 0, w: 0, raf: 0 };
+const qPlayBtn = document.getElementById("q-play");
+function qPlayShow() {   // кнопку показываем только у сур с записью
+  qPlayBtn.hidden = !Q_AUDIO[qOpen];
+}
+function qPlayLabel() {
+  document.getElementById("q-play-t").textContent = qPlay.el && !qPlay.el.paused
+    ? `Аят ${qPlay.a || 1} · аль-Афаси` : qPlay.a ? "Продолжить" : "Слушать";
+  qPlayBtn.classList.toggle("on", !!qPlay.el && !qPlay.el.paused);
+}
+async function qPlayToggle() {
+  if (qPlay.el && qPlay.s === qOpen) {
+    if (qPlay.el.paused) { qPlay.el.play(); qPlayLoop(); } else qPlay.el.pause();
+    qPlayLabel(); return;
+  }
+  qPlayStop();
+  const s = qOpen;
+  try { qPlay.data = await qGet("audio/" + Q_AUDIO[s]); }
+  catch (e) { toast("Не получилось загрузить чтеца. Нужен интернет"); return; }
+  qPlay.s = s;
+  qPlay.el = new Audio("quran/audio/" + qPlay.data.file);
+  qPlay.el.addEventListener("ended", () => { qPlayMark(0, 0); qPlay.a = 0; qPlayLabel(); });
+  qPlay.el.addEventListener("pause", qPlayLabel);
+  qPlay.el.addEventListener("error", () => { toast("Не получилось загрузить чтеца. Нужен интернет"); qPlayStop(); });
+  try { await qPlay.el.play(); } catch (e) { toast("Не получилось включить звук"); qPlayStop(); return; }
+  qPlayLoop(); qPlayLabel();
+}
+// Раз в кадр: какой аят и какое слово звучат сейчас
+function qPlayLoop() {
+  cancelAnimationFrame(qPlay.raf);
+  const step = () => {
+    if (!qPlay.el || qPlay.el.paused) return;
+    const t = qPlay.el.currentTime * 1000, A = qPlay.data.ayahs;
+    let a = 0, w = 0;
+    for (let i = 0; i < A.length; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
+    if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
+    if (a !== qPlay.a || w !== qPlay.w) qPlayMark(a, w);
+    qPlay.raf = requestAnimationFrame(step);
+  };
+  qPlay.raf = requestAnimationFrame(step);
+}
+// Подсветить аят a (и слово w в мусхафе); 0 — снять подсветку
+function qPlayMark(a, w) {
+  const s = qPlay.s, newAyah = a !== qPlay.a;
+  qPlay.a = a; qPlay.w = w;
+  document.querySelectorAll(".q-ayah.playing").forEach(e => e.classList.remove("playing"));
+  document.querySelectorAll(".ml span.pa, .ml span.pw").forEach(e => e.classList.remove("pa", "pw"));
+  if (newAyah) qPlayLabel();
+  if (!a) return;
+  if (qMode === "mushaf") {
+    const page = mIndex && mPageOf(s, a);
+    if (newAyah && page && mCurrent() && +mCurrent().dataset.page !== page) mShowPage(page, "");
+    const ws = [...document.querySelectorAll(`#q-mushaf [data-k="${s}:${a}"]`)];
+    ws.forEach(e => e.classList.add("pa"));
+    if (w && ws[w - 1]) ws[w - 1].classList.add("pw");
+  } else {
+    const el = document.getElementById("qa-" + a);
+    if (el) { el.classList.add("playing"); if (newAyah) el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  }
+}
+function qPlayStop() {
+  cancelAnimationFrame(qPlay.raf);
+  if (qPlay.el) { qPlay.el.pause(); qPlay.el.src = ""; }
+  qPlay.el = null; qPlayMark(0, 0); qPlay.a = 0; qPlay.s = 0;
+  qPlayLabel();
+}
+qPlayBtn.addEventListener("click", e => { e.stopPropagation(); qPlayToggle(); });
 // Текст: когда прокрутили ниже кнопок — они прячутся (.float); нажатие на экран показывает их (mControls)
 document.getElementById("quran-read").addEventListener("scroll", e => {
   const page = e.currentTarget;
@@ -2524,6 +2625,8 @@ function applyQMode() {
   document.getElementById("q-mushaf").hidden = qMode !== "mushaf";
   document.getElementById("q-mode").dataset.set = qMode;
   document.querySelectorAll("#q-mode .set-opt").forEach(o => o.setAttribute("aria-checked", o.dataset.mode === qMode ? "true" : "false"));
+  qPlayShow();
+  if (qPlay.el) qPlay.a = -1;   // режим сменился во время чтения — подсветить заново в новом виде
 }
 document.querySelectorAll("#q-mode .set-opt").forEach(o => o.addEventListener("click", async () => {
   if (qMode === o.dataset.mode) return;
