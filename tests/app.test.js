@@ -866,6 +866,24 @@ const section = name => console.log("•", name);
     await k.click("#tab-quran"); await W(k, 600);
     await k.click('.q-row[data-s="2"]'); await W(k, 1200);
     check(await k.locator('[data-act="listen"]').count() === 286 && await k.locator("#q-listen-surah").isVisible(), "у аль-Бакары нет кнопок «Слушать»");
+    // Окно «Слушать» прокручено вниз: палец вниз прокручивает его вверх, а не закрывает. Сверху — закрывает
+    {
+      await k.click("#q-listen-surah"); await W(k, 600);
+      const sh = k.locator("#q-listen-sheet .sheet"), cdp = await ctx.newCDPSession(k);
+      const drag = async step => {
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 200, y: 300 }] });
+        for (let i = 1; i <= 10; i++) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 200, y: 300 + i * step }] }); await W(k, 16); }
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await W(k, 600);
+      };
+      await sh.evaluate(e => { e.scrollTop = e.scrollHeight; }); await W(k, 200);
+      const st0 = await sh.evaluate(e => e.scrollTop);
+      await drag(25);
+      check(st0 > 0 && await k.locator("#q-listen-sheet").isVisible() && await sh.evaluate(e => e.scrollTop) < st0,
+        "прокрученное окно «Слушать» закрылось вместо прокрутки вверх");
+      await sh.evaluate(e => { e.scrollTop = 0; }); await W(k, 100);
+      await drag(30);
+      check(!(await k.locator("#q-listen-sheet").isVisible()), "окно «Слушать» не закрылось смахиванием сверху");
+    }
     await k.evaluate(() => mControls(true)); await k.click("#q-back"); await W(k, 500);
     await k.click('.q-row[data-s="114"]'); await W(k, 900);
     // аят 3 — Хусари: играет с сервера, подсвечен, после аята — стоп

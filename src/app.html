@@ -1403,7 +1403,7 @@ document.querySelectorAll(".sheet-back").forEach(back => {
     const tgt = e.target;
     if (e.touches.length !== 1 || tgt.closest("input[type=range], input[type=search]")) { y0 = null; return; }
     const list = tgt.closest(".sheet-list, #city-list");
-    if (list && list.scrollTop > 0) { y0 = null; return; }   // список прокручен — сначала он едет вверх
+    if ((list && list.scrollTop > 0) || el.scrollTop > 0) { y0 = null; return; }   // список или само окно прокручены — сначала они едут вверх
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; t0 = Date.now(); dy = 0; dragging = false;
   }, { passive: true });
   el.addEventListener("touchmove", e => {
