@@ -663,23 +663,36 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 }
 #quran-read.mushaf .q-mode { top: calc(var(--edge-gap) + 46px); margin: 0 auto; }
 #quran-read.mushaf:not(.ctl) .topbar, #quran-read.mushaf:not(.ctl) .q-mode { opacity: 0; transform: translateY(-8px); pointer-events: none; }
-/* Кнопка чтеца внизу по центру. В мусхафе видна вместе с кнопками сверху или пока идёт чтение */
-.q-play {
-  position: fixed; z-index: 7; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); translate: -50% 0;
-  display: flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 10px 18px 10px 14px;
-  background: var(--accent); color: #fff; font: inherit; font-size: 15px; font-weight: 600; white-space: nowrap;
-  box-shadow: 0 6px 20px rgba(0,0,0,.18); transition: opacity .2s ease, transform .2s ease;
-}
-.q-play svg { width: 20px; height: 20px; fill: currentColor; }
-.q-play .i-pause, .q-play.on .i-play { display: none; }
-.q-play.on .i-pause { display: block; }
-#quran-read.mushaf:not(.ctl) .q-play:not(.on) { opacity: 0; transform: translateY(8px); pointer-events: none; }
-/* В мусхафе кнопка маленькая и круглая, слева на уровне номера страницы — чтобы не закрывать строки */
-#quran-read.mushaf .q-play { left: 10px; translate: none; bottom: calc(2px + env(safe-area-inset-bottom, 0px)); padding: 7px; }
-#quran-read.mushaf .q-play span { display: none; }
-#quran-read.mushaf .q-play svg { width: 18px; height: 18px; }
 /* Звучащий аят: в тексте — карточка, в мусхафе — аят слегка, звучащее слово ярче */
+/* ---------- Чтецы ---------- */
 .q-ayah.playing { background: var(--flash); margin-inline: -16px; padding-inline: 16px; transition: background .3s ease; }
+.q-listen { margin: 10px auto 0; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 8px 16px;
+  background: var(--press); color: var(--accent-ink); font: inherit; font-size: 14px; font-weight: 600; }
+.q-listen svg, .q-act svg.hp { width: 18px; height: 18px; }
+/* Мусхаф: долгое нажатие на аят — окно «Слушать»; без системного меню выделения текста */
+.q-mushaf { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* Окно «Слушать» */
+#q-listen-sheet .sheet { max-height: 86vh; overflow-y: auto; }
+.ql-h { margin: 8px 6px 0; font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.ql-range { display: inline-flex; align-items: center; gap: 6px; }
+.ql-range select { font: inherit; font-size: 15px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+/* Панель во время чтения — внизу экрана (вне экрана суры: у него transform, и fixed внутри «уезжал» бы вместе с ним) */
+.q-player {
+  position: fixed; z-index: 40; left: 50%; translate: -50% 0; bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  width: min(560px, calc(100% - 20px)); display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  background: var(--surface); border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.18), 0 0 0 1px var(--line);
+}
+.q-player button { flex: none; border: 0; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; }
+.q-player svg { width: 20px; height: 20px; fill: currentColor; }
+#qp-toggle { background: var(--accent); color: #fff; }
+#qp-stop { background: var(--press); color: var(--fg); }
+.qp-t { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.qp-t b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qp-t small { color: var(--muted); font-size: 12.5px; }
+#qp-toggle .i-pause, #qp-toggle.on .i-play { display: none; }
+#qp-toggle.on .i-pause { display: block; }
+#quran-read.audio .mp { justify-content: flex-start; }   /* мусхаф: страница прижата к верху, внизу место под панелью */
+#quran-read.audio .q-text { padding-bottom: 70px; }   /* чтобы панель не закрывала последний аят */
 .ml span.pa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .ml span.pw { background: color-mix(in srgb, var(--accent) 34%, transparent); border-radius: 4px; }
 .q-mushaf {
@@ -959,12 +972,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   </div>
   <!-- Страницы мусхафа: листаются пальцем, следующая — слева, как в книге -->
   <div class="q-mushaf" id="q-mushaf" hidden></div>
-  <!-- Чтец (пробно — пока только сура ан-Нас): слушать, звучащий аят подсвечен -->
-  <button class="q-play" id="q-play" hidden aria-label="Слушать суру">
-    <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
-    <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>
-    <span id="q-play-t">Слушать</span>
-  </button>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -1010,6 +1017,31 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 </main>
 
 <!-- Окно «Перейти к аяту» на странице суры -->
+<!-- Окно «Слушать»: что (аят / сура / аяты с…по…) и какой чтец -->
+<div class="sheet-back" id="q-listen-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="ql-title">
+    <h2 id="ql-title">Слушать</h2>
+    <p id="ql-sub"></p>
+    <div id="ql-what">
+      <button class="choice-row" role="radio" data-what="ayah"><span class="txt" id="ql-ayah-t">Этот аят</span><span class="check">✓</span></button>
+      <button class="choice-row" role="radio" data-what="surah"><span class="txt">Всю суру</span><span class="check">✓</span></button>
+      <button class="choice-row" role="radio" data-what="range"><span class="txt"><span class="ql-range">Аяты с <select id="ql-from" aria-label="С аята"></select> по <select id="ql-to" aria-label="По аят"></select></span></span><span class="check">✓</span></button>
+    </div>
+    <div class="ql-h">Чтец</div>
+    <div id="ql-reciters"></div>
+    <button class="sheet-btn q-go-yes" id="ql-go">Слушать</button>
+  </div>
+</div>
+<!-- Панель во время чтения -->
+<div class="q-player" id="q-player" hidden>
+  <button id="qp-toggle" class="on" aria-label="Пауза">
+    <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+    <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>
+  </button>
+  <span class="qp-t"><b id="qp-name"></b><small id="qp-pos"></small></span>
+  <button id="qp-stop" aria-label="Остановить"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button>
+</div>
+
 <div class="sheet-back" id="q-go-sheet" hidden>
   <div class="sheet" role="dialog" aria-labelledby="q-go-title">
     <h2 id="q-go-title">Перейти к аяту</h2>
@@ -2088,6 +2120,7 @@ function qFont() {
 const Q_ICON = {
   mark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/></svg>',
   markFill: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/></svg>',
+  listen: '<svg class="hp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h2.5a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM20 14h-2.5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1H19a1 1 0 0 0 1-1z"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 6.4C9.3 4.9 6.6 4.1 3 4.1v14c3.5 0 6.2.8 8.1 2.3z"/><path d="M12.9 6.4c1.8-1.5 4.5-2.3 8.1-2.3v14c-3.5 0-6.2.8-8.1 2.3z"/></svg>',
 };
 // «аят»: 1 аят, 2 аята, 5 аятов
@@ -2172,7 +2205,7 @@ document.querySelectorAll("#q-switch .set-opt").forEach(o => o.addEventListener(
 
 let qOpen = 0;   // открытая сура
 async function openSurah(n, ayah = 0) {
-  if (qPlay.s && qPlay.s !== n) qPlayStop();
+  if (qPlay.s && qPlay.s !== n) qPlayStop();   // открыли другую суру — чтение прекращаем
   const screen = document.getElementById("quran-read");
   const box = document.getElementById("q-ayahs");
   let data;
@@ -2180,6 +2213,7 @@ async function openSurah(n, ayah = 0) {
   catch (e) { toast("Не получилось открыть суру. Нужен интернет"); return; }
   const x = qSurah(n);
   qOpen = n;
+  const hasAudio = await qAudioHas(n);   // у суры есть записи чтецов — кнопки «Слушать»
   const last = data.ayahs[data.ayahs.length - 1].page;
   const pages = last > x.page ? `страницы ${x.page}–${last}` : `страница ${x.page}`;
   const lastJuz = data.ayahs[data.ayahs.length - 1].juz;
@@ -2190,12 +2224,14 @@ async function openSurah(n, ayah = 0) {
     ${x.meaning ? `<p class="q-meaning">«${x.meaning}»</p>` : ""}
     <p>Сура ${n} · ${x.ayahs} ${ayahWord(x.ayahs)}</p>
     <p>${juz} · ${pages}</p>
-    ${n !== 1 && n !== 9 ? `<div class="q-basmala" lang="ar">${qIndex.basmala}</div>` : ""}`;
+    ${n !== 1 && n !== 9 ? `<div class="q-basmala" lang="ar">${qIndex.basmala}</div>` : ""}
+    ${hasAudio ? `<div><button class="q-listen" id="q-listen-surah">${Q_ICON.listen}Слушать суру</button></div>` : ""}`;
   box.innerHTML = data.ayahs.map((a, i) => `
     <article class="q-ayah" id="qa-${i + 1}" data-a="${i + 1}">
       <div class="q-ayah-top">
         <span class="q-num-line"><span class="dua-num">${i + 1}</span>${x.sajda.includes(i + 1) ? `<span class="q-sajda">земной поклон</span>` : ""}</span>
         <span class="q-acts">
+          ${hasAudio ? `<button class="q-act" data-act="listen" aria-label="Слушать аят">${Q_ICON.listen}</button>` : ""}
           <button class="q-act" data-act="share" aria-label="Поделиться аятом">${DUA_BTN.share}</button>
           <button class="q-act${qMarks.some(m => m.s === n && m.a === i + 1) ? " on" : ""}" data-act="mark" aria-label="Закладка">${Q_ICON.mark}</button>
         </span>
@@ -2279,61 +2315,135 @@ document.getElementById("q-nav").addEventListener("click", e => {
 document.getElementById("q-back").addEventListener("click", () => { qPlayStop(); showScreen("quran"); });
 
 /* ================================================================
-   ЧТЕЦ (пробно: сура ан-Нас, Мишари Рашид аль-Афаси)
-   quran/audio/afasy/114.mp3 — запись всей суры, quran/audio/afasy/114.json — когда звучит каждый аят
-   и каждое слово (мс): ayahs[i] = [начало, конец, [[слово, начало, конец], …]]. Источник — Quran Foundation
-   (api.quran.com, chapter_recitations, segments), запись — download.quranicaudio.com
+   ЧТЕЦЫ (пробно: сура ан-Нас, 5 чтецов)
+   quran/audio/reciters.json — список чтецов и сур, у которых есть записи;
+   quran/audio/<чтец>/<сура>.mp3 — запись всей суры, <сура>.json — когда звучит каждый аят и слово (мс):
+   ayahs[i] = [начало, конец, [[слово, начало, конец], …]]. Источник — Quran Foundation (api.quran.com,
+   chapter_recitations с segments), записи — download.quranicaudio.com.
+   Слушать: аят, всю суру или аяты с … по …. Звучащий аят подсвечен (в мусхафе — и слово)
    ================================================================ */
-const Q_AUDIO = { 114: "afasy/114" };   // какие суры можно слушать
-const qPlay = { el: null, data: null, s: 0, a: 0, w: 0, raf: 0 };
-const qPlayBtn = document.getElementById("q-play");
-function qPlayShow() {   // кнопку показываем только у сур с записью
-  qPlayBtn.hidden = !Q_AUDIO[qOpen];
+let qRec = null;   // reciters.json
+async function qAudioHas(s) {
+  try { qRec = qRec || await qGet("audio/reciters"); } catch (e) { return false; }
+  return qRec.surahs.includes(s);
 }
-function qPlayLabel() {
-  document.getElementById("q-play-t").textContent = qPlay.el && !qPlay.el.paused
-    ? `Аят ${qPlay.a || 1} · аль-Афаси` : qPlay.a ? "Продолжить" : "Слушать";
-  qPlayBtn.classList.toggle("on", !!qPlay.el && !qPlay.el.paused);
+const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, w: 0, raf: 0, src: "" };
+const qListen = { s: 0, a: 1, what: "ayah" };
+const qLS = document.getElementById("q-listen-sheet");
+// Открыть окно «Слушать»: сура s, аят a, что выбрано сразу
+function qListenOpen(s, a, what) {
+  const x = qSurah(s);
+  Object.assign(qListen, { s, a, what });
+  document.getElementById("ql-sub").textContent = `${x.ru} · ${x.ayahs} ${ayahWord(x.ayahs)}`;
+  document.getElementById("ql-ayah-t").textContent = `Аят ${a}`;
+  const opts = Array.from({ length: x.ayahs }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+  const from = document.getElementById("ql-from"), to = document.getElementById("ql-to");
+  from.innerHTML = opts; to.innerHTML = opts; from.value = a; to.value = x.ayahs;
+  const saved = load("azkar-reciter", qRec.reciters[0].id);
+  document.getElementById("ql-reciters").innerHTML = qRec.reciters.map(r =>
+    `<button class="choice-row" role="radio" data-rec="${r.id}" aria-checked="${r.id === saved}"><span class="txt">${r.name}</span><span class="check">✓</span></button>`).join("");
+  qListenWhat(what);
+  qLS.hidden = false;
 }
-async function qPlayToggle() {
-  if (qPlay.el && qPlay.s === qOpen) {
-    if (qPlay.el.paused) { qPlay.el.play(); qPlayLoop(); } else qPlay.el.pause();
-    qPlayLabel(); return;
-  }
-  qPlayStop();
-  const s = qOpen;
-  try { qPlay.data = await qGet("audio/" + Q_AUDIO[s]); }
+function qListenWhat(what) {
+  qListen.what = what;
+  document.querySelectorAll("#ql-what .choice-row").forEach(b => b.setAttribute("aria-checked", b.dataset.what === what));
+}
+document.getElementById("ql-what").addEventListener("click", e => {
+  if (e.target.closest("select")) { qListenWhat("range"); return; }   // выбрали номер аята — значит, «аяты с … по …»
+  const b = e.target.closest("[data-what]"); if (b) qListenWhat(b.dataset.what);
+});
+["ql-from", "ql-to"].forEach(id => document.getElementById(id).addEventListener("change", () => {
+  const f = document.getElementById("ql-from"), t = document.getElementById("ql-to");
+  if (+t.value < +f.value) (id === "ql-from" ? t : f).value = (id === "ql-from" ? f : t).value;   // «по» не раньше «с»
+  qListenWhat("range");
+}));
+document.getElementById("ql-reciters").addEventListener("click", e => {
+  const b = e.target.closest("[data-rec]"); if (!b) return;
+  document.querySelectorAll("#ql-reciters .choice-row").forEach(x => x.setAttribute("aria-checked", x === b));
+});
+qLS.addEventListener("click", e => { if (e.target === qLS) closeSheet(qLS); });
+document.getElementById("ql-go").addEventListener("click", () => {
+  const rec = document.querySelector('#ql-reciters [aria-checked="true"]')?.dataset.rec || qRec.reciters[0].id;
+  store("azkar-reciter", rec);
+  const n = qSurah(qListen.s).ayahs;
+  const [from, to] = qListen.what === "ayah" ? [qListen.a, qListen.a] : qListen.what === "surah" ? [1, n]
+    : [+document.getElementById("ql-from").value, +document.getElementById("ql-to").value];
+  closeSheet(qLS);
+  qPlayStart(qListen.s, from, to, rec);
+});
+// Начать: сура s, аяты from…to, чтец rec
+async function qPlayStart(s, from, to, rec) {
+  let data;
+  try { data = await qGet(`audio/${rec}/${s}`); }
   catch (e) { toast("Не получилось загрузить чтеца. Нужен интернет"); return; }
-  qPlay.s = s;
-  qPlay.el = new Audio("quran/audio/" + qPlay.data.file);
-  qPlay.el.addEventListener("ended", () => { qPlayMark(0, 0); qPlay.a = 0; qPlayLabel(); });
-  qPlay.el.addEventListener("pause", qPlayLabel);
-  qPlay.el.addEventListener("error", () => { toast("Не получилось загрузить чтеца. Нужен интернет"); qPlayStop(); });
-  try { await qPlay.el.play(); } catch (e) { toast("Не получилось включить звук"); qPlayStop(); return; }
-  qPlayLoop(); qPlayLabel();
+  const src = `quran/audio/${rec}/${s}.mp3`;
+  if (!qPlay.el || qPlay.src !== src) {
+    if (qPlay.el) { qPlay.el.pause(); qPlay.el.src = ""; }
+    qPlay.el = new Audio(src); qPlay.src = src;
+    qPlay.el.addEventListener("pause", qPlayUi);
+    qPlay.el.addEventListener("play", qPlayUi);
+    qPlay.el.addEventListener("ended", () => qPlayStop());
+    qPlay.el.addEventListener("error", () => { toast("Не получилось загрузить чтеца. Нужен интернет"); qPlayStop(); });
+  }
+  Object.assign(qPlay, { data, s, from, to, rec, a: 0, w: 0 });
+  document.getElementById("q-player").hidden = false;
+  document.getElementById("quran-read").classList.add("audio");
+  if (qMode === "mushaf") mFit();   // страница чуть ниже — освобождаем место под панелью
+  // Перемотать к первому аяту можно, только когда запись начала загружаться. А play() нужно вызвать сразу,
+  // пока идёт нажатие (иначе iPhone не даст звук) — поэтому до перемотки звук выключен
+  const el = qPlay.el, start = data.ayahs[from - 1][0] / 1000;
+  const seek = () => {
+    el.currentTime = start;
+    // Некоторые серверы не отдают файл по частям — тогда перемотка не срабатывает. Запасной путь:
+    // загрузить запись целиком (сотни КБ) и играть из памяти — там перематывать можно всегда
+    setTimeout(async () => {
+      if (Math.abs(el.currentTime - start) < 1 || qPlay.el !== el) { el.muted = false; return; }
+      try {
+        const url = URL.createObjectURL(await (await fetch(qPlay.src)).blob());
+        el.addEventListener("loadedmetadata", () => { el.currentTime = start; el.muted = false; el.play(); qPlayLoop(); }, { once: true });
+        el.src = url;
+      } catch (e) { el.muted = false; }
+    }, 250);
+  };
+  el.muted = true;   // до перемотки — без звука
+  if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, { once: true });
+  try { await el.play(); } catch (e) { toast("Не получилось включить звук"); qPlayStop(); return; }
+  qPlayLoop();
 }
-// Раз в кадр: какой аят и какое слово звучат сейчас
+function qPlayUi() {
+  if (!qPlay.el || !qPlay.s) return;
+  const on = !qPlay.el.paused, x = qSurah(qPlay.s), r = qRec.reciters.find(r => r.id === qPlay.rec);
+  const t = document.getElementById("qp-toggle");
+  t.classList.toggle("on", on); t.setAttribute("aria-label", on ? "Пауза" : "Продолжить");
+  document.getElementById("qp-name").textContent = r ? r.name : "";
+  const what = qPlay.from === qPlay.to ? `аят ${qPlay.from}` : qPlay.from === 1 && qPlay.to === x.ayahs ? "вся сура" : `аяты ${qPlay.from}–${qPlay.to}`;
+  document.getElementById("qp-pos").textContent = `${x.ru}, ${what}` + (qPlay.a && qPlay.from !== qPlay.to ? ` · сейчас ${qPlay.a}` : "");
+}
+// Раз в кадр: какой аят и слово звучат; дошли до конца выбранного — стоп
 function qPlayLoop() {
   cancelAnimationFrame(qPlay.raf);
   const step = () => {
     if (!qPlay.el || qPlay.el.paused) return;
     const t = qPlay.el.currentTime * 1000, A = qPlay.data.ayahs;
+    if (qPlay.el.muted) { qPlay.raf = requestAnimationFrame(step); return; }   // ещё перематываем к началу
+    if (t >= A[qPlay.to - 1][1]) { qPlayStop(); return; }
     let a = 0, w = 0;
-    for (let i = 0; i < A.length; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
+    for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
     if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
     if (a !== qPlay.a || w !== qPlay.w) qPlayMark(a, w);
     qPlay.raf = requestAnimationFrame(step);
   };
   qPlay.raf = requestAnimationFrame(step);
 }
-// Подсветить аят a (и слово w в мусхафе); 0 — снять подсветку
+// Подсветить аят a (в мусхафе и слово w); 0 — снять
 function qPlayMark(a, w) {
   const s = qPlay.s, newAyah = a !== qPlay.a;
   qPlay.a = a; qPlay.w = w;
   document.querySelectorAll(".q-ayah.playing").forEach(e => e.classList.remove("playing"));
   document.querySelectorAll(".ml span.pa, .ml span.pw").forEach(e => e.classList.remove("pa", "pw"));
-  if (newAyah) qPlayLabel();
-  if (!a) return;
+  if (newAyah) qPlayUi();
+  if (!a || s !== qOpen) return;
   if (qMode === "mushaf") {
     const page = mIndex && mPageOf(s, a);
     if (newAyah && page && mCurrent() && +mCurrent().dataset.page !== page) mShowPage(page, "");
@@ -2347,11 +2457,39 @@ function qPlayMark(a, w) {
 }
 function qPlayStop() {
   cancelAnimationFrame(qPlay.raf);
-  if (qPlay.el) { qPlay.el.pause(); qPlay.el.src = ""; }
-  qPlay.el = null; qPlayMark(0, 0); qPlay.a = 0; qPlay.s = 0;
-  qPlayLabel();
+  if (qPlay.el) qPlay.el.pause();
+  qPlayMark(0, 0); qPlay.s = 0;
+  document.getElementById("q-player").hidden = true;
+  document.getElementById("quran-read").classList.remove("audio");
+  if (qMode === "mushaf") mFit();
 }
-qPlayBtn.addEventListener("click", e => { e.stopPropagation(); qPlayToggle(); });
+document.getElementById("qp-toggle").addEventListener("click", () => {
+  if (!qPlay.el) return;
+  if (qPlay.el.paused) { qPlay.el.play(); qPlayLoop(); } else qPlay.el.pause();
+});
+document.getElementById("qp-stop").addEventListener("click", qPlayStop);
+document.getElementById("q-head").addEventListener("click", e => {
+  if (e.target.closest("#q-listen-surah")) qListenOpen(qOpen, 1, "surah");
+});
+// Мусхаф: долгое нажатие на слово аята — окно «Слушать» с этим аятом
+let mPress = null, mPressFired = false;
+const mq = document.getElementById("q-mushaf");
+mq.addEventListener("pointerdown", e => {
+  const sp = e.target.closest("[data-k]"); mPressFired = false;
+  if (!sp || !qRec) return;
+  const [s, a] = sp.dataset.k.split(":").map(Number);
+  if (!qRec.surahs.includes(s)) return;
+  mPress = { x: e.clientX, y: e.clientY, t: setTimeout(() => {
+    mPressFired = true; haptic("tap");
+    document.querySelectorAll(`#q-mushaf [data-k="${s}:${a}"]`).forEach(x => x.classList.add("pa"));   // какой аят выбран
+    setTimeout(() => { if (!qPlay.s) document.querySelectorAll(".ml span.pa").forEach(x => x.classList.remove("pa")); }, 600);
+    qListenOpen(s, a, "ayah");
+  }, 450) };
+});
+const mPressCancel = () => { if (mPress) { clearTimeout(mPress.t); mPress = null; } };
+mq.addEventListener("pointermove", e => { if (mPress && Math.hypot(e.clientX - mPress.x, e.clientY - mPress.y) > 8) mPressCancel(); });
+["pointerup", "pointercancel", "scroll"].forEach(ev => mq.addEventListener(ev, mPressCancel, { passive: true }));
+mq.addEventListener("contextmenu", e => e.preventDefault());
 // Текст: когда прокрутили ниже кнопок — они прячутся (.float); нажатие на экран показывает их (mControls)
 document.getElementById("quran-read").addEventListener("scroll", e => {
   const page = e.currentTarget;
@@ -2437,6 +2575,7 @@ document.getElementById("q-ru-toggle").addEventListener("click", () => {
 document.getElementById("q-ayahs").addEventListener("click", async e => {
   const b = e.target.closest(".q-act"); if (!b) return;
   const a = +b.closest(".q-ayah").dataset.a, x = qSurah(qOpen);
+  if (b.dataset.act === "listen") { qListenOpen(qOpen, a, "ayah"); return; }
   if (b.dataset.act === "share") {
     const el = b.closest(".q-ayah");
     const text = [el.querySelector(".q-ar").textContent, el.querySelector(".q-ru").textContent,
@@ -2517,7 +2656,8 @@ function mFit() {
   const box = document.getElementById("q-mushaf");
   // clientHeight включает отступы ленты (сверху — место под системным размытием у края), их вычитаем
   const cs = getComputedStyle(box), pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  const w = box.clientWidth - 10, h = box.clientHeight - pad - 6 - 2 * 20;   // 20 — подписи сверху и снизу
+  const player = document.getElementById("quran-read").classList.contains("audio") ? 64 : 0;   // место под панелью чтеца
+  const w = box.clientWidth - 10, h = box.clientHeight - pad - 6 - 2 * 20 - player;   // 20 — подписи сверху и снизу
   if (w <= 0 || h <= 0) return;
   const RH = Math.floor(h / 15 * 10) / 10, W = Math.floor(Math.min(w, RH * 12));
   box.style.setProperty("--mw", W + "px");
@@ -2625,8 +2765,7 @@ function applyQMode() {
   document.getElementById("q-mushaf").hidden = qMode !== "mushaf";
   document.getElementById("q-mode").dataset.set = qMode;
   document.querySelectorAll("#q-mode .set-opt").forEach(o => o.setAttribute("aria-checked", o.dataset.mode === qMode ? "true" : "false"));
-  qPlayShow();
-  if (qPlay.el) qPlay.a = -1;   // режим сменился во время чтения — подсветить заново в новом виде
+  if (qPlay.s) qPlay.a = -1;   // режим сменился во время чтения — подсветить заново в новом виде
 }
 document.querySelectorAll("#q-mode .set-opt").forEach(o => o.addEventListener("click", async () => {
   if (qMode === o.dataset.mode) return;
@@ -2667,6 +2806,7 @@ function mControls(show) {
   if (show) mCtlTimer = setTimeout(() => page.classList.remove("ctl"), 4000);   // сами прячутся через 4 с
 }
 document.getElementById("q-mushaf").addEventListener("click", () => {
+  if (mPressFired) { mPressFired = false; return; }   // это было долгое нажатие (окно «Слушать»), не переключаем кнопки
   mControls(!document.getElementById("quran-read").classList.contains("ctl"));
 });
 /* ================================================================

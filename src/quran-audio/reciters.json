@@ -1,0 +1,28 @@
+{
+ "_": "Чтецы: записи сур и разметка времени (мс) аятов и слов — Quran Foundation (api.quran.com chapter_recitations, segments), записи download.quranicaudio.com. В приложении пока пробно: сура 114.",
+ "reciters": [
+  {
+   "id": "afasy",
+   "name": "Мишари Рашид аль-Афаси"
+  },
+  {
+   "id": "abdulbaset",
+   "name": "Абдуль-Басит Абдус-Самад"
+  },
+  {
+   "id": "husary",
+   "name": "Махмуд Халиль аль-Хусари"
+  },
+  {
+   "id": "minshawi",
+   "name": "Мухаммад Сиддик аль-Миншави"
+  },
+  {
+   "id": "sudais",
+   "name": "Абдур-Рахман ас-Судейс"
+  }
+ ],
+ "surahs": [
+  114
+ ]
+}
