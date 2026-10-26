@@ -891,6 +891,7 @@ const section = name => console.log("•", name);
     await k.click('[data-rec="husary"]'); await W(k, 400);
     await k.click("#ql-go"); await W(k, 1500);
     const a3 = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src, hl: document.querySelector(".q-ayah.playing")?.id }));
+    check(await k.evaluate(() => document.querySelector("#qa-3 .q-ar .w.pw") !== null), "в тексте не подсвечено звучащее слово аята 3");
     check(a3.a === 3 && a3.hl === "qa-3" && a3.src.startsWith("https://download.quranicaudio.com/"), "аят 3 не играет с сервера чтецов: " + JSON.stringify(a3));
     await W(k, 5000);
     check(await k.evaluate(() => qPlay.s === 0 && document.getElementById("q-player").hidden), "после конца аята 3 чтение не остановилось");
@@ -920,9 +921,18 @@ const section = name => console.log("•", name);
     check(await k.locator("#q-listen-sheet").isVisible() && (await k.locator("#ql-ayah-t").innerText()) === "Аят 2", "долгое нажатие в мусхафе не открыло окно с аятом 2");
     check(await k.locator('#ql-reciters [aria-checked="true"]').getAttribute("data-rec") === "husary", "палец, отпущенный после долгого нажатия, сменил чтеца");
     await k.selectOption("#ql-to", "4"); await W(k, 200);
+    const pageBox = () => k.evaluate(() => { const r = document.querySelector('.mp[data-page="604"] .mp-lines').getBoundingClientRect(); return Math.round(r.top) + "/" + Math.round(r.height); });
+    const box0 = await pageBox();
     await k.click("#ql-go"); await W(k, 1500);
+    check(await pageBox() === box0, "панель чтеца сдвинула страницу мусхафа");
+    const away = () => k.evaluate(() => document.getElementById("q-player").classList.contains("away"));
+    check(!(await away()), "при начале чтения панель не видна");
     const m = await k.evaluate(() => ({ s: qPlay.s, from: qPlay.from, to: qPlay.to, pa: document.querySelector(".ml span.pa")?.dataset.k }));
     check(m.s === 113 && m.from === 2 && m.to === 4 && m.pa === "113:2", "аяты 2–4 аль-Фаляк в мусхафе: " + JSON.stringify(m));
+    await W(k, 4000);
+    check(await away(), "панель чтеца не спряталась вместе с кнопками сверху");
+    await k.tap("#q-mushaf", { position: { x: 200, y: 400 } }); await W(k, 400);
+    check(!(await away()), "нажатие на мусхаф не показало панель чтеца");
     await browser2.close();
   }
 

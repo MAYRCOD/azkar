@@ -693,11 +693,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .qp-t b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qp-t small { color: var(--muted); font-size: 12.5px; }
 #qp-toggle .i-pause, #qp-toggle.on .i-play { display: none; }
+.q-player { transition: opacity .25s ease, transform .25s var(--ease); }
+.q-player.away { opacity: 0; transform: translateY(16px); pointer-events: none; }
 #qp-toggle.on .i-pause { display: block; }
-#quran-read.audio .mp { justify-content: flex-start; }   /* мусхаф: страница прижата к верху, внизу место под панелью */
 #quran-read.audio .q-text { padding-bottom: 70px; }   /* чтобы панель не закрывала последний аят */
 .ml span.pa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.ml span.pw { background: color-mix(in srgb, var(--accent) 34%, transparent); border-radius: 4px; }
+.ml span.pw, .q-ar .w.pw { background: color-mix(in srgb, var(--accent) 34%, transparent); border-radius: 4px; }
 .q-mushaf {
   flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
@@ -2241,7 +2242,7 @@ async function openSurah(n, ayah = 0) {
           <button class="q-act${qMarks.some(m => m.s === n && m.a === i + 1) ? " on" : ""}" data-act="mark" aria-label="Закладка">${Q_ICON.mark}</button>
         </span>
       </div>
-      <p class="q-ar" lang="ar">${a.ar}</p>
+      <p class="q-ar" lang="ar">${hasAudio ? qArWords(a.ar, n, i + 1) : a.ar}</p>
       <p class="q-ru">${a.ru}</p>
     </article>`).join("");
   applyQRu();
@@ -2330,6 +2331,14 @@ document.getElementById("q-back").addEventListener("click", () => { qPlayStop();
    Слушать: аят, всю суру или аяты с … по …. Звучащий аят подсвечен (в мусхафе — и слово)
    ================================================================ */
 let qRec = null;   // reciters.json
+// Текст аята — каждое слово в своём <span class="w">, чтобы подсвечивать звучащее слово.
+// Номер аята (арабские цифры) и знаки ۞ ۩ словами не считаются. В 4 аятах наше деление на слова
+// расходится с разметкой чтецов — там подсвечивается только аят
+const Q_WORDS_OFF = new Set(["15:7", "27:20", "36:22", "37:130"]);
+function qArWords(ar, s, a) {
+  if (Q_WORDS_OFF.has(`${s}:${a}`)) return ar;
+  return ar.split(" ").map(x => /^[\u0660-\u0669]+$|^[۞۩]$/.test(x) ? x : `<span class="w">${x}</span>`).join(" ");
+}
 async function qAudioHas(s) {
   try { qRec = qRec || await qGet("audio/reciters"); } catch (e) { return false; }
   return qRec.surahs.includes(s);
@@ -2547,7 +2556,7 @@ function qPlayStart(s, from, to, rec) {
   } else if (qPlay.el.readyState >= 1) qPlay.el.currentTime = start;   // та же запись — перематываем сразу
   document.getElementById("q-player").hidden = false;
   document.getElementById("quran-read").classList.add("audio");
-  if (qMode === "mushaf") mFit();   // страница чуть ниже — освобождаем место под панелью
+  mControls(true);   // панель чтеца видна вместе с кнопками сверху, потом прячется вместе с ними
   const el = qPlay.el;
   el.play().then(qPlayLoop, e => {
     if (qPlay.el !== el) return;
@@ -2606,7 +2615,7 @@ function qPlayMark(a, w) {
   const s = qPlay.s, newAyah = a !== qPlay.a;
   qPlay.a = a; qPlay.w = w;
   document.querySelectorAll(".q-ayah.playing").forEach(e => e.classList.remove("playing"));
-  document.querySelectorAll(".ml span.pa, .ml span.pw").forEach(e => e.classList.remove("pa", "pw"));
+  document.querySelectorAll(".ml span.pa, .ml span.pw, .q-ar .w.pw").forEach(e => e.classList.remove("pa", "pw"));
   if (newAyah) qPlayUi();
   if (!a || (qMode !== "mushaf" && s !== qOpen)) return;   // в мусхафе на странице бывает несколько сур
   if (qMode === "mushaf") {
@@ -2617,7 +2626,13 @@ function qPlayMark(a, w) {
     if (w && ws[w - 1]) ws[w - 1].classList.add("pw");
   } else {
     const el = document.getElementById("qa-" + a);
-    if (el) { el.classList.add("playing"); if (newAyah) el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    if (el) {
+      el.classList.add("playing");
+      if (w) el.querySelectorAll(".q-ar .w")[w - 1]?.classList.add("pw");
+      if (newAyah) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // в самом начале прокрутка к аяту прячет кнопки — показываем их с панелью ещё раз, когда доехали
+      if (newAyah && Date.now() - qPlay.t0 < 1500) setTimeout(() => { if (qPlay.s) mControls(true); }, 700);
+    }
   }
 }
 function qPlayStop() {
@@ -2626,8 +2641,15 @@ function qPlayStop() {
   qPlayMark(0, 0); qPlay.s = 0;
   document.getElementById("q-player").hidden = true;
   document.getElementById("quran-read").classList.remove("audio");
-  if (qMode === "mushaf") mFit();
 }
+// Панель чтеца показывается и прячется вместе с кнопками сверху (нажатие на экран) — страница при этом не сдвигается
+function qPlayerSync() {
+  const page = document.getElementById("quran-read");
+  const shown = page.classList.contains("ctl") || (qMode !== "mushaf" && !page.classList.contains("float"));
+  document.getElementById("q-player").classList.toggle("away", !shown);
+}
+new MutationObserver(qPlayerSync).observe(document.getElementById("quran-read"), { attributes: true, attributeFilter: ["class"] });
+document.getElementById("q-player").addEventListener("click", () => mControls(true));   // нажимают на панель — не прятать
 document.getElementById("qp-toggle").addEventListener("click", () => {
   if (!qPlay.el) return;
   if (qPlay.el.paused) { qPlay.el.play(); qPlayLoop(); } else qPlay.el.pause();
@@ -2826,8 +2848,7 @@ function mFit() {
   const box = document.getElementById("q-mushaf");
   // clientHeight включает отступы ленты (сверху — место под системным размытием у края), их вычитаем
   const cs = getComputedStyle(box), pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  const player = document.getElementById("quran-read").classList.contains("audio") ? 64 : 0;   // место под панелью чтеца
-  const w = box.clientWidth - 10, h = box.clientHeight - pad - 6 - 2 * 20 - player;   // 20 — подписи сверху и снизу
+  const w = box.clientWidth - 10, h = box.clientHeight - pad - 6 - 2 * 20;   // 20 — подписи сверху и снизу
   if (w <= 0 || h <= 0) return;
   const RH = Math.floor(h / 15 * 10) / 10, W = Math.floor(Math.min(w, RH * 12));
   box.style.setProperty("--mw", W + "px");
