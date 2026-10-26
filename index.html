@@ -2524,46 +2524,54 @@ function qPlayStart(s, from, to, rec) {
     qPrep(rec, s).then(() => qPlayStart(s, from, to, rec), () => toast("Не получилось загрузить чтеца. Нужен интернет"));
     return;
   }
-  const { data, src } = ready;
+  const { data, src } = ready, start = data.ayahs[from - 1][0] / 1000;
+  Object.assign(qPlay, { data, s, from, to, rec, a: 0, w: 0, start, t0: Date.now() });
   if (!qPlay.el || qPlay.src !== src) {
     if (qPlay.el) { qPlay.el.pause(); qPlay.el.removeAttribute("src"); qPlay.el.load(); }
-    const el = qPlay.el = new Audio(src); qPlay.src = src;
+    // «#t=…» в адресе — браузер сам начнёт с первого аята (на iPhone так надёжнее, чем перематывать потом)
+    const el = qPlay.el = new Audio(start > 0.3 ? `${src}#t=${start.toFixed(2)}` : src); qPlay.src = src;
     el.preload = "auto";
     el.addEventListener("pause", qPlayUi);
     el.addEventListener("play", qPlayUi);
-    el.addEventListener("ended", () => { if (qPlay.el === el) qPlayStop(); });
+    el.addEventListener("loadedmetadata", () => {   // «#t=» не сработал — перематываем сами
+      if (qPlay.el === el && Math.abs(el.currentTime - qPlay.start) > 1) el.currentTime = qPlay.start;
+    });
+    el.addEventListener("playing", () => qPlayCheckSeek(el));
+    el.addEventListener("ended", () => { if (qPlay.el === el) qPlayEnd("конец записи"); });
     el.addEventListener("error", () => {
       if (qPlay.el !== el || !el.getAttribute("src")) return;
-      toast("Не получилось загрузить чтеца. Нужен интернет"); qPlayStop();
+      toast(`Не получилось загрузить запись (ошибка ${el.error ? el.error.code : "?"}). Нужен интернет`); qPlayStop();
     });
-  }
-  Object.assign(qPlay, { data, s, from, to, rec, a: 0, w: 0 });
+  } else if (qPlay.el.readyState >= 1) qPlay.el.currentTime = start;   // та же запись — перематываем сразу
   document.getElementById("q-player").hidden = false;
   document.getElementById("quran-read").classList.add("audio");
   if (qMode === "mushaf") mFit();   // страница чуть ниже — освобождаем место под панелью
-  // Перемотать к первому аяту можно, только когда запись начала загружаться. А play() нужно вызвать сразу,
-  // пока идёт нажатие (иначе iPhone не даст звук) — поэтому до перемотки звук выключен
-  const el = qPlay.el, start = data.ayahs[from - 1][0] / 1000;
-  const seek = () => {
-    el.currentTime = start;
-    // Некоторые серверы не отдают файл по частям — тогда перемотка не срабатывает. Запасной путь (для
-    // небольших записей): загрузить запись целиком и играть из памяти — там перематывать можно всегда
-    setTimeout(async () => {
-      if (Math.abs(el.currentTime - start) < 1 || qPlay.el !== el || (data.size || 0) > 8e6) { el.muted = false; return; }
-      try {
-        const url = URL.createObjectURL(await (await fetch(qPlay.src)).blob());
-        el.addEventListener("loadedmetadata", () => { el.currentTime = start; el.muted = false; el.play(); qPlayLoop(); }, { once: true });
-        el.src = url;
-      } catch (e) { el.muted = false; }
-    }, 250);
-  };
-  el.muted = true;   // до перемотки — без звука
-  if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, { once: true });
+  const el = qPlay.el;
   el.play().then(qPlayLoop, e => {
     if (qPlay.el !== el) return;
     if (e.name === "NotAllowedError") { qPlayUi(); toast("Нажмите ▶, чтобы начать"); return; }   // iPhone не дал звук без нажатия
-    if (e.name !== "AbortError") { toast("Не получилось включить звук"); qPlayStop(); }
+    if (e.name !== "AbortError") { toast(`Не получилось включить звук (${e.name})`); qPlayStop(); }
   });
+}
+// Некоторые серверы не отдают файл по частям — тогда перемотка не срабатывает. Запасной путь (для
+// небольших записей): загрузить запись целиком и играть из памяти — там перематывать можно всегда
+function qPlayCheckSeek(el) {
+  setTimeout(async () => {
+    const start = qPlay.start;
+    if (qPlay.el !== el || el.paused || el.currentTime > start - 1 || (qPlay.data.size || 0) > 8e6 || el.src.startsWith("blob:")) return;
+    try {
+      const url = URL.createObjectURL(await (await fetch(qPlay.src)).blob());
+      if (qPlay.el !== el) return;
+      el.src = `${url}#t=${start.toFixed(2)}`;
+      el.play().then(qPlayLoop, () => qPlayUi());
+    } catch (e) {}
+  }, 400);
+}
+// Запись кончилась. Если сразу после начала — что-то не так: пишем, что именно (чтобы найти причину)
+function qPlayEnd(why) {
+  const el = qPlay.el;
+  if (Date.now() - qPlay.t0 < 4000 && el) toast(`Чтение оборвалось: ${why}, ${el.currentTime.toFixed(1)} из ${(el.duration || 0).toFixed(0)} с`);
+  qPlayStop();
 }
 function qPlayUi() {
   if (!qPlay.el || !qPlay.s) return;
@@ -2580,8 +2588,7 @@ function qPlayLoop() {
   const step = () => {
     if (!qPlay.el || qPlay.el.paused) return;
     const t = qPlay.el.currentTime * 1000, A = qPlay.data.ayahs;
-    if (qPlay.el.muted) { qPlay.raf = requestAnimationFrame(step); return; }   // ещё перематываем к началу
-    if (t >= A[qPlay.to - 1][1]) { qPlayStop(); return; }
+    if (t >= A[qPlay.to - 1][1]) { qPlayEnd("дошли до конца аятов"); return; }
     let a = 0, w = 0;
     for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
     if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
