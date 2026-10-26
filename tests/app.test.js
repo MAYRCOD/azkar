@@ -896,6 +896,9 @@ const section = name => console.log("•", name);
     await k.click('#q-rec-sheet [data-rec="husary"]'); await W(k, 500);
     check(!(await k.locator("#q-rec-sheet").isVisible()) && await k.locator("#q-listen-sheet").isVisible(), "после выбора чтеца не вернулись в окно «Слушать»");
     check((await k.locator("#ql-rec-name").innerText()) === "Махмуд Халиль аль-Хусари", "в окне «Слушать» не показан выбранный чтец");
+    await k.click("#ql-rec-open"); await W(k, 400); await k.click("#qr-back"); await W(k, 400);
+    check(!(await k.locator("#q-rec-sheet").isVisible()) && await k.locator("#q-listen-sheet").isVisible() && await k.evaluate(() => qListen.rec) === "husary",
+      "«‹ Назад» на странице «Чтецы» не вернул в окно «Слушать» (или сменил чтеца)");
     await k.click("#ql-go"); await W(k, 1500);
     const a3 = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src, hl: document.querySelector(".q-ayah.playing")?.id }));
     check(await k.evaluate(() => document.querySelector("#qa-3 .q-ar .w.pw") !== null), "в тексте не подсвечено звучащее слово аята 3");

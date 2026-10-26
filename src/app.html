@@ -655,8 +655,18 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #q-listen-sheet .sheet { max-height: 86vh; overflow-y: auto; }
 .ql-h { margin: 8px 6px 0; font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
 #q-listen-sheet .choice-row small:empty, #q-rec-sheet .choice-row small:empty { display: none; }
-#q-rec-sheet { background: transparent; }   /* под ним уже затемнено окном «Слушать» */
-#q-rec-sheet .sheet { max-height: 80vh; overflow-y: auto; box-shadow: 0 -8px 30px rgba(0,0,0,.18); }
+/* Страница «Чтецы» — на весь экран поверх окна «Слушать», въезжает справа */
+.q-rec-page {
+  position: fixed; inset: 0; z-index: 45; background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--edge-gap) + 6px) 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  animation: qr-in .28s var(--ease);
+}
+.q-rec-page.closing { animation: qr-out .22s ease forwards; }
+@keyframes qr-in { from { transform: translateX(100%); } }
+@keyframes qr-out { to { transform: translateX(100%); } }
+.q-rec-page h1 { font-size: 26px; margin: 10px 2px 14px; }
+.qr-list { background: var(--surface); border: 1px solid var(--edge); border-radius: 14px; box-shadow: var(--shadow); padding: 2px 12px; width: min(560px, 100%); margin: 0 auto; }
+.qr-list .choice-row { padding: 13px 4px; }
 .ql-chev { color: var(--muted); font-size: 22px; line-height: 1; padding-right: 4px; }
 #ql-dl .choice-row .txt { color: var(--accent-ink); }
 #ql-dl .choice-row small { color: var(--muted); }
@@ -1021,12 +1031,11 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <button class="sheet-btn q-go-yes" id="ql-go">Слушать</button>
   </div>
 </div>
-<!-- Окно «Чтецы»: открывается поверх окна «Слушать», выбрал — вернулся обратно -->
-<div class="sheet-back" id="q-rec-sheet" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="qr-title">
-    <h2 id="qr-title">Чтецы</h2>
-    <div id="ql-reciters"></div>
-  </div>
+<!-- Страница «Чтецы» на весь экран: открывается из окна «Слушать», выбрал чтеца или «‹ Назад» — обратно -->
+<div class="q-rec-page" id="q-rec-sheet" role="dialog" aria-labelledby="qr-title" hidden>
+  <div class="topbar"><button class="back" id="qr-back">‹ Назад</button></div>
+  <h1 id="qr-title">Чтецы</h1>
+  <div class="qr-list" id="ql-reciters"></div>
 </div>
 <!-- Панель во время чтения -->
 <div class="q-player" id="q-player" hidden>
@@ -2501,11 +2510,12 @@ document.getElementById("ql-what").addEventListener("click", e => {
   if (+t.value < +f.value) (id === "ql-from" ? t : f).value = (id === "ql-from" ? f : t).value;   // «по» не раньше «с»
   qListenWhat("range");
 }));
-// «Чтец ›» — окно со всеми чтецами поверх окна «Слушать»
+// «Чтец ›» — страница со всеми чтецами поверх окна «Слушать»
 document.getElementById("ql-rec-open").addEventListener("click", () => {
   document.getElementById("ql-reciters").innerHTML = qRec.reciters.map(r =>
     `<button class="choice-row" role="radio" data-rec="${r.id}" aria-checked="${r.id === qSelRec()}"><span class="txt">${r.name}<small></small></span><span class="check">✓</span></button>`).join("");
   qDlRender();
+  qRS.scrollTop = 0;
   qRS.hidden = false;
 });
 document.getElementById("ql-reciters").addEventListener("click", e => {
@@ -2514,9 +2524,14 @@ document.getElementById("ql-reciters").addEventListener("click", e => {
   qListen.rec = b.dataset.rec; qDelArm = "";
   qDlRender();
   qPrep(qListen.rec, qListen.s).then(qDlRender, () => {});
-  setTimeout(() => closeSheet(qRS), 180);   // короткая пауза, чтобы увидеть галочку
+  setTimeout(qRecClose, 180);   // короткая пауза, чтобы увидеть галочку
 });
-qRS.addEventListener("click", e => { if (e.target === qRS) closeSheet(qRS); });
+function qRecClose() {
+  if (qRS.hidden) return;
+  qRS.classList.add("closing");
+  setTimeout(() => { qRS.hidden = true; qRS.classList.remove("closing"); }, 220);
+}
+document.getElementById("qr-back").addEventListener("click", qRecClose);
 qLS.addEventListener("click", e => { if (e.target === qLS) closeSheet(qLS); });
 document.getElementById("ql-go").addEventListener("click", () => {
   const rec = qSelRec();
