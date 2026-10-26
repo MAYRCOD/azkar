@@ -868,6 +868,7 @@ const section = name => console.log("•", name);
     check(await k.locator('[data-act="listen"]').count() === 286 && await k.locator("#q-listen-surah").isVisible(), "у аль-Бакары нет кнопок «Слушать»");
     // Окно «Слушать» прокручено вниз: палец вниз прокручивает его вверх, а не закрывает. Сверху — закрывает
     {
+      await k.setViewportSize({ width: 390, height: 520 });   // на низком экране окно «Слушать» прокручивается
       await k.click("#q-listen-surah"); await W(k, 600);
       const sh = k.locator("#q-listen-sheet .sheet"), cdp = await ctx.newCDPSession(k);
       const drag = async step => {
@@ -883,12 +884,18 @@ const section = name => console.log("•", name);
       await sh.evaluate(e => { e.scrollTop = 0; }); await W(k, 100);
       await drag(30);
       check(!(await k.locator("#q-listen-sheet").isVisible()), "окно «Слушать» не закрылось смахиванием сверху");
+      await k.setViewportSize({ width: 390, height: 780 }); await W(k, 300);
     }
     await k.evaluate(() => mControls(true)); await k.click("#q-back"); await W(k, 500);
     await k.click('.q-row[data-s="114"]'); await W(k, 900);
     // аят 3 — Хусари: играет с сервера, подсвечен, после аята — стоп
     await k.click('#qa-3 [data-act="listen"]'); await W(k, 500);
-    await k.click('[data-rec="husary"]'); await W(k, 400);
+    // «Чтец ›» открывает окно со всеми чтецами поверх; выбрал — оно закрылось, в строке новый чтец
+    await k.click("#ql-rec-open"); await W(k, 400);
+    check(await k.locator("#q-rec-sheet").isVisible() && await k.locator("#q-rec-sheet [data-rec]").count() === 5, "окно «Чтецы» не открылось или там не 5 чтецов");
+    await k.click('#q-rec-sheet [data-rec="husary"]'); await W(k, 500);
+    check(!(await k.locator("#q-rec-sheet").isVisible()) && await k.locator("#q-listen-sheet").isVisible(), "после выбора чтеца не вернулись в окно «Слушать»");
+    check((await k.locator("#ql-rec-name").innerText()) === "Махмуд Халиль аль-Хусари", "в окне «Слушать» не показан выбранный чтец");
     await k.click("#ql-go"); await W(k, 1500);
     const a3 = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src, hl: document.querySelector(".q-ayah.playing")?.id }));
     check(await k.evaluate(() => document.querySelector("#qa-3 .q-ar .w.pw") !== null), "в тексте не подсвечено звучащее слово аята 3");
@@ -933,7 +940,7 @@ const section = name => console.log("•", name);
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }] }); await W(k, 700);
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await W(k, 400);
     check(await k.locator("#q-listen-sheet").isVisible() && (await k.locator("#ql-ayah-t").innerText()) === "Аят 2", "долгое нажатие в мусхафе не открыло окно с аятом 2");
-    check(await k.locator('#ql-reciters [aria-checked="true"]').getAttribute("data-rec") === "husary", "палец, отпущенный после долгого нажатия, сменил чтеца");
+    check(await k.evaluate(() => qListen.rec) === "husary" && !(await k.locator("#q-rec-sheet").isVisible()), "палец, отпущенный после долгого нажатия, сменил чтеца или открыл окно «Чтецы»");
     await k.selectOption("#ql-to", "4"); await W(k, 200);
     const pageBox = () => k.evaluate(() => { const r = document.querySelector('.mp[data-page="604"] .mp-lines').getBoundingClientRect(); return Math.round(r.top) + "/" + Math.round(r.height); });
     const box0 = await pageBox();

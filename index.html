@@ -674,7 +674,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* Окно «Слушать» */
 #q-listen-sheet .sheet { max-height: 86vh; overflow-y: auto; }
 .ql-h { margin: 8px 6px 0; font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
-#q-listen-sheet .choice-row small:empty { display: none; }
+#q-listen-sheet .choice-row small:empty, #q-rec-sheet .choice-row small:empty { display: none; }
+#q-rec-sheet { background: transparent; }   /* под ним уже затемнено окном «Слушать» */
+#q-rec-sheet .sheet { max-height: 80vh; overflow-y: auto; box-shadow: 0 -8px 30px rgba(0,0,0,.18); }
+.ql-chev { color: var(--muted); font-size: 22px; line-height: 1; padding-right: 4px; }
 #ql-dl .choice-row .txt { color: var(--accent-ink); }
 #ql-dl .choice-row small { color: var(--muted); }
 .ql-range { display: inline-flex; align-items: center; gap: 6px; }
@@ -1035,10 +1038,17 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
       <button class="choice-row" role="radio" data-what="range"><span class="txt"><span class="ql-range">Аяты с <select id="ql-from" aria-label="С аята"></select> по <select id="ql-to" aria-label="По аят"></select></span></span><span class="check">✓</span></button>
     </div>
     <div class="ql-h">Чтец</div>
-    <div id="ql-reciters"></div>
+    <button class="choice-row" id="ql-rec-open"><span class="txt"><span id="ql-rec-name"></span><small id="ql-rec-sub"></small></span><span class="ql-chev" aria-hidden="true">›</span></button>
     <div class="ql-h">Без интернета</div>
     <div id="ql-dl"></div>
     <button class="sheet-btn q-go-yes" id="ql-go">Слушать</button>
+  </div>
+</div>
+<!-- Окно «Чтецы»: открывается поверх окна «Слушать», выбрал — вернулся обратно -->
+<div class="sheet-back" id="q-rec-sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="qr-title">
+    <h2 id="qr-title">Чтецы</h2>
+    <div id="ql-reciters"></div>
   </div>
 </div>
 <!-- Панель во время чтения -->
@@ -2349,7 +2359,7 @@ async function qAudioHas(s) {
   return qRec.surahs.includes(s);
 }
 const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, w: 0, raf: 0, src: "", repeat: !!load("azkar-repeat", false) };
-const qListen = { s: 0, a: 1, what: "ayah" };
+const qListen = { s: 0, a: 1, what: "ayah", rec: "" };
 const qLS = document.getElementById("q-listen-sheet");
 
 // --- Скачанные записи (IndexedDB) ---
@@ -2404,7 +2414,8 @@ function qUnprep(key) {
   if (r && r.src.startsWith("blob:") && qPlay.src !== r.src) URL.revokeObjectURL(r.src);
   qReady.delete(key); qReadyP.delete(key);
 }
-const qSelRec = () => document.querySelector('#ql-reciters [aria-checked="true"]')?.dataset.rec || qRec.reciters[0].id;
+const qSelRec = () => qListen.rec || qRec.reciters[0].id;
+const qRS = document.getElementById("q-rec-sheet");
 const qMB = b => b >= 1e9 ? `${(b / 1073741824).toFixed(1).replace(".", ",")} ГБ`
   : `${(b / 1048576).toFixed(b < 1e7 ? 1 : 0).replace(".", ",")} МБ`;
 
@@ -2460,10 +2471,10 @@ function qDlRender() {
     (job && qDl.all ? row("stop", `Скачиваю весь Коран: ${qDl.done} из ${qDl.total}`, "Нажмите, чтобы остановить")
       : n === all ? del("delall", "Весь Коран скачан ✓", "все записи этого чтеца")
       : row("all", "Скачать весь Коран", qMB(r.size) + (n ? ` · уже скачано сур: ${n}` : "")));
-  document.querySelectorAll("#ql-reciters [data-rec]").forEach(b => {
-    const k = count(b.dataset.rec);
-    b.querySelector("small").textContent = k === all ? "Скачан весь Коран" : k ? `Скачано сур: ${k}` : "";
-  });
+  const got = id => { const k = count(id); return k === all ? "Скачан весь Коран" : k ? `Скачано сур: ${k}` : ""; };
+  document.getElementById("ql-rec-name").textContent = r.name;
+  document.getElementById("ql-rec-sub").textContent = got(rec);
+  document.querySelectorAll("#ql-reciters [data-rec]").forEach(b => { b.querySelector("small").textContent = got(b.dataset.rec); });
 }
 document.getElementById("ql-dl").addEventListener("click", e => {
   const b = e.target.closest("[data-dl]"), d = b && b.dataset.dl;
@@ -2492,8 +2503,7 @@ function qListenOpen(s, a, what) {
   from.innerHTML = opts; to.innerHTML = opts; from.value = a; to.value = x.ayahs;
   let saved = load("azkar-reciter", qRec.reciters[0].id);
   if (!qRec.reciters.some(r => r.id === saved)) saved = qRec.reciters[0].id;
-  document.getElementById("ql-reciters").innerHTML = qRec.reciters.map(r =>
-    `<button class="choice-row" role="radio" data-rec="${r.id}" aria-checked="${r.id === saved}"><span class="txt">${r.name}<small></small></span><span class="check">✓</span></button>`).join("");
+  qListen.rec = saved;
   qListenWhat(what);
   qDelArm = "";
   qDlRender();
@@ -2514,13 +2524,22 @@ document.getElementById("ql-what").addEventListener("click", e => {
   if (+t.value < +f.value) (id === "ql-from" ? t : f).value = (id === "ql-from" ? f : t).value;   // «по» не раньше «с»
   qListenWhat("range");
 }));
+// «Чтец ›» — окно со всеми чтецами поверх окна «Слушать»
+document.getElementById("ql-rec-open").addEventListener("click", () => {
+  document.getElementById("ql-reciters").innerHTML = qRec.reciters.map(r =>
+    `<button class="choice-row" role="radio" data-rec="${r.id}" aria-checked="${r.id === qSelRec()}"><span class="txt">${r.name}<small></small></span><span class="check">✓</span></button>`).join("");
+  qDlRender();
+  qRS.hidden = false;
+});
 document.getElementById("ql-reciters").addEventListener("click", e => {
   const b = e.target.closest("[data-rec]"); if (!b) return;
   document.querySelectorAll("#ql-reciters .choice-row").forEach(x => x.setAttribute("aria-checked", x === b));
-  qDelArm = "";
+  qListen.rec = b.dataset.rec; qDelArm = "";
   qDlRender();
-  qPrep(b.dataset.rec, qListen.s).then(qDlRender, () => {});
+  qPrep(qListen.rec, qListen.s).then(qDlRender, () => {});
+  setTimeout(() => closeSheet(qRS), 180);   // короткая пауза, чтобы увидеть галочку
 });
+qRS.addEventListener("click", e => { if (e.target === qRS) closeSheet(qRS); });
 qLS.addEventListener("click", e => { if (e.target === qLS) closeSheet(qLS); });
 document.getElementById("ql-go").addEventListener("click", () => {
   const rec = qSelRec();
