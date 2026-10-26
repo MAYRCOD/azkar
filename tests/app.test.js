@@ -896,6 +896,20 @@ const section = name => console.log("•", name);
     await W(k, 5000);
     check(await k.evaluate(() => qPlay.s === 0 && document.getElementById("q-player").hidden), "после конца аята 3 чтение не остановилось");
     check(await k.evaluate(() => localStorage.getItem("azkar-reciter")) === '"husary"', "выбранный чтец не запомнился");
+    // повтор: аят 2 (≈4,8 с) идёт по кругу; кнопка запоминается
+    await k.click('#qa-2 [data-act="listen"]'); await W(k, 500); await k.click("#ql-go"); await W(k, 800);
+    await k.click("#qp-repeat"); await W(k, 300);
+    check(await k.evaluate(() => localStorage.getItem("azkar-repeat")) === "true", "повтор не запомнился");
+    await W(k, 6500);
+    const rp = await k.evaluate(() => ({ s: qPlay.s, a: qPlay.a, paused: qPlay.el.paused, t: qPlay.el.currentTime }));
+    check(rp.s === 114 && rp.a === 2 && !rp.paused && rp.t > 7.5 && rp.t < 12.8, "повтор аята 2 не пошёл по кругу: " + JSON.stringify(rp));
+    check(await k.evaluate(() => document.getElementById("q-player").classList.contains("away")), "панель чтеца не спряталась вместе с кнопками (текст)");
+    await k.evaluate(() => mControls(true)); await W(k, 300);   // нажатие на экран — панель снова видна
+    await k.click("#qp-repeat"); await W(k, 200);
+    // ушли со страницы суры — чтение остановилось
+    await k.evaluate(() => mControls(true)); await k.click("#q-back"); await W(k, 500);
+    check(await k.evaluate(() => qPlay.s === 0 && qPlay.el.paused && document.getElementById("q-player").hidden), "после выхода из суры чтец не замолчал");
+    await k.click('.q-row[data-s="114"]'); await W(k, 900);
     // скачать суру → без интернета играет из памяти телефона
     await k.click('#qa-1 [data-act="listen"]'); await W(k, 500);
     await k.click('[data-dl="one"]'); await W(k, 1500);

@@ -689,9 +689,12 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .q-player svg { width: 20px; height: 20px; fill: currentColor; }
 #qp-toggle { background: var(--accent); color: #fff; }
 #qp-stop { background: var(--press); color: var(--fg); }
+#qp-repeat { background: none; color: var(--muted); }
+#qp-repeat svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#qp-repeat.on { background: var(--press); color: var(--accent-ink); }
 .qp-t { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
 .qp-t b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.qp-t small { color: var(--muted); font-size: 12.5px; }
+.qp-t small { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #qp-toggle .i-pause, #qp-toggle.on .i-play { display: none; }
 .q-player { transition: opacity .25s ease, transform .25s var(--ease); }
 .q-player.away { opacity: 0; transform: translateY(16px); pointer-events: none; }
@@ -1045,6 +1048,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>
   </button>
   <span class="qp-t"><b id="qp-name"></b><small id="qp-pos"></small></span>
+  <button id="qp-repeat" aria-label="Повторять" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg></button>
   <button id="qp-stop" aria-label="Остановить"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button>
 </div>
 
@@ -1325,6 +1329,7 @@ renderSet(false);
 
 /* Переключение экранов: показываем один, остальные прячем */
 function showScreen(id) {
+  if (id !== "quran-read") document.dispatchEvent(new Event("quran-leave"));   // ушли со страницы суры — чтец замолкает
   for (const el of document.querySelectorAll(".screen")) el.hidden = el.id !== id;
   const screen = document.getElementById(id);
   screen.scrollTop = 0;
@@ -2318,7 +2323,7 @@ qGoSheet.addEventListener("click", e => { if (e.target === qGoSheet) closeSheet(
 document.getElementById("q-nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-s]"); if (b) openSurah(+b.dataset.s);
 });
-document.getElementById("q-back").addEventListener("click", () => { qPlayStop(); showScreen("quran"); });
+document.getElementById("q-back").addEventListener("click", () => showScreen("quran"));
 
 /* ================================================================
    ЧТЕЦЫ
@@ -2343,7 +2348,7 @@ async function qAudioHas(s) {
   try { qRec = qRec || await qGet("audio/reciters"); } catch (e) { return false; }
   return qRec.surahs.includes(s);
 }
-const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, w: 0, raf: 0, src: "" };
+const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, w: 0, raf: 0, src: "", repeat: !!load("azkar-repeat", false) };
 const qListen = { s: 0, a: 1, what: "ayah" };
 const qLS = document.getElementById("q-listen-sheet");
 
@@ -2548,7 +2553,11 @@ function qPlayStart(s, from, to, rec) {
     el.addEventListener("playing", () => qPlayCheckSeek(el));
     // Экран погас или приложение свёрнуто — кадры не рисуются, но запись идёт: следим за концом по её времени
     el.addEventListener("timeupdate", () => { if (qPlay.el === el && document.hidden) qPlayTick(); });
-    el.addEventListener("ended", () => { if (qPlay.el === el) qPlayEnd("конец записи"); });
+    el.addEventListener("ended", () => {
+      if (qPlay.el !== el || !qPlay.s) return;
+      if (qPlay.repeat) { el.currentTime = qPlay.start; el.play().then(qPlayLoop, () => qPlayUi()); return; }   // по кругу
+      qPlayEnd("конец записи");
+    });
     el.addEventListener("error", () => {
       if (qPlay.el !== el || !el.getAttribute("src")) return;
       toast(`Не получилось загрузить запись (ошибка ${el.error ? el.error.code : "?"}). Нужен интернет`); qPlayStop();
@@ -2603,7 +2612,10 @@ function qPlayLoop() {
 function qPlayTick() {
   if (!qPlay.el || qPlay.el.paused || !qPlay.s) return false;
   const t = qPlay.el.currentTime * 1000, A = qPlay.data.ayahs;
-  if (t >= A[qPlay.to - 1][1]) { qPlayEnd("дошли до конца аятов"); return false; }
+  if (t >= A[qPlay.to - 1][1]) {
+    if (qPlay.repeat) { qPlay.el.currentTime = qPlay.start; return true; }   // повтор: снова с первого выбранного аята
+    qPlayEnd("дошли до конца аятов"); return false;
+  }
   let a = 0, w = 0;
   for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
   if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
@@ -2649,7 +2661,18 @@ function qPlayerSync() {
   document.getElementById("q-player").classList.toggle("away", !shown);
 }
 new MutationObserver(qPlayerSync).observe(document.getElementById("quran-read"), { attributes: true, attributeFilter: ["class"] });
-document.getElementById("q-player").addEventListener("click", () => mControls(true));   // нажимают на панель — не прятать
+document.getElementById("q-player").addEventListener("click", e => { if (qPlay.s && !e.target.closest("#qp-stop")) mControls(true); });   // нажимают на панель — не прятать
+document.addEventListener("quran-leave", () => { if (qPlay.s) qPlayStop(); });
+// Повтор выбранных аятов или суры по кругу (запоминается)
+function qRepeatUi() {
+  const b = document.getElementById("qp-repeat");
+  b.classList.toggle("on", qPlay.repeat); b.setAttribute("aria-pressed", qPlay.repeat);
+}
+qRepeatUi();
+document.getElementById("qp-repeat").addEventListener("click", () => {
+  qPlay.repeat = !qPlay.repeat; store("azkar-repeat", qPlay.repeat); qRepeatUi(); haptic("tap");
+  toast(qPlay.repeat ? "Повтор включён" : "Повтор выключен");
+});
 document.getElementById("qp-toggle").addEventListener("click", () => {
   if (!qPlay.el) return;
   if (qPlay.el.paused) { qPlay.el.play(); qPlayLoop(); } else qPlay.el.pause();
