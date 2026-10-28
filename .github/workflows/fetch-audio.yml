@@ -1,16 +1,16 @@
 # Скачивает разметку времени чтецов для всех сур (tools/fetch_audio.py) и сохраняет её в эту же ветку.
-# Запускается только пушем в ветку audio-fetch (служебная ветка для скачивания).
+# Запускается только пушем в служебные ветки audio-fetch / audio-fetch-2 (для скачивания).
 name: fetch-audio
 on:
   push:
-    branches: [audio-fetch]
+    branches: [audio-fetch, audio-fetch-2]
     paths: [tools/fetch_audio.py, .github/workflows/fetch-audio.yml]
 permissions:
   contents: write
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - run: python3 tools/fetch_audio.py
@@ -19,5 +19,5 @@ jobs:
           git config user.name "MAYRCOD"
           git config user.email "MAYRCOD@users.noreply.github.com"
           git add -A src/quran-audio
-          git commit -m "Чтецы: разметка времени всех 114 сур для 5 чтецов (скачано tools/fetch_audio.py)"
+          git commit -m "Чтецы: разметка времени аятов всех 114 сур для всех чтецов Quran Foundation (скачано tools/fetch_audio.py)"
           git push
