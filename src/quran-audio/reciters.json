@@ -1,35 +1,137 @@
 {
- "_": "Чтецы: разметка времени (мс) аятов и слов — Quran Foundation (api.quran.com chapter_recitations, segments); записи берутся с download.quranicaudio.com. size — общий размер записей всего Корана, байт.",
+ "_": "Чтецы: разметка времени (мс) аятов — Quran Foundation (api.quran.com chapter_recitations); записи берутся с сервера чтецов (url в файле суры). size — общий размер записей всего Корана, байт.",
  "reciters": [
   {
-   "id": "afasy",
-   "qf": 7,
-   "name": "Мишари Рашид аль-Афаси",
-   "size": 1680759654
+   "id": "qf1",
+   "qf": 1,
+   "name": "Abdul Basit Abdul Samad",
+   "style": "Mujawwad",
+   "size": 3374164989,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
   },
   {
    "id": "abdulbaset",
    "qf": 2,
-   "name": "Абдуль-Басит Абдус-Самад",
-   "size": 2583570130
-  },
-  {
-   "id": "husary",
-   "qf": 6,
-   "name": "Махмуд Халиль аль-Хусари",
-   "size": 1225959245
-  },
-  {
-   "id": "minshawi",
-   "qf": 9,
-   "name": "Мухаммад Сиддик аль-Миншави",
-   "size": 1665764338
+   "name": "Abdul Basit Abdul Samad",
+   "style": "Murattal",
+   "size": 2583570130,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
   },
   {
    "id": "sudais",
    "qf": 3,
-   "name": "Абдур-Рахман ас-Судейс",
-   "size": 1698216114
+   "name": "Abdur-Rahman as-Sudais",
+   "style": "Murattal",
+   "size": 1698216114,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
+  },
+  {
+   "id": "qf4",
+   "qf": 4,
+   "name": "Abu Bakr al-Shatri",
+   "style": "Murattal",
+   "size": 1421265196,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 3
+  },
+  {
+   "id": "qf5",
+   "qf": 5,
+   "name": "Hani ar-Rifai",
+   "style": "Murattal",
+   "size": 1459066203,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 1
+  },
+  {
+   "id": "husary",
+   "qf": 6,
+   "name": "Mahmoud Khaleel Al-Husary",
+   "style": "Murattal",
+   "size": 1225959245,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
+  },
+  {
+   "id": "afasy",
+   "qf": 7,
+   "name": "Mishari Rashid al-`Afasy",
+   "style": "Murattal",
+   "size": 1680759654,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
+  },
+  {
+   "id": "minshawi",
+   "qf": 9,
+   "name": "Muhammad Siddiq al-Minshawi",
+   "style": "Murattal",
+   "size": 1665764338,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
+  },
+  {
+   "id": "qf10",
+   "qf": 10,
+   "name": "Sa`ud ash-Shuraym",
+   "style": "Murattal",
+   "size": 1045312524,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 1
+  },
+  {
+   "id": "qf12",
+   "qf": 12,
+   "name": "Mahmoud Khalil Al-Husary",
+   "style": "Muallim",
+   "size": 2741064365,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
+  },
+  {
+   "id": "qf97",
+   "qf": 97,
+   "name": "Yasser ad-Dussary",
+   "style": "Murattal",
+   "size": 1494030368,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
+  },
+  {
+   "id": "qf161",
+   "qf": 161,
+   "name": "Khalifah Al Tunaiji",
+   "style": "Murattal",
+   "size": 814439434,
+   "hosts": [
+    "download.quranicaudio.com"
+   ],
+   "no_word_marks": 0
   }
  ],
  "surahs": [
