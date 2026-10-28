@@ -174,7 +174,7 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
   box-shadow: var(--shadow); padding: 16px 18px 18px;
   transition: transform .15s ease;
 }
-.ayah-day:active { transform: scale(.99); }
+.ayah-day.pressed { transform: scale(.99); }
 .ayah-label { font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--gold); }
 .ayah-day .ayah-ar { display: none; font-size: calc(23px * var(--ar-k, 1)); line-height: 1.9; }   /* .ayah-day впереди: правило .ar ниже не перебьёт размер */
 .ayah-ru { font-size: 15px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
@@ -188,10 +188,6 @@ h1 { font-family: var(--f-display); font-size: clamp(26px, 6.5vw, 31px); line-he
 #home > * { flex-shrink: 0; }   /* иначе в колонке с прокруткой блоки сжимаются и обрезаются */
 @media (display-mode: standalone) { #home { padding-top: 40px; } }
 html.standalone #home { padding-top: 40px; }
-.home-head { display: grid; gap: 6px; margin-bottom: 4px; }
-.home-date { font-size: 13.5px; color: var(--muted); }
-.home-date:empty { display: none; }
-.home-head h1 { font-size: clamp(26px, 7vw, 32px); }
 /* Большая карточка: картинка на всю карточку, снизу затемнение, на нём текст */
 .hero {
   position: relative; display: block; width: 100%; aspect-ratio: 16 / 10.5; min-height: 190px;
@@ -199,7 +195,7 @@ html.standalone #home { padding-top: 40px; }
   background: #1d2433; box-shadow: 0 4px 10px rgba(var(--sh), .10), 0 14px 32px rgba(var(--sh), .16);
   transition: transform .15s ease;
 }
-.hero:active { transform: scale(.985); }
+.hero.pressed { transform: scale(.985); }
 .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; display: none;
   transform: scale(1.32); transform-origin: 50% 55%; }   /* картинки круглые по краям — увеличиваем, чтобы края ушли за карточку */
 .hero[data-time="morning"] .hero-img[data-for="morning"], .hero[data-time="evening"] .hero-img[data-for="evening"] { display: block; }
@@ -216,7 +212,7 @@ html.standalone #home { padding-top: 40px; }
 #home .set-switch { margin: 2px 0 0; }
 /* Список разделов */
 .home-rows .row { min-height: 54px; font-size: 16px; }
-.home-rows .row:active { background: var(--press); }
+.home-rows .row.pressed { background: var(--press); }
 .home-rows .tile { width: 32px; height: 32px; }
 .home-rows .row[data-time="morning"] .t-evening, .home-rows .row[data-time="evening"] .t-morning { display: none; }
 .row-done { position: static; width: 20px; height: 20px; box-shadow: none; display: none; }
@@ -858,7 +854,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 /* Нажатие: кнопка чуть «проседает» */
 .choice, .btn, .row, .choice-row, .counter { transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
-.btn:active, button.row:active { transform: scale(.98); }
+.btn:active, button.row.pressed { transform: scale(.98); }
 .choice-row:active { background: var(--press); }
 .tab-item:active { transform: scale(.94); }
 .counter:active { transform: scale(.985); }
@@ -878,11 +874,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 
 <!-- ===== ГЛАВНАЯ ===== -->
 <main class="screen" id="home">
-  <!-- Вариант C: приветствие, большая карточка «что читать сейчас», ниже — список разделов -->
-  <div class="home-head">
-    <span class="home-date" id="home-date"></span>
-    <h1>Ас-саляму алейкум</h1>
-  </div>
   <!-- Большая карточка — азкары, время которых сейчас. id (go-morning / go-evening) переставляет updateHome() -->
   <button class="hero" id="go-evening" data-time="evening">
     <img class="hero-img" data-for="morning" src="data:image/jpeg;base64,__IMG_MORNING__" alt="">
@@ -1315,36 +1306,13 @@ let show = Object.assign({ ar: true, ru: true, tr: true }, load("azkar-show", {}
 
 /* Главная (вариант C).
    Какие азкары «сейчас»: пока нет времени намазов — по часам телефона:
-   с 3:00 до 13:00 — утренние, остальное время — вечерние.
+   с 2:00 до 14:00 — утренние, остальное время — вечерние.
    Когда вернём время намазов — здесь будут фаджр и аср */
-function nowTime(d = new Date()) { const h = d.getHours(); return h >= 3 && h < 13 ? "morning" : "evening"; }
+function nowTime(d = new Date()) { const h = d.getHours(); return h >= 2 && h < 14 ? "morning" : "evening"; }
 const TIME_NAME = { morning: "Утренние азкары", evening: "Вечерние азкары" };
-// Примерно сколько минут читать оставшееся: на каждое повторение — по длине арабского текста
-function minutesLeft(list, t) {
-  let sec = 0;
-  for (const z of list) {
-    const left = Math.max(0, z.times - (counts[t + ":" + z.id] || 0));
-    sec += left * Math.max(3, (z.ar || "").length / 15);
-  }
-  return Math.max(1, Math.round(sec / 60));
-}
-// Дата по хиджре: число и месяц берём у браузера (календарь Умм аль-Кура), названия месяцев — свои, по-русски
-const HIJRI_MONTHS = ["мухаррам", "сафар", "раби' аль-авваль", "раби' ас-сани", "джумада аль-уля", "джумада аль-ахира",
-  "раджаб", "ша'бан", "рамадан", "шавваль", "зуль-ка'да", "зуль-хиджа"];
-function homeDate(d = new Date()) {
-  const wd = new Intl.DateTimeFormat("ru", { weekday: "long" }).format(d);
-  let s = wd[0].toUpperCase() + wd.slice(1);
-  try {
-    const parts = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "numeric" }).formatToParts(d);
-    const day = +parts.find(p => p.type === "day").value, month = +parts.find(p => p.type === "month").value;
-    if (day && month) s += " · " + day + " " + HIJRI_MONTHS[month - 1];
-  } catch (e) {}   // старый браузер без хиджры — показываем только день недели
-  return s;
-}
 function updateHome() {
   checkNewDay();   // если день сменился — отметки должны пропасть
   renderAyah();   // в полночь — новый аят
-  document.getElementById("home-date").textContent = homeDate();
   const now = nowTime(), other = now === "morning" ? "evening" : "morning";
   const hero = document.querySelector(".hero"), row = document.querySelector(".home-rows .row[data-time]");
   hero.dataset.time = now; hero.id = "go-" + now;
@@ -1360,7 +1328,7 @@ function updateHome() {
       hero.querySelector(".hero-kicker").textContent = done ? "Сегодня прочитаны" : "Сейчас время";
       hero.querySelector(".hero-title").textContent = TIME_NAME[t];
       hero.querySelector(".hero-sub").textContent = done ? `Все ${all.length} ${plural(all.length)}`
-        : `${read} из ${all.length} · ~${minutesLeft(all, t)} мин`;
+        : `${read} из ${all.length}`;
     } else {
       row.querySelector(".row-name").textContent = TIME_NAME[t];
       row.querySelector(".row-count").textContent = read ? `${read} из ${all.length}` : `${all.length} ${plural(all.length)}`;
@@ -1369,7 +1337,33 @@ function updateHome() {
   // напоминания: код ниже по файлу, при самом первом запуске его ещё нет — тогда пропускаем
   try { remindAfterUpdate(); } catch (e) {}
 }
-// Каждую минуту проверяем: не сменилось ли «сейчас» (например, в 13:00)
+/* Подсветка нажатия у карточек и строк-кнопок.
+   Обычный :active на iPhone срабатывает сразу при касании — и строка подсвечивалась,
+   когда палец просто начинал листать страницу. Поэтому подсвечиваем сами:
+   через 90 мс после касания, если палец не сдвинулся; начал листать — подсветку снимаем.
+   Короткий тап (быстрее 90 мс) тоже мигнёт подсветкой, чтобы нажатие было видно */
+(function () {
+  const SEL = ".hero, button.row, .ayah-day";
+  let el = null, x = 0, y = 0, timer = 0;
+  const off = () => { clearTimeout(timer); timer = 0; if (el) el.classList.remove("pressed"); el = null; };
+  document.addEventListener("pointerdown", e => {
+    off();
+    el = e.target.closest(SEL); if (!el) return;
+    x = e.clientX; y = e.clientY;
+    const t = el; timer = setTimeout(() => { timer = 0; t.classList.add("pressed"); }, 90);
+  }, { passive: true });
+  document.addEventListener("pointermove", e => { if (el && Math.hypot(e.clientX - x, e.clientY - y) > 8) off(); }, { passive: true });
+  document.addEventListener("pointerup", () => {
+    if (!el) return;
+    const t = el;
+    if (timer) { clearTimeout(timer); timer = 0; t.classList.add("pressed"); }
+    el = null; setTimeout(() => t.classList.remove("pressed"), 120);
+  });
+  document.addEventListener("pointercancel", off);
+  document.addEventListener("scroll", off, true);   // true — ловим прокрутку любого блока, не только страницы
+})();
+
+// Каждую минуту проверяем: не сменилось ли «сейчас» (например, в 14:00)
 setInterval(() => { if (!document.getElementById("home").hidden) updateHome(); }, 60000);
 
 /* Аят дня. Номер дня считаем по МЕСТНОЙ дате телефона (как и счётчики),
