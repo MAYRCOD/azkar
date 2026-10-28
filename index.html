@@ -714,7 +714,6 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 #qp-toggle.on .i-pause { display: block; }
 #quran-read.audio .q-text { padding-bottom: 70px; }   /* чтобы панель не закрывала последний аят */
 .ml span.pa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.ml span.pw, .q-ar .w.pw { background: color-mix(in srgb, var(--accent) 34%, transparent); border-radius: 4px; }
 .q-mushaf {
   flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
@@ -2266,7 +2265,7 @@ async function openSurah(n, ayah = 0) {
           <button class="q-act${qMarks.some(m => m.s === n && m.a === i + 1) ? " on" : ""}" data-act="mark" aria-label="Закладка">${Q_ICON.mark}</button>
         </span>
       </div>
-      <p class="q-ar" lang="ar">${hasAudio ? qArWords(a.ar, n, i + 1) : a.ar}</p>
+      <p class="q-ar" lang="ar">${a.ar}</p>
       <p class="q-ru">${a.ru}</p>
     </article>`).join("");
   applyQRu();
@@ -2348,26 +2347,18 @@ document.getElementById("q-back").addEventListener("click", () => showScreen("qu
    ЧТЕЦЫ
    quran/audio/reciters.json — чтецы (size — сколько весят записи всего Корана) и суры, у которых есть разметка;
    quran/audio/<чтец>/<сура>.json — {url: запись всей суры на сервере чтецов, size: её размер, ayahs},
-   ayahs[i] = [начало, конец, [[слово, начало, конец], …]] (мс). Разметка — Quran Foundation (api.quran.com,
-   chapter_recitations с segments), записи — download.quranicaudio.com.
+   ayahs[i] = [начало, конец] (мс). Разметка — Quran Foundation (api.quran.com, chapter_recitations),
+   записи — сервер чтецов (download.quranicaudio.com).
    Записи играют прямо с сервера. Человек может скачать суру или весь Коран выбранного чтеца — тогда запись
    лежит в памяти телефона (IndexedDB «azkar-audio», ключ «чтец/сура» → {blob, data}) и играет без интернета.
-   Слушать: аят, всю суру или аяты с … по …. Звучащий аят подсвечен (в мусхафе — и слово)
+   Слушать: аят, всю суру или аяты с … по …. Звучащий аят подсвечен (отдельные слова — нет)
    ================================================================ */
 let qRec = null;   // reciters.json
-// Текст аята — каждое слово в своём <span class="w">, чтобы подсвечивать звучащее слово.
-// Номер аята (арабские цифры) и знаки ۞ ۩ словами не считаются. В 4 аятах наше деление на слова
-// расходится с разметкой чтецов — там подсвечивается только аят
-const Q_WORDS_OFF = new Set(["15:7", "27:20", "36:22", "37:130"]);
-function qArWords(ar, s, a) {
-  if (Q_WORDS_OFF.has(`${s}:${a}`)) return ar;
-  return ar.split(" ").map(x => /^[\u0660-\u0669]+$|^[۞۩]$/.test(x) ? x : `<span class="w">${x}</span>`).join(" ");
-}
 async function qAudioHas(s) {
   try { qRec = qRec || await qGet("audio/reciters"); } catch (e) { return false; }
   return qRec.surahs.includes(s);
 }
-const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, w: 0, raf: 0, src: "", repeat: !!load("azkar-repeat", false) };
+const qPlay = { el: null, data: null, s: 0, from: 0, to: 0, rec: "", a: 0, raf: 0, src: "", repeat: !!load("azkar-repeat", false) };
 const qListen = { s: 0, a: 1, what: "ayah", rec: "" };
 const qLS = document.getElementById("q-listen-sheet");
 
@@ -2573,7 +2564,7 @@ function qPlayStart(s, from, to, rec) {
     return;
   }
   const { data, src } = ready, start = data.ayahs[from - 1][0] / 1000;
-  Object.assign(qPlay, { data, s, from, to, rec, a: 0, w: 0, start, t0: Date.now() });
+  Object.assign(qPlay, { data, s, from, to, rec, a: 0, start, t0: Date.now() });
   if (!qPlay.el || qPlay.src !== src) {
     if (qPlay.el) { qPlay.el.pause(); qPlay.el.removeAttribute("src"); qPlay.el.load(); }
     // «#t=…» в адресе — браузер сам начнёт с первого аята (на iPhone так надёжнее, чем перематывать потом)
@@ -2636,7 +2627,7 @@ function qPlayUi() {
   const what = qPlay.from === qPlay.to ? `аят ${qPlay.from}` : qPlay.from === 1 && qPlay.to === x.ayahs ? "вся сура" : `аяты ${qPlay.from}–${qPlay.to}`;
   document.getElementById("qp-pos").textContent = `${x.ru}, ${what}` + (qPlay.a && qPlay.from !== qPlay.to ? ` · сейчас ${qPlay.a}` : "");
 }
-// Раз в кадр: какой аят и слово звучат; дошли до конца выбранного — стоп
+// Раз в кадр: какой аят звучит; дошли до конца выбранного — стоп
 function qPlayLoop() {
   cancelAnimationFrame(qPlay.raf);
   const step = () => { if (qPlayTick()) qPlay.raf = requestAnimationFrame(step); };
@@ -2650,31 +2641,28 @@ function qPlayTick() {
     if (qPlay.repeat) { qPlay.el.currentTime = qPlay.start; return true; }   // повтор: снова с первого выбранного аята
     qPlayEnd("дошли до конца аятов"); return false;
   }
-  let a = 0, w = 0;
+  let a = 0;
   for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
-  if (a) for (const [n, f, to] of A[a - 1][2]) if (t >= f && t < to) { w = n; break; }
-  if (a !== qPlay.a || w !== qPlay.w) qPlayMark(a, w);
+  // в мусхафе страница с аятом может дорисоваться позже (перелистнули) — тогда подсвечиваем ещё раз
+  if (a !== qPlay.a || (a && qMode === "mushaf" && !document.querySelector(".ml span.pa"))) qPlayMark(a);
   return true;
 }
-// Подсветить аят a (в мусхафе и слово w); 0 — снять
-function qPlayMark(a, w) {
+// Подсветить аят a; 0 — снять
+function qPlayMark(a) {
   const s = qPlay.s, newAyah = a !== qPlay.a;
-  qPlay.a = a; qPlay.w = w;
+  qPlay.a = a;
   document.querySelectorAll(".q-ayah.playing").forEach(e => e.classList.remove("playing"));
-  document.querySelectorAll(".ml span.pa, .ml span.pw, .q-ar .w.pw").forEach(e => e.classList.remove("pa", "pw"));
+  document.querySelectorAll(".ml span.pa").forEach(e => e.classList.remove("pa"));
   if (newAyah) qPlayUi();
   if (!a || (qMode !== "mushaf" && s !== qOpen)) return;   // в мусхафе на странице бывает несколько сур
   if (qMode === "mushaf") {
     const page = mIndex && mPageOf(s, a);
     if (newAyah && page && mCurrent() && +mCurrent().dataset.page !== page) mShowPage(page, "");
-    const ws = [...document.querySelectorAll(`#q-mushaf [data-k="${s}:${a}"]`)];
-    ws.forEach(e => e.classList.add("pa"));
-    if (w && ws[w - 1]) ws[w - 1].classList.add("pw");
+    document.querySelectorAll(`#q-mushaf [data-k="${s}:${a}"]`).forEach(e => e.classList.add("pa"));
   } else {
     const el = document.getElementById("qa-" + a);
     if (el) {
       el.classList.add("playing");
-      if (w) el.querySelectorAll(".q-ar .w")[w - 1]?.classList.add("pw");
       if (newAyah) el.scrollIntoView({ behavior: "smooth", block: "center" });
       // в самом начале прокрутка к аяту прячет кнопки — показываем их с панелью ещё раз, когда доехали
       if (newAyah && Date.now() - qPlay.t0 < 1500) setTimeout(() => { if (qPlay.s) mControls(true); }, 700);
@@ -2684,7 +2672,7 @@ function qPlayMark(a, w) {
 function qPlayStop() {
   cancelAnimationFrame(qPlay.raf);
   if (qPlay.el) qPlay.el.pause();
-  qPlayMark(0, 0); qPlay.s = 0;
+  qPlayMark(0); qPlay.s = 0;
   document.getElementById("q-player").hidden = true;
   document.getElementById("quran-read").classList.remove("audio");
 }

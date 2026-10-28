@@ -2620,7 +2620,8 @@ function qPlayTick() {
   }
   let a = 0;
   for (let i = qPlay.from - 1; i < qPlay.to; i++) if (t >= A[i][0] && t < A[i][1]) { a = i + 1; break; }
-  if (a !== qPlay.a) qPlayMark(a);
+  // в мусхафе страница с аятом может дорисоваться позже (перелистнули) — тогда подсвечиваем ещё раз
+  if (a !== qPlay.a || (a && qMode === "mushaf" && !document.querySelector(".ml span.pa"))) qPlayMark(a);
   return true;
 }
 // Подсветить аят a; 0 — снять

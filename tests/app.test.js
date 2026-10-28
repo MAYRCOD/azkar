@@ -892,7 +892,18 @@ const section = name => console.log("•", name);
     await k.click('#qa-3 [data-act="listen"]'); await W(k, 500);
     // «Чтец ›» открывает окно со всеми чтецами поверх; выбрал — оно закрылось, в строке новый чтец
     await k.click("#ql-rec-open"); await W(k, 400);
-    check(await k.locator("#q-rec-sheet").isVisible() && await k.locator("#q-rec-sheet [data-rec]").count() === 5, "окно «Чтецы» не открылось или там не 5 чтецов");
+    check(await k.locator("#q-rec-sheet").isVisible() && await k.locator("#q-rec-sheet [data-rec]").count() === 12, "окно «Чтецы» не открылось или там не 12 чтецов");
+    // у всех чтецов разметка всех сур читается, аятов столько, сколько в суре, записи — с сервера чтецов
+    const recAll = await k.evaluate(async () => {
+      const bad = [];
+      for (const r of qRec.reciters) for (const s of [1, 2, 36, 114]) {
+        const d = await qGet(`audio/${r.id}/${s}`), n = qSurah(s).ayahs;
+        if (d.ayahs.length !== n || !d.url.startsWith("https://download.quranicaudio.com/") || !(d.size > 0)
+          || d.ayahs.some(([f, t], i) => !(t > f) || (i && f < d.ayahs[i - 1][0]))) bad.push(`${r.id}/${s}`);
+      }
+      return { n: qRec.reciters.length, ids: new Set(qRec.reciters.map(r => r.id)).size, bad };
+    });
+    check(recAll.n === 12 && recAll.ids === 12 && recAll.bad.length === 0, "разметка чтецов с ошибками: " + JSON.stringify(recAll));
     await k.click('#q-rec-sheet [data-rec="husary"]'); await W(k, 500);
     check(!(await k.locator("#q-rec-sheet").isVisible()) && await k.locator("#q-listen-sheet").isVisible(), "после выбора чтеца не вернулись в окно «Слушать»");
     check((await k.locator("#ql-rec-name").innerText()) === "Махмуд Халиль аль-Хусари", "в окне «Слушать» не показан выбранный чтец");
@@ -957,6 +968,10 @@ const section = name => console.log("•", name);
     check(await away(), "панель чтеца не спряталась вместе с кнопками сверху");
     await k.tap("#q-mushaf", { position: { x: 200, y: 400 } }); await W(k, 400);
     check(!(await away()), "нажатие на мусхаф не показало панель чтеца");
+    // аят на другой странице: мусхаф перелистывается, и аят подсвечен, когда страница дорисуется
+    await k.evaluate(async () => { await qPrep("afasy", 1); qPlayStart(1, 2, 3, "afasy"); }); await W(k, 1500);
+    const jump = await k.evaluate(() => ({ a: qPlay.a, page: mCurrent()?.dataset.page, pa: [...new Set([...document.querySelectorAll(".ml span.pa")].map(e => e.dataset.k))] }));
+    check(jump.a === 2 && jump.page === "1" && jump.pa.join() === "1:2", "после перелистывания аят в мусхафе не подсвечен: " + JSON.stringify(jump));
     await browser2.close();
   }
 
