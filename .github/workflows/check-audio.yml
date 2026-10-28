@@ -1,0 +1,19 @@
+# Служебная проверка записей чтецов. Запускается только пушем в ветку audio-check.
+name: check-audio
+on:
+  push:
+    branches: [audio-check]
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y -qq ffmpeg >/dev/null
+      - run: python3 tools/check_audio.py '[["afasy", 7, 14], ["afasy", 7, 37], ["afasy", 7, 78], ["afasy", 7, 60], ["abdulbaset", 2, 2], ["husary", 6, 52], ["minshawi", 9, 13], ["sudais", 3, 3], ["sudais", 3, 28], ["shatri", 4, 10], ["shatri", 4, 17], ["shatri", 4, 59], ["shatri", 4, 36], ["tunaiji", 161, 1], ["tunaiji", 161, 10], ["tunaiji", 161, 13], ["tunaiji", 161, 36], ["rifai", 5, 8], ["rifai", 5, 36], ["shuraym", 10, 36], ["shuraym", 10, 1], ["dossary", 97, 36], ["dossary", 97, 1], ["abdulbaset-mujawwad", 1, 36], ["husary-muallim", 12, 36], ["husary-muallim", 12, 1]]'
+      - run: |
+          git config user.name "MAYRCOD"
+          git config user.email "MAYRCOD@users.noreply.github.com"
+          git add audio-check.txt && git commit -m "Проверка записей чтецов" && git push
