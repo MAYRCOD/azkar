@@ -418,7 +418,8 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 .row .value::after { content: "›"; font-size: 20px; line-height: 1; color: var(--inactive); }
 
 /* ---------- Дуа: список тем, как настройки iPhone ---------- */
-#duas { overflow-y: auto; padding-block: 16px 100px; gap: 18px; font-size: 15px; }
+#duas { overflow-y: auto; padding-block: 16px calc(32px + env(safe-area-inset-bottom, 0px));   /* панели внизу тут нет */
+  gap: 18px; font-size: 15px; }
 #duas h1 { font-size: 24px; }
 #dua-groups { display: grid; gap: 18px; }
 .search {
@@ -537,6 +538,10 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border: 0; bord
 
 /* Окно выбора, которое выезжает снизу */
 .sheet-back { position: fixed; inset: 0; background: var(--dim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+/* В окнах текст не выделяется: окно «Слушать» открывается под пальцем после долгого нажатия в мусхафе,
+   и iPhone продолжал жест уже как выделение текста окна (синяя заливка и меню «Copy / Look Up») */
+.sheet-back { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.sheet-back input, .sheet-back textarea { -webkit-user-select: text; user-select: text; }
 .sheet-back { animation: dim-in .25s ease; }
 .sheet-back.closing, .sheet-back.closing-drag { animation: dim-out .22s ease forwards; }
 .sheet-back.closing .sheet { animation: down .22s var(--ease) forwards; }
@@ -616,7 +621,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* Шрифт мусхафа (KFGQPC Hafs v18) подгружается при первом открытии раздела — см. qFont() */
 :root { --f-quran: "QuranHafs", var(--f-arabic); --mh-ink: #2c5e3f; }   /* рамка заголовка суры */
 :root[data-theme="dark"] { --mh-ink: #c8a95e; }
-#quran { overflow-y: auto; padding-block: 16px 100px; gap: 18px; font-size: 15px; }   /* как у «Дуа» */
+#quran { overflow-y: auto; padding-block: 16px calc(32px + env(safe-area-inset-bottom, 0px));   /* панели внизу тут нет */
+  gap: 18px; font-size: 15px; }   /* как у «Дуа» */
 #quran h1 { font-size: 24px; }
 #q-list { display: grid; gap: 18px; }
 #quran-read { overflow-y: auto; padding-block: 16px calc(40px + env(safe-area-inset-bottom, 0px)); }   /* панели внизу нет */
@@ -1396,9 +1402,9 @@ function showScreen(id) {
   // Когда анимация закончилась, снимаем её полностью — так iPhone рисует текст заново, чётко
   clearTimeout(screen._enterTimer);
   screen._enterTimer = setTimeout(() => screen.classList.remove("enter"), 900);
-  // Нижняя панель уезжает при чтении: в азкарах (там внизу счётчик) и на странице темы дуа.
-  // Вернуться — кнопкой «‹ Назад» / «‹ Дуа» вверху
-  const tabbar = document.getElementById("tabbar"), away = id === "reader" || id === "dua-read" || id === "quran-read";
+  // Нижняя панель уезжает в азкарах (там внизу счётчик), в Коране и в Дуа (со всеми их страницами).
+  // Вернуться — кнопкой «‹ Главная» / «‹ Назад» вверху или смахиванием вправо
+  const tabbar = document.getElementById("tabbar"), away = ["reader", "duas", "dua-read", "quran", "quran-read"].includes(id);
   tabbar.classList.toggle("away", away);
   document.getElementById("tab-veil").classList.toggle("away", away);
   if (id === "home") updateHome();
@@ -2764,6 +2770,7 @@ mq.addEventListener("pointerdown", e => {
     document.querySelectorAll(`#q-mushaf [data-k="${s}:${a}"]`).forEach(x => x.classList.add("pa"));   // какой аят выбран
     setTimeout(() => { if (!qPlay.s) document.querySelectorAll(".ml span.pa").forEach(x => x.classList.remove("pa")); }, 600);
     qListenOpen(s, a, "ayah");
+    try { getSelection().removeAllRanges(); } catch (e) {}   // если iPhone всё же начал выделение — снимаем
   }, 450) };
 });
 const mPressCancel = () => { if (mPress) { clearTimeout(mPress.t); mPress = null; } };
@@ -2771,7 +2778,7 @@ mq.addEventListener("pointermove", e => { if (mPress && Math.hypot(e.clientX - m
 ["pointerup", "pointercancel", "scroll"].forEach(ev => mq.addEventListener(ev, mPressCancel, { passive: true }));
 mq.addEventListener("contextmenu", e => e.preventDefault());
 // Палец отпустили после долгого нажатия — этот «клик» не должен нажать строку открывшегося под пальцем окна
-window.addEventListener("pointerup", () => { if (mPressFired) setTimeout(() => { mPressFired = false; }, 60); }, true);
+window.addEventListener("pointerup", () => { if (mPressFired) { try { getSelection().removeAllRanges(); } catch (e) {} setTimeout(() => { mPressFired = false; }, 60); } }, true);
 window.addEventListener("click", e => {
   if (mPressFired && qLS.contains(e.target)) { e.preventDefault(); e.stopPropagation(); mPressFired = false; }
 }, true);
