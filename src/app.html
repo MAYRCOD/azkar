@@ -321,7 +321,8 @@ html.standalone #reader { padding-top: 22px; }
   user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
 /* Круг занимает почти всю высоту свободного места, но не шире экрана */
-.tb-dial { position: relative; width: min(100cqh - 40px, 100cqw - 48px, 270px); aspect-ratio: 1; display: grid; place-items: center; pointer-events: none; }
+.tb-dial { position: relative; width: min(70vw, 270px); width: min(100cqh - 40px, 100cqw - 48px, 270px);   /* первая строка — для iOS старше 16, где нет единиц cqh/cqw */
+  aspect-ratio: 1; display: grid; place-items: center; pointer-events: none; }
 .tb-face {
   width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--surface);
   box-shadow: 0 2px 6px rgba(var(--sh), .06), 0 18px 44px rgba(var(--sh), .14);
@@ -690,8 +691,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   width: min(560px, calc(100% - 20px)); display: flex; align-items: center; gap: 10px; padding: 8px 10px;
   background: var(--surface); border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.18), 0 0 0 1px var(--line);
 }
-.q-player button { flex: none; border: 0; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; }
-.q-player svg { width: 20px; height: 20px; fill: currentColor; }
+/* Значок по центру кружка: padding 0 и flex. Старый Safari (iPhone 11 со старой iOS) не умел display: grid у <button>
+   и оставлял свои поля у кнопки — значки уезжали вправо */
+.q-player button { flex: none; border: 0; padding: 0; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; -webkit-appearance: none; appearance: none; }
+.q-player svg { display: block; flex: none; width: 20px; height: 20px; fill: currentColor; }
 #qp-toggle { background: var(--accent); color: #fff; }
 #qp-stop { background: var(--press); color: var(--fg); }
 #qp-repeat { background: none; color: var(--muted); }
@@ -705,7 +708,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .q-player.away { opacity: 0; transform: translateY(16px); pointer-events: none; }
 #qp-toggle.on .i-pause { display: block; }
 #quran-read.audio .q-text { padding-bottom: 70px; }   /* чтобы панель не закрывала последний аят */
-.ml span.pa { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+/* Сначала обычный полупрозрачный зелёный — его понимает любой iPhone; color-mix (iOS 16.2+) уточняет цвет по теме */
+.ml span.pa { background: rgba(52, 199, 89, .12); }
+@supports (color: color-mix(in srgb, red, blue)) { .ml span.pa { background: color-mix(in srgb, var(--accent) 12%, transparent); } }
 .q-mushaf {
   flex: 1; min-height: 0; display: flex; direction: rtl;          /* первая страница справа, следующая — слева */
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
@@ -802,7 +807,8 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
    Так же в мусхафе (.ml span.on) — там цвет букв задаёт палитра шрифта, поэтому подсвечиваем фоном */
 .q-ayah.flash, .ml span.on { animation: q-flash 1.6s ease; }
 @keyframes q-flash { 0%, 60% { background: var(--flash); } 100% { background: transparent; } }
-:root { --flash: color-mix(in srgb, var(--accent) 24%, transparent); }
+:root { --flash: rgba(52, 199, 89, .24); }   /* для iOS старше 16.2: там нет color-mix — без этого подсветка аята пропадала */
+@supports (color: color-mix(in srgb, red, blue)) { :root { --flash: color-mix(in srgb, var(--accent) 24%, transparent); } }
 .q-ayah.flash { margin-inline: -16px; padding-inline: 16px; }
 .q-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
 .q-nav button {

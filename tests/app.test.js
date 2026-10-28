@@ -1009,6 +1009,21 @@ const section = name => console.log("•", name);
     const a3 = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src, hl: document.querySelector(".q-ayah.playing")?.id }));
     check(await k.evaluate(() => !document.querySelector(".q-ar span, .pw")), "слова в тексте всё ещё подсвечиваются (решили подсвечивать только аят)");
     check(a3.a === 3 && a3.hl === "qa-3" && a3.src.startsWith("https://download.quranicaudio.com/"), "аят 3 не играет с сервера чтецов: " + JSON.stringify(a3));
+    // значки на панели чтеца — ровно по центру кружков (на iPhone 11 со старой iOS уезжали вправо)
+    const iconOff = await k.evaluate(() => ["qp-toggle", "qp-repeat", "qp-stop"].map(id => {
+      const b = document.getElementById(id).getBoundingClientRect(), i = [...document.getElementById(id).querySelectorAll("svg")].find(x => getComputedStyle(x).display !== "none").getBoundingClientRect();
+      return Math.max(Math.abs(b.x + b.width / 2 - i.x - i.width / 2), Math.abs(b.y + b.height / 2 - i.y - i.height / 2));
+    }));
+    check(iconOff.every(d => d < 1), "значки на панели чтеца не по центру кружков: " + JSON.stringify(iconOff));
+    check(await k.evaluate(() => getComputedStyle(document.getElementById("q-player").querySelector("button")).paddingLeft) === "0px", "у кнопок панели чтеца остались поля");
+    // подсветка звучащего аята видна, и у неё есть запасной цвет для iOS старше 16.2 (там нет color-mix)
+    check(await k.evaluate(() => { const c = getComputedStyle(document.getElementById("qa-3")).backgroundColor; return c !== "rgba(0, 0, 0, 0)" && c !== "transparent"; }), "звучащий аят не подсвечен");
+    const fb = await k.evaluate(() => { const out = { flash: false, pa: false };
+      for (const sh of document.styleSheets) for (const r of sh.cssRules) {
+        if (r.selectorText === ":root" && /rgba\(52, 199, 89, 0?\.24\)/.test(r.style.getPropertyValue("--flash"))) out.flash = true;
+        if (r.selectorText === ".ml span.pa" && /rgba\(52, 199, 89, 0?\.12\)/.test(r.style.background)) out.pa = true;
+      } return out; });
+    check(fb.flash && fb.pa, "нет запасного цвета подсветки для старых iPhone: " + JSON.stringify(fb));
     await W(k, 5000);
     check(await k.evaluate(() => qPlay.s === 0 && document.getElementById("q-player").hidden), "после конца аята 3 чтение не остановилось");
     check(await k.evaluate(() => localStorage.getItem("azkar-reciter")) === '"husary"', "выбранный чтец не запомнился");
