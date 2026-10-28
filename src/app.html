@@ -196,8 +196,7 @@ html.standalone #home { padding-top: 40px; }
   transition: transform .15s ease;
 }
 .hero.pressed { transform: scale(.985); }
-.hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; display: none;
-  transform: scale(1.32); transform-origin: 50% 55%; }   /* картинки круглые по краям — увеличиваем, чтобы края ушли за карточку */
+.hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: none; }   /* картинки 1800×1200 (3:2), src/images */
 .hero[data-time="morning"] .hero-img[data-for="morning"], .hero[data-time="evening"] .hero-img[data-for="evening"] { display: block; }
 .hero::after {   /* затемнение снизу — чтобы белый текст читался на любой картинке */
   content: ""; position: absolute; inset: 0;
