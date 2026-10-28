@@ -62,13 +62,78 @@ const section = name => console.log("•", name);
   check(await p.evaluate(() => AZKAR.filter(z => z.when.includes("evening") && !z.full).map(z => z.id).join(",")) === "e-ikhlas,e-falaq,e-nas,e-sayyid,e-hasbi,e-bismillah,e-radiitu,e-bika,e-hayyu,e-alim,e-tahlil10,e-subhan100,e-kursi,e-amsayna,e-kalimat,e-afiya", "основные вечерние не в порядке полных");
   check(counts.dup === 0, "повторяются id азкаров");
 
+  section("Главная (вариант C): «Сейчас время» по часам, панель на 3 вкладки, Дуа и Коран со строк, нажатие при прокрутке");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 700 }, hasTouch: true, isMobile: true });
+    const h = await ctx.newPage(); h.on("pageerror", e => errs.push(e.message));
+    await h.clock.install({ time: new Date(2026, 9, 28, 1, 30) });
+    // с 2:00 до 14:00 — утренние, остальное время — вечерние
+    for (const [hh, mm, want] of [[1, 59, "evening"], [2, 0, "morning"], [13, 59, "morning"], [14, 0, "evening"], [23, 30, "evening"]]) {
+      await h.clock.setFixedTime(new Date(2026, 9, 28, hh, mm));
+      await h.goto(URL); await h.evaluate(() => localStorage.clear()); await h.reload(); await W(h, 300);
+      const st = await h.evaluate(() => ({ hero: document.querySelector(".hero").dataset.time, id: document.querySelector(".hero").id,
+        row: document.querySelector(".home-rows .row[data-time]").dataset.time, kicker: document.querySelector(".hero-kicker").textContent,
+        title: document.querySelector(".hero-title").textContent }));
+      check(st.hero === want && st.id === "go-" + want && st.row !== want && st.kicker === "Сейчас время"
+        && st.title === (want === "morning" ? "Утренние азкары" : "Вечерние азкары"), `${hh}:${mm}: на карточке не то время: ` + JSON.stringify(st));
+    }
+    // время меняется, пока главная открыта: 13:59 → 14:00 (проверка раз в минуту)
+    await h.clock.setFixedTime(new Date(2026, 9, 28, 13, 59)); await h.reload(); await W(h, 300);
+    await h.clock.setFixedTime(new Date(2026, 9, 28, 14, 0)); await h.clock.runFor(61000); await W(h, 100);
+    check(await h.evaluate(() => document.querySelector(".hero").dataset.time) === "evening", "в 14:00 карточка не сменилась на вечерние");
+    // картинка на карточке видна и заполняет её
+    const img = await h.evaluate(() => { const i = [...document.querySelectorAll(".hero-img")].find(x => getComputedStyle(x).display !== "none"), c = document.querySelector(".hero").getBoundingClientRect(), r = i.getBoundingClientRect();
+      return { ok: i.complete && i.naturalWidth === 1800 && i.naturalHeight === 1200, fill: Math.abs(r.width - c.width) < 1 && Math.abs(r.height - c.height) < 1, data: i.dataset.for }; });
+    check(img.ok && img.fill && img.data === "evening", "картинка на карточке не та или не на всю карточку: " + JSON.stringify(img));
+    // нет ни даты, ни приветствия, ни минут
+    const homeText = await h.locator("#home").innerText();
+    check(!/саляму|мин\b|·/.test(homeText), "на главной осталось лишнее (приветствие/дата/минуты)");
+    // нижняя панель: 3 вкладки, подписи влезают
+    check((await h.locator(".tab-item").count()) === 3 && (await h.locator("#tab-home, #tab-tasbih, #tab-settings").count()) === 3, "в панели не 3 вкладки");
+    // прокрутка, начатая пальцем на строке «Дуа», не подсвечивает её и не открывает Дуа
+    const r = await h.$eval("#go-duas", e => { const b = e.getBoundingClientRect(); return { x: b.x + 100, y: b.y + 25 }; });
+    const cdp = await ctx.newCDPSession(h);
+    const T = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: r.x, y }] });
+    await h.clock.resume();
+    await T("touchStart", r.y); let lit = false;
+    for (let i = 1; i <= 15; i++) { await T("touchMove", r.y - i * 12); await W(h, 16); lit ||= await h.$eval("#go-duas", e => e.classList.contains("pressed")); }
+    await T("touchEnd"); await W(h, 300);
+    check(!lit, "строка подсветилась при прокрутке");
+    check(await h.locator("#home").isVisible() && await h.$eval("#home", e => e.scrollTop) > 20, "прокрутка по строке не сработала или открыла раздел");
+    // обычное нажатие: подсветка мигает и раздел открывается; «‹ Главная» возвращает
+    await h.$eval("#home", e => e.scrollTop = 0);
+    await h.tap("#go-duas"); await W(h, 500);
+    check(await h.locator("#duas").isVisible() && (await h.getAttribute("#tabbar", "data-active")) === "home", "нажатие на «Дуа» не открыло Дуа");
+    await h.click("#duas-back"); await W(h, 300);
+    check(await h.locator("#home").isVisible(), "«‹ Главная» из Дуа не вернула на главную");
+    await h.tap("#go-quran"); await W(h, 700);
+    check(await h.locator("#quran").isVisible(), "нажатие на «Коран» не открыло Коран");
+    await h.click("#quran-back"); await W(h, 300);
+    check(await h.locator("#home").isVisible(), "«‹ Главная» из Корана не вернула на главную");
+    check(!(await h.locator(".pressed").count()), "подсветка нажатия осталась висеть");
+    // строка «Утренние» открывает утренние, карточка — вечерние
+    await h.click(".home-rows .row[data-time]"); await W(h, 500);
+    check(await h.locator("#reader").isVisible() && await h.evaluate(() => time) === "morning", "строка не открыла утренние");
+    await h.click("#back"); await W(h, 300);
+    await h.click(".hero"); await W(h, 500);
+    check(await h.evaluate(() => time) === "evening", "карточка не открыла вечерние");
+    await ctx.close();
+  }
+
   section("Основные и полные: переключатель, число азкаров, чтение, отметка «прочитано», сохранение");
   {
     check(await p.locator("#set-switch").isVisible(), "нет переключателя «Основные | Полные»");
     check((await p.locator('.set-opt[aria-checked="true"]').innerText()) === "Основные", "по умолчанию не «Основные»");
-    check((await p.locator("#count-morning").innerText()) === "17 азкаров" && (await p.locator("#count-evening").innerText()) === "16 азкаров", "неверное число на кнопках (основные)");
+    // число азкаров на главной: у карточки «Сейчас время» — «0 из 17», у строки — «16 азкаров»
+    const homeNums = () => p.evaluate(() => {
+      const h = document.querySelector(".hero"), r = document.querySelector(".home-rows .row[data-time]");
+      return { [h.dataset.time]: +(h.querySelector(".hero-sub").textContent.match(/из (\d+)/) || [])[1], [r.dataset.time]: parseInt(r.querySelector(".row-count").textContent) };
+    });
+    let hn = await homeNums();
+    check(hn.morning === 17 && hn.evening === 16, "неверное число на главной (основные): " + JSON.stringify(hn));
     await p.click('.set-opt[data-set="full"]'); await W(p, 500);
-    check((await p.locator("#count-morning").innerText()) === "26 азкаров" && (await p.locator("#count-evening").innerText()) === "26 азкаров", "неверное число на кнопках (полные): " + await p.locator("#count-morning").innerText() + " / " + await p.locator("#count-evening").innerText());
+    hn = await homeNums();
+    check(hn.morning === 26 && hn.evening === 26, "неверное число на главной (полные): " + JSON.stringify(hn));
     // таблетка переехала вправо
     const pill = await p.evaluate(() => getComputedStyle(document.getElementById("set-switch"), "::before").transform);
     check(pill !== "none", "подложка переключателя не переехала");
@@ -91,14 +156,14 @@ const section = name => console.log("•", name);
     await p.click("#back"); await W(p, 300);
     await p.click('.set-opt[data-set="main"]'); await W(p, 300);
     await p.evaluate(() => { localStorage.removeItem(KEY); counts = {}; updateHome(); });
-    // на любом экране заголовок не обрезан сверху, а кнопки видны или до них можно долистать
+    // на любом экране карточка «Сейчас время» не обрезана сверху, а остальное видно или до него можно долистать
     for (const [w, h] of [[320, 568], [375, 667], [390, 844], [430, 932]]) {
       for (const s of ["main", "full"]) {
         await p.setViewportSize({ width: w, height: h }); await p.click(`.set-opt[data-set="${s}"]`); await W(p, 300);
         const r = await p.evaluate(() => { const home = document.getElementById("home");
-          return { top: document.querySelector(".ar-title").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop,
+          return { top: document.querySelector(".hero").getBoundingClientRect().top - home.getBoundingClientRect().top + home.scrollTop,
                    pageW: document.documentElement.scrollWidth }; });
-        check(r.top >= 0, `${w}×${h} ${s}: заголовок обрезан сверху (${Math.round(r.top)})`);
+        check(r.top >= 0, `${w}×${h} ${s}: карточка обрезана сверху (${Math.round(r.top)})`);
         check(r.pageW <= w, `${w}×${h} ${s}: главная шире экрана`);
       }
     }
@@ -550,8 +615,8 @@ const section = name => console.log("•", name);
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ["clipboard-read", "clipboard-write"] });
     const d = await ctx.newPage(); d.on("pageerror", e => errs.push(e.message));
     await d.goto(URL); await d.evaluate(() => localStorage.clear()); await d.reload(); await W(d, 400);
-    await d.click("#tab-duas"); await W(d, 500);
-    check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "вкладка «Дуа» не открылась");
+    await d.click("#go-duas"); await W(d, 500);
+    check(await d.locator("#duas").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "home", "«Дуа» не открылась с главной");
     const soon = await d.locator(".dua-row.soon").count(), ready = await d.locator(".dua-row:not(.soon)").count();
     check(ready === 101 && soon === 0, `тем с текстами ${ready}, «скоро» ${soon}`);
     // дополненные части: пометок «{{…}}» столько же, сколько источников, и на экране скобок не видно
@@ -591,7 +656,7 @@ const section = name => console.log("•", name);
     }
     await d.setViewportSize({ width: 390, height: 844 }); await W(d, 200);
     await d.click('[data-cat="eat-before"]'); await W(d, 600);
-    check(await d.locator("#dua-read").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "duas", "тема не открылась страницей");
+    check(await d.locator("#dua-read").isVisible() && (await d.getAttribute("#tabbar", "data-active")) === "home", "тема не открылась страницей");
     check((await d.locator(".dua-card").count()) === 2 && (await d.locator("#dua-read .counter").count()) === 0, "на странице темы не 2 карточки или есть счётчик");
     check((await d.locator(".dua-card").nth(1).locator(".dua-head b").innerText()) === "Если забыл сказать в начале", "нет заголовка у второго дуа");
     check(!(await d.locator(".dua-card").first().locator(".tr").isVisible()), "транскрипция не свёрнута");
@@ -628,8 +693,8 @@ const section = name => console.log("•", name);
     const k = await ctx.newPage(); k.on("pageerror", e => errs.push(e.message));
     // экран пониже, чтобы короткие суры прокручивались (проверяем «Продолжить» и переход к аяту)
     await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 400);
-    await k.click("#tab-quran"); await W(k, 800);
-    check(await k.locator("#quran").isVisible() && (await k.getAttribute("#tabbar", "data-active")) === "quran", "вкладка «Коран» не открылась");
+    await k.click("#go-quran"); await W(k, 800);
+    check(await k.locator("#quran").isVisible() && (await k.getAttribute("#tabbar", "data-active")) === "home", "«Коран» не открылся с главной");
     check((await k.locator(".q-row").count()) === 114, "в списке не 114 сур");
     check(!(await k.locator("#q-list .group-title").count()), "в списке сур не должно быть заголовков джузов");
     // у каждой суры число аятов совпадает с файлом суры, перевод — у каждого аята
@@ -751,7 +816,7 @@ const section = name => console.log("•", name);
       await touch("touchEnd"); await W(k, 500);
     };
     const onSurah = () => k.locator("#quran-read").isVisible();
-    await k.click("#tab-quran"); await W(k, 700);
+    await k.click("#tab-home"); await k.click("#go-quran"); await W(k, 700);
     await k.click('.q-row[data-s="78"]'); await W(k, 800);
     await gesture(60, 400, 0, -250);
     check(await onSurah() && await k.evaluate(() => document.getElementById("quran-read").scrollTop > 100), "вертикальная прокрутка не работает или закрыла суру");
@@ -777,7 +842,7 @@ const section = name => console.log("•", name);
     const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
     const swipe = async dx => { await touch("touchStart", 195 - dx / 2, 420); for (let i = 1; i <= 10; i++) { await touch("touchMove", 195 - dx / 2 + dx * i / 10, 421); await W(k, 16); } await touch("touchEnd"); await W(k, 900); };
     const page = () => k.evaluate(() => mCurrent() && mCurrent().dataset.page);
-    await k.click("#tab-quran"); await W(k, 700);
+    await k.click("#tab-home"); await k.click("#go-quran"); await W(k, 700);
     await k.click('.q-row[data-s="104"]'); await W(k, 800);
     await k.click('#q-mode [data-mode="mushaf"]'); await W(k, 1500);
     check(await k.locator("#q-mushaf").isVisible() && !(await k.locator("#q-ayahs").isVisible()), "режим «Мусхаф» не включился");
@@ -863,7 +928,7 @@ const section = name => console.log("•", name);
     const k = await ctx.newPage();
     k.on("pageerror", e => errs.push(e.message));
     await k.goto(URL); await k.evaluate(() => localStorage.clear()); await k.reload(); await W(k, 500);
-    await k.click("#tab-quran"); await W(k, 600);
+    await k.click("#tab-home"); await k.click("#go-quran"); await W(k, 600);
     await k.click('.q-row[data-s="2"]'); await W(k, 1200);
     check(await k.locator('[data-act="listen"]').count() === 286 && await k.locator("#q-listen-surah").isVisible(), "у аль-Бакары нет кнопок «Слушать»");
     // Окно «Слушать» прокручено вниз: палец вниз прокручивает его вверх, а не закрывает. Сверху — закрывает
@@ -1056,7 +1121,7 @@ const section = name => console.log("•", name);
     await q.reload(); await W(q, 800);
     await ctx.setOffline(true); await q.reload(); await W(q, 800);
     check(await q.locator("#go-morning").isVisible(), "без интернета не открылось");
-    await q.click("#tab-quran"); await W(q, 800);
+    await q.click("#tab-home"); await q.click("#go-quran"); await W(q, 800);
     await q.click('.q-row[data-s="112"]'); await W(q, 800);
     check((await q.locator(".q-ayah").count()) === 4, "без интернета сура не открылась");
     await ctx.close();
