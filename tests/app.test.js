@@ -901,7 +901,7 @@ const section = name => console.log("•", name);
       "«‹ Назад» на странице «Чтецы» не вернул в окно «Слушать» (или сменил чтеца)");
     await k.click("#ql-go"); await W(k, 1500);
     const a3 = await k.evaluate(() => ({ a: qPlay.a, src: qPlay.src, hl: document.querySelector(".q-ayah.playing")?.id }));
-    check(await k.evaluate(() => document.querySelector("#qa-3 .q-ar .w.pw") !== null), "в тексте не подсвечено звучащее слово аята 3");
+    check(await k.evaluate(() => !document.querySelector(".q-ar span, .pw")), "слова в тексте всё ещё подсвечиваются (решили подсвечивать только аят)");
     check(a3.a === 3 && a3.hl === "qa-3" && a3.src.startsWith("https://download.quranicaudio.com/"), "аят 3 не играет с сервера чтецов: " + JSON.stringify(a3));
     await W(k, 5000);
     check(await k.evaluate(() => qPlay.s === 0 && document.getElementById("q-player").hidden), "после конца аята 3 чтение не остановилось");
