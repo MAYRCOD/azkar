@@ -837,6 +837,17 @@ const section = name => console.log("•", name);
     check(await vis("quran"), "прокрутка списка сур закрыла Коран");
     await gesture(40, 400, 260, 10);
     check(await vis("home") && await k.evaluate(() => !document.getElementById("quran").style.transform), "свайп вправо в списке сур не вернул на главную");
+    // в виде «Джузы» — тоже на главную; сура, открытая из джуза, возвращает к джузам
+    await k.click("#go-quran"); await W(k, 700);
+    await k.click('#q-switch [data-view="juzs"]'); await W(k, 500);
+    await gesture(40, 400, 260, 10);
+    check(await vis("home"), "свайп вправо в списке джузов не вернул на главную");
+    await k.click("#go-quran"); await W(k, 700);
+    await k.locator("#q-list button").first().click(); await W(k, 800);
+    await gesture(40, 400, 260, 10);
+    check(await vis("quran") && await k.evaluate(() => qView) === "juzs", "из суры, открытой через джуз, свайп не вернул к джузам");
+    await k.click('#q-switch [data-view="surahs"]'); await W(k, 400);
+    await gesture(40, 400, 260, 10);
     await k.click("#go-duas"); await W(k, 600);
     await gesture(40, 400, -260, 0);
     check(await vis("duas"), "свайп влево не должен закрывать Дуа");
