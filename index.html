@@ -642,6 +642,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* pan-y: вертикальную прокрутку делает браузер, а движение вбок отдаёт нам — для смахивания «назад».
    Без этого iPhone забирал бы жест себе и отменял его (так уже было со свайпом в азкарах) */
 #quran-read { touch-action: pan-y; will-change: transform; }
+#quran, #duas, #dua-read { touch-action: pan-y; }   /* то же смахивание «назад» на этих экранах */
 #quran-read .topbar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; }
 .q-row .lbl { gap: 12px; }
 /* ---------- Мусхаф ---------- */
@@ -2804,16 +2805,17 @@ document.querySelector("#quran-read .q-text").addEventListener("click", e => {
   mControls(!document.getElementById("quran-read").classList.contains("ctl"));
 });
 
-// Смахнуть страницу суры вправо — вернуться к списку (как «назад» в приложениях iPhone).
+// Смахнуть страницу вправо — вернуться назад (как в приложениях iPhone):
+// сура → список сур, Коран и Дуа → главная, тема дуа → список тем.
 // Срабатывает только на чёткий жест: движение в первые 10 px должно быть явно вбок (в 1,5 раза
 // больше, чем вниз/вверх), иначе это прокрутка и мы его не трогаем. Страница едет за пальцем;
 // отпустил — если сдвинул больше чем на треть экрана или смахнул быстро, уходим к списку, иначе страница возвращается
-(() => {
-  const page = document.getElementById("quran-read");
+function swipeBack(id, backTo, skip = () => false) {
+  const page = document.getElementById(id);
   let g = null;
   const reset = () => { page.style.transition = ""; page.style.transform = ""; page.style.opacity = ""; };
   page.addEventListener("touchstart", e => {
-    if (e.touches.length !== 1 || qMode === "mushaf") { g = null; return; }   // в мусхафе вбок листают страницы
+    if (e.touches.length !== 1 || skip()) { g = null; return; }
     const t = e.touches[0];
     g = { x: t.clientX, y: t.clientY, dir: null, dx: 0, last: [t.clientX, performance.now()], v: 0 };
   }, { passive: true });
@@ -2841,11 +2843,15 @@ document.querySelector("#quran-read .q-text").addEventListener("click", e => {
     if (!go) { page.style.transform = ""; page.style.opacity = ""; setTimeout(reset, 220); return; }
     page.style.transform = `translateX(${innerWidth}px)`; page.style.opacity = "0";
     haptic("tap");
-    setTimeout(() => { showScreen("quran"); reset(); }, 200);
+    setTimeout(() => { showScreen(backTo); reset(); }, 200);
   };
   page.addEventListener("touchend", end);
   page.addEventListener("touchcancel", end);
-})();
+}
+swipeBack("quran-read", "quran", () => qMode === "mushaf");   // в мусхафе вбок листают страницы
+swipeBack("quran", "home");
+swipeBack("duas", "home");
+swipeBack("dua-read", "duas");
 
 // Где остановился: первый аят, который сейчас виден вверху экрана. Запоминаем при прокрутке
 function saveQLast() {

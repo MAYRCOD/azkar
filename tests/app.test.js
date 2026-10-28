@@ -830,6 +830,25 @@ const section = name => console.log("•", name);
     await k.click('.q-row[data-s="79"]'); await W(k, 800);
     await gesture(40, 400, -260, 0);
     check(await onSurah(), "свайп влево не должен закрывать суру");
+    // список сур → главная; Дуа → главная; тема дуа → список тем
+    const vis = id => k.locator("#" + id).isVisible();
+    await k.click("#q-back"); await W(k, 500);
+    await gesture(60, 400, 0, -250);
+    check(await vis("quran"), "прокрутка списка сур закрыла Коран");
+    await gesture(40, 400, 260, 10);
+    check(await vis("home") && await k.evaluate(() => !document.getElementById("quran").style.transform), "свайп вправо в списке сур не вернул на главную");
+    await k.click("#go-duas"); await W(k, 600);
+    await gesture(40, 400, -260, 0);
+    check(await vis("duas"), "свайп влево не должен закрывать Дуа");
+    await gesture(60, 400, 80, 0, 10, 60);
+    check(await vis("duas"), "короткое медленное движение вбок закрыло Дуа");
+    await gesture(40, 400, 260, 10);
+    check(await vis("home"), "свайп вправо в Дуа не вернул на главную");
+    await k.click("#go-duas"); await W(k, 600);
+    await k.click('[data-cat="eat-before"]'); await W(k, 600);
+    await gesture(40, 400, 260, 10);
+    check(await vis("duas") && !(await vis("dua-read")), "свайп вправо на теме дуа не вернул к списку тем");
+    check(!(await k.locator(".pressed").count()), "после свайпа осталась подсветка нажатия");
     await ctx.close();
   }
 
