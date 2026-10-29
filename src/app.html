@@ -628,19 +628,16 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .names-hadith figcaption { font-size: 12.5px; color: var(--muted); }
 .name-row { min-height: 60px; }
 .name-row .name-t { display: grid; gap: 1px; min-width: 0; }
-.name-row .name-t small { color: var(--muted); font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }   /* толкование в списке — не длиннее двух строк */
+.name-row .name-t small { color: var(--muted); font-size: 13px; }
 .name-row .name-ar { font-family: var(--f-arabic); font-size: 24px; line-height: 1.6; color: var(--gold); flex: none; direction: rtl; white-space: nowrap; }
 .names-foot { margin: 0; padding-inline: 4px; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
-/* Страница имени: сверху имя крупно, ниже карточки «Значение» и «В Коране» */
+/* Страница имени: арабское имя крупно, под ним транскрипция и перевод */
 .name-body { display: grid; gap: 14px; }
 .name-hero { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 8px 0 6px; }
 .name-hero .name-num { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .name-hero .name-big { font-family: var(--f-arabic); font-size: clamp(44px, 14vw, 60px); line-height: 1.7; color: var(--gold); margin: 0; direction: rtl; text-align: center; }
 .name-hero h1 { font-size: 26px; }
-.name-card { display: grid; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow); }
-.name-label { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--gold); }
-.name-card p { margin: 0; line-height: 1.55; }
-.name-about { font-size: calc(17px * var(--tx-k, 1)); }
+.name-hero .name-mean { margin: 4px 0 0; font-size: calc(18px * var(--tx-k, 1)); color: var(--muted); text-wrap: balance; }
 #name-read .q-nav { margin-top: 2px; }
 #name-read .q-nav span { flex: 1; }
 
@@ -1000,7 +997,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   </figure>
   <label class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <input type="search" id="names-search" placeholder="Поиск: рахман, милость…" autocomplete="off" enterkeyhint="search">
+    <input type="search" id="names-search" placeholder="Поиск: рахман, милостивый…" autocomplete="off" enterkeyhint="search">
   </label>
   <div class="rows" id="names-list"></div>
   <p class="names-foot" id="names-foot"></p>
@@ -1622,11 +1619,11 @@ document.getElementById("names-foot").textContent = NAMES.source;
 function renderNames() {
   const q = low(document.getElementById("names-search").value.trim()).replace(/['’ʼ]/g, "");
   const tr = x => low(x.tr).replace(/['’ʼ]/g, "");
-  const list = NAMES.names.filter(x => !q || String(x.n) === q || tr(x).includes(q) || low(x.about).includes(q) || tr(x).replace(/^[а-я]+-/, "").includes(q));
+  const list = NAMES.names.filter(x => !q || String(x.n) === q || tr(x).includes(q) || low(x.ru).includes(q) || tr(x).replace(/^[а-я]+-/, "").includes(q));
   const box = document.getElementById("names-list");
   box.innerHTML = list.map(x => `
     <button class="row name-row" data-n="${x.n}">
-      <span class="lbl"><span class="dua-num">${x.n}</span><span class="name-t"><b>${x.tr}</b><small>${x.about}</small></span></span>
+      <span class="lbl"><span class="dua-num">${x.n}</span><span class="name-t"><b>${x.tr}</b><small>${x.ru}</small></span></span>
       <span class="name-ar" lang="ar">${arabic(x.ar)}</span>
     </button>`).join("") || `<p class="dua-empty">Ничего не найдено</p>`;
 }
@@ -1640,8 +1637,8 @@ function openName(n) {
     <section class="name-hero">
       <p class="name-big" lang="ar">${arabic(x.ar)}</p>
       <h1>${x.tr}</h1>
-    </section>
-    <section class="name-card"><span class="name-label">Значение</span><p class="name-about">${x.about}</p></section>`;
+      <p class="name-mean">${x.ru}</p>
+    </section>`;
   document.getElementById("name-nav").innerHTML =
     (prev ? `<button class="prev" data-n="${prev.n}"><small>‹ Предыдущее</small>${prev.tr}</button>` : "<span></span>") +
     (next ? `<button class="next" data-n="${next.n}"><small>Следующее ›</small>${next.tr}</button>` : "<span></span>");

@@ -145,19 +145,19 @@ const section = name => console.log("•", name);
     const first = await m.evaluate(() => [NAMES.names[0].tr, NAMES.names[98].tr, NAMES.names.map(x => x.n).join(",") === Array.from({ length: 99 }, (_, i) => i + 1).join(",")]);
     check(first[0] === "Аллах" && first[1] === "Ас-Сабур" && first[2], "порядок имён не тот: " + JSON.stringify(first));
     await m.fill("#names-search", "мутаали"); await W(m, 200);
-    check((await m.locator("#names-list .name-row").count()) === 1, "поиск без апострофа («мутаали») не нашёл аль-Мутаʼали");
-    await m.fill("#names-search", "властелин"); await W(m, 200);
-    check((await m.locator("#names-list .name-row b").allInnerTexts()).includes("Аль-Малик"), "поиск по толкованию («властелин») не нашёл аль-Малика");
+    check((await m.locator("#names-list .name-row").count()) === 1, "поиск без апострофа («мутаали») не нашёл аль-Мута'али");
+    await m.fill("#names-search", "царь"); await W(m, 200);
+    check((await m.locator("#names-list .name-row b").allInnerTexts()).join() === "Аль-Малик", "поиск по переводу («царь») не нашёл аль-Малика");
     await m.fill("#names-search", "");
     await m.click('#names-list [data-n="4"]'); await W(m, 600);
-    const p4 = await m.evaluate(() => ({ pos: document.getElementById("name-pos").textContent, about: document.querySelector(".name-about")?.textContent,
-      extra: document.querySelectorAll(".name-open, .q-ar, .name-note, .name-hl").length }));
-    check(p4.pos === "4 из 99" && p4.about === "Абсолютный Властелин." && p4.extra === 0, "страница аль-Малика собрана не так: " + JSON.stringify(p4));
+    const p4 = await m.evaluate(() => ({ pos: document.getElementById("name-pos").textContent, tr: document.querySelector(".name-hero h1")?.textContent,
+      ru: document.querySelector(".name-mean")?.textContent, ar: !!document.querySelector(".name-big"), extra: document.querySelectorAll("#name-body .name-card, #name-body .q-ar").length }));
+    check(p4.pos === "4 из 99" && p4.tr === "Аль-Малик" && p4.ru === "Царь" && p4.ar && p4.extra === 0, "страница аль-Малика собрана не так: " + JSON.stringify(p4));
     await m.click("#name-nav .next"); await W(m, 400);
     check((await m.locator("#name-pos").innerText()) === "5 из 99", "«Следующее» не открыло 5-е имя");
     // у всех 99 имён есть толкование, ни одна страница не шире экрана
-    const empty = await m.evaluate(() => NAMES.names.filter(x => !x.about || x.about.length < 5).map(x => x.n));
-    check(empty.length === 0, "имена без толкования: " + empty);
+    const empty = await m.evaluate(() => NAMES.names.filter(x => !x.ru || !x.tr || !x.ar).map(x => x.n));
+    check(empty.length === 0, "имена без перевода или транскрипции: " + empty);
     for (const n of [1, 32, 57, 85, 99]) {
       await m.evaluate(n => openName(n), n); await W(m, 150);
       check(await m.evaluate(() => document.documentElement.scrollWidth) <= 390, `страница имени ${n} шире экрана`);
