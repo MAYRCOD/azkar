@@ -617,6 +617,35 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 @media (max-width: 359px) { .tab-item { font-size: 9.5px; letter-spacing: -.01em; } }   /* 5 подписей на узком экране (iPhone SE 1) */
 .tab-item[aria-selected="true"] { color: var(--accent-ink); }
 
+/* ---------- 99 имён Аллаха ---------- */
+#names, #name-read { overflow-y: auto; padding-block: 16px calc(32px + env(safe-area-inset-bottom, 0px)); gap: 16px; font-size: 15px; touch-action: pan-y; }
+#names h1 { font-size: 24px; }
+.names-tile { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }   /* «99» обычным шрифтом: арабские цифры шрифт Хафс рисует в кружке номера аята */
+.names-hadith { margin: 0; padding: 14px 16px; border-radius: 16px; background: var(--press); display: grid; gap: 6px; }
+.names-hadith blockquote { margin: 0; font-size: 15px; line-height: 1.5; }
+.names-hadith figcaption { font-size: 12.5px; color: var(--muted); }
+.name-row { min-height: 60px; }
+.name-row .name-t { display: grid; gap: 1px; min-width: 0; }
+.name-row .name-t small { color: var(--muted); font-size: 13px; }
+.name-row .name-ar { font-family: var(--f-quran); font-size: 26px; line-height: 1.5; color: var(--gold); flex: none; direction: rtl; }
+.names-demo { margin: 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+/* Страница имени: сверху имя крупно, ниже карточки «Значение» и «В Коране» */
+.name-body { display: grid; gap: 14px; }
+.name-hero { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 8px 0 6px; }
+.name-hero .name-num { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.name-hero .name-big { font-family: var(--f-quran); font-size: 64px; line-height: 1.6; color: var(--gold); margin: 0; direction: rtl; }
+.name-hero h1 { font-size: 26px; }
+.name-hero .name-mean { margin: 2px 0 0; font-size: 17px; color: var(--muted); }
+.name-card { display: grid; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow); }
+.name-label { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--gold); }
+.name-card p { margin: 0; line-height: 1.55; }
+.name-card .q-ar { font-family: var(--f-quran); font-size: calc(26px * var(--ar-k, 1)); line-height: 2.1; direction: rtl; text-align: right; }
+.name-card .name-ru { font-size: calc(15px * var(--tx-k, 1)); }
+.name-hl { color: var(--gold); }
+.name-open { justify-self: start; border: 0; background: none; padding: 4px 0 0; color: var(--accent-ink); font-size: 14px; font-weight: 600; }
+#name-read .q-nav { margin-top: 2px; }
+#name-read .q-nav span { flex: 1; }
+
 /* ---------- Коран ---------- */
 /* Шрифт мусхафа (KFGQPC Hafs v18) подгружается при первом открытии раздела — см. qFont() */
 :root { --f-quran: "QuranHafs", var(--f-arabic); --mh-ink: #2c5e3f; }   /* рамка заголовка суры */
@@ -893,6 +922,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
       <span class="lbl"><span class="tile tile-blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 6.4C9.3 4.9 6.6 4.1 3 4.1v14c3.5 0 6.2.8 8.1 2.3z"/><path d="M12.9 6.4c1.8-1.5 4.5-2.3 8.1-2.3v14c-3.5 0-6.2.8-8.1 2.3z"/></svg></span>Коран</span>
       <span class="value">114 сур</span>
     </button>
+    <button class="row" id="go-names">
+      <span class="lbl"><span class="tile tile-teal names-tile" aria-hidden="true">99</span>99 имён Аллаха</span>
+      <span class="value"></span>
+    </button>
   </div>
   <!-- Аят дня: свёрнут — перевод в три строки; нажал — раскрылся с арабским -->
   <button class="ayah-day" id="ayah-day" aria-expanded="false">
@@ -958,6 +991,28 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   <p class="dua-sub" id="dua-sub"></p>
   <div class="dua-cards" id="dua-cards"></div>
 </main>
+<!-- ===== 99 ИМЁН АЛЛАХА ===== -->
+<!-- Список имён. Нажал — страница имени: крупно по-арабски, значение, аят из Корана, соседние имена -->
+<main class="screen" id="names" hidden>
+  <div class="topbar"><button class="back" id="names-back">‹ Главная</button></div>
+  <h1>99 имён Аллаха</h1>
+  <figure class="names-hadith">
+    <blockquote id="names-hadith"></blockquote>
+    <figcaption id="names-hadith-src"></figcaption>
+  </figure>
+  <label class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="search" id="names-search" placeholder="Поиск: милостивый, рахман…" autocomplete="off" enterkeyhint="search">
+  </label>
+  <div class="rows" id="names-list"></div>
+  <p class="names-demo">Пример: 3 имени из 99. Значения — черновик, проверим перед публикацией.</p>
+</main>
+<main class="screen" id="name-read" hidden>
+  <div class="topbar"><button class="back" id="name-back">‹ Имена</button><span class="pos" id="name-pos"></span></div>
+  <div class="name-body" id="name-body"></div>
+  <nav class="q-nav" id="name-nav"></nav>
+</main>
+
 <!-- ===== КОРАН ===== -->
 <!-- Список сур. Нажал на суру — открывается её страница: аят за аятом, под каждым перевод -->
 <main class="screen" id="quran" hidden>
@@ -1217,6 +1272,7 @@ const ICONS = {
 };
 const az = id => AZKAR.find(z => z.id === id);
 const DUA_GROUPS = __DUA_JSON__;
+const NAMES = __NAMES_JSON__;   // 99 имён Аллаха (src/data/names.json)
 // Некоторые дуа — это те же суры и аяты, что в азкарах. Чтобы текст не хранился дважды,
 // в dua.json у них вместо текста ссылка: from — id азкаров (тексты склеиваются через sep,
 // по умолчанию пробел; транскрипция — всегда через пробел), from_ayah — ref аята дня.
@@ -1404,16 +1460,17 @@ function showScreen(id) {
   screen._enterTimer = setTimeout(() => screen.classList.remove("enter"), 900);
   // Нижняя панель уезжает в азкарах (там внизу счётчик), в Коране и в Дуа (со всеми их страницами).
   // Вернуться — кнопкой «‹ Главная» / «‹ Назад» вверху или смахиванием вправо
-  const tabbar = document.getElementById("tabbar"), away = ["reader", "duas", "dua-read", "quran", "quran-read"].includes(id);
+  const tabbar = document.getElementById("tabbar"), away = ["reader", "duas", "dua-read", "quran", "quran-read", "names", "name-read"].includes(id);
   tabbar.classList.toggle("away", away);
   document.getElementById("tab-veil").classList.toggle("away", away);
   if (id === "home") updateHome();
   if (id === "duas") renderDuas();
   if (id === "quran") renderQuran();
+  if (id === "names") renderNames();
   document.getElementById("toast").classList.remove("show");   // подсказка не переезжает на другой экран
   // чтение азкаров относится к «Главной», страница темы дуа — к «Дуа»
   // Дуа и Коран теперь открываются с главной — в панели подсвечена «Главная»
-  const tab = ["reader", "duas", "dua-read", "quran", "quran-read"].includes(id) ? "home" : id;
+  const tab = ["reader", "duas", "dua-read", "quran", "quran-read", "names", "name-read"].includes(id) ? "home" : id;
   tabbar.dataset.active = tab;   // по этому атрибуту подложка переезжает на нужную вкладку
   document.querySelectorAll(".tab-item").forEach(t =>
     t.setAttribute("aria-selected", t.dataset.screen === tab ? "true" : "false"));
@@ -1559,6 +1616,60 @@ document.getElementById("size-reset").addEventListener("click", () => {
 });
 
 /* ================================================================
+   99 ИМЁН АЛЛАХА: список с поиском → страница имени
+   ================================================================ */
+document.getElementById("names-hadith").textContent = "«" + NAMES.hadith.ru + "»";
+document.getElementById("names-hadith-src").textContent = NAMES.hadith.src;
+function renderNames() {
+  qFont();   // имена и аяты — шрифтом мусхафа, как в «Коране»
+  const q = low(document.getElementById("names-search").value.trim());
+  const list = NAMES.names.filter(x => !q || String(x.n) === q || low(x.tr).includes(q) || low(x.ru).includes(q) || low(x.tr).replace(/^[а-я]+-/, "").includes(q));
+  const box = document.getElementById("names-list");
+  box.innerHTML = list.map(x => `
+    <button class="row name-row" data-n="${x.n}">
+      <span class="lbl"><span class="dua-num">${x.n}</span><span class="name-t"><b>${x.tr}</b><small>${x.ru}</small></span></span>
+      <span class="name-ar" lang="ar">${x.ar}</span>
+    </button>`).join("") || `<p class="dua-empty">Ничего не найдено</p>`;
+  box.hidden = false;
+}
+document.getElementById("names-search").addEventListener("input", renderNames);
+document.getElementById("names-search").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+document.getElementById("names-list").addEventListener("click", e => { const r = e.target.closest("[data-n]"); if (r) openName(+r.dataset.n); });
+// Само имя в аяте выделяем золотым. Сравниваем буквы без огласовок, без «аль-» в начале
+// и без «алифа» в конце: «ٱلرَّحۡمَٰنِ» в аяте = «ٱلرَّحۡمَٰنُ» в списке, «رَحِيمٗا» = «ٱلرَّحِيمُ»
+function nameInAyah(ayah, name) {
+  const bare = w => w.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "").replace(/^[وفب]?[اٱ]ل/, "").replace(/ا$/, "");
+  const key = bare(name);
+  return ayah.replace(/[^\s\u00A0]+/g, w => bare(w) === key ? `<span class="name-hl">${w}</span>` : w);   // номер аята стоит через неразрывный пробел
+}
+function openName(n) {
+  qFont();
+  const i = NAMES.names.findIndex(x => x.n === n), x = NAMES.names[i], prev = NAMES.names[i - 1], next = NAMES.names[i + 1], A = x.ayah;
+  document.getElementById("name-pos").textContent = `${x.n} из 99`;
+  document.getElementById("name-body").innerHTML = `
+    <section class="name-hero">
+      <p class="name-big" lang="ar">${x.ar}</p>
+      <h1>${x.tr}</h1>
+      <p class="name-mean">${x.ru}</p>
+    </section>
+    <section class="name-card"><span class="name-label">Значение</span><p>${x.about}</p></section>
+    <section class="name-card"><span class="name-label">В Коране</span>
+      <p class="q-ar" lang="ar">${nameInAyah(A.ar, x.ar)}</p>
+      <p class="name-ru">${A.ru}</p>
+      <button class="name-open" data-s="${A.s}" data-a="${A.a}">Сура ${A.sura}, ${A.a} — открыть ›</button>
+    </section>`;
+  document.getElementById("name-nav").innerHTML =
+    (prev ? `<button class="prev" data-n="${prev.n}"><small>‹ Предыдущее</small>${prev.tr}</button>` : "<span></span>") +
+    (next ? `<button class="next" data-n="${next.n}"><small>Следующее ›</small>${next.tr}</button>` : "<span></span>");
+  if (document.getElementById("name-read").hidden) showScreen("name-read");
+  else document.getElementById("name-read").scrollTop = 0;
+}
+document.getElementById("name-nav").addEventListener("click", e => { const b = e.target.closest("[data-n]"); if (b) { haptic("tap"); openName(+b.dataset.n); } });
+document.getElementById("name-body").addEventListener("click", e => { const b = e.target.closest(".name-open"); if (b) openSurah(+b.dataset.s, +b.dataset.a); });
+document.getElementById("names-back").addEventListener("click", () => showScreen("home"));
+document.getElementById("name-back").addEventListener("click", () => showScreen("names"));
+
+/* ================================================================
    3. ВЫБОР: утренние или вечерние
    ================================================================ */
 function openTime(t) {
@@ -1582,6 +1693,7 @@ function openTime(t) {
 for (const el of document.querySelectorAll(".hero, .home-rows .row[data-time]")) el.addEventListener("click", () => openTime(el.dataset.time));
 document.getElementById("go-duas").addEventListener("click", () => showScreen("duas"));
 document.getElementById("go-quran").addEventListener("click", () => showScreen("quran"));
+document.getElementById("go-names").addEventListener("click", () => showScreen("names"));
 document.getElementById("duas-back").addEventListener("click", () => showScreen("home"));
 document.getElementById("quran-back").addEventListener("click", () => showScreen("home"));
 document.getElementById("back").addEventListener("click", () => showScreen("home"));
@@ -2842,6 +2954,8 @@ swipeBack("quran-read", "quran", () => qMode === "mushaf");   // в мусхаф
 swipeBack("quran", "home");
 swipeBack("duas", "home");
 swipeBack("dua-read", "duas");
+swipeBack("names", "home");
+swipeBack("name-read", "names");
 
 // Где остановился: первый аят, который сейчас виден вверху экрана. Запоминаем при прокрутке
 function saveQLast() {

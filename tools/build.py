@@ -42,6 +42,7 @@ DATA = {
     "__AZKAR_JSON__": SRC / "data" / "azkar.json",
     "__AYAT_JSON__": SRC / "data" / "ayat.json",
     "__DUA_JSON__": SRC / "data" / "dua.json",
+    "__NAMES_JSON__": SRC / "data" / "names.json",
 }
 
 # Раздел «Коран»: данные (их готовит tools/make_quran.py) и шрифт Мединского мусхафа (KFGQPC Hafs v18)
