@@ -8,19 +8,23 @@ ROOT = pathlib.Path(__file__).resolve().parent / "names-src"
 RAW = ROOT / "raw"; RAW.mkdir(parents=True, exist_ok=True)
 UA = {"User-Agent": "Mozilla/5.0 (azkar app; contact via github MAYRCOD)", "Accept": "application/json, text/html"}
 
-def get(url, tries=4):
+LOG = []
+def get(url, tries=4, must=True):
     for i in range(tries):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=40) as r:
                 return r.read()
         except Exception as e:
             print("  повтор", i + 1, url, e); time.sleep(2 + 3 * i)
-    raise SystemExit("не скачалось: " + url)
+    LOG.append("не скачалось: " + url)
+    if must: raise SystemExit("не скачалось: " + url)
+    return None
 
 (RAW / "tirmidhi-3507.html").write_bytes(get("https://sunnah.com/tirmidhi:3507"))
 # хадисы для имён, которых нет в Коране: аль-Мукаддим/аль-Муаххир (1120), аль-Мани' (844), ас-Сабур (6099)
 for h in ["bukhari:1120", "bukhari:844", "bukhari:6099", "muslim:771a", "muslim:2804"]:
-    (RAW / (h.replace(":", "-") + ".html")).write_bytes(get("https://sunnah.com/" + h))
+    b = get("https://sunnah.com/" + h, must=False)
+    if b: (RAW / (h.replace(":", "-") + ".html")).write_bytes(b)
 res = json.loads(get("https://api.quran.com/api/v4/resources/tafsirs"))
 (RAW / "tafsirs.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
 ru = [t for t in res["tafsirs"] if t.get("language_name", "").lower() == "russian" or "ru-" in t.get("slug", "")]
@@ -45,10 +49,13 @@ for tid in (170, 91):
     for ch in range(1, 115):
         page = 1
         while True:
-            r = json.loads(get(f"https://api.quran.com/api/v4/tafsirs/{tid}/by_chapter/{ch}?per_page=50&page={page}"))
+            b = get(f"https://api.quran.com/api/v4/tafsirs/{tid}/by_chapter/{ch}?per_page=50&page={page}", must=False)
+            if not b: break
+            r = json.loads(b)
             for t in r.get("tafsirs", []): full[t.get("verse_key") or f"{ch}:?{len(full)}"] = t.get("text", "")
             nxt = (r.get("pagination") or {}).get("next_page")
             if not nxt: break
             page = nxt; time.sleep(0.2)
         print("тафсир", tid, "сура", ch, len(full))
     (RAW / f"saadi-{tid}-full.json").write_text(json.dumps(full, ensure_ascii=False), encoding="utf-8")
+(RAW / "log.txt").write_text("\n".join(LOG) or "без ошибок", encoding="utf-8")
