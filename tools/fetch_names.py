@@ -18,6 +18,9 @@ def get(url, tries=4):
     raise SystemExit("не скачалось: " + url)
 
 (RAW / "tirmidhi-3507.html").write_bytes(get("https://sunnah.com/tirmidhi:3507"))
+# хадисы для имён, которых нет в Коране: аль-Мукаддим/аль-Муаххир (1120), аль-Мани' (844), ас-Сабур (6099)
+for h in ["bukhari:1120", "bukhari:844", "bukhari:6099", "muslim:771a", "muslim:2804"]:
+    (RAW / (h.replace(":", "-") + ".html")).write_bytes(get("https://sunnah.com/" + h))
 res = json.loads(get("https://api.quran.com/api/v4/resources/tafsirs"))
 (RAW / "tafsirs.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
 ru = [t for t in res["tafsirs"] if t.get("language_name", "").lower() == "russian" or "ru-" in t.get("slug", "")]
@@ -34,3 +37,18 @@ for k in keys:
     time.sleep(0.4)
 (RAW / "saadi-kuliev.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 print("готово:", len(keys), "аятов")
+
+# Весь тафсир ас-Саади (русский 170 и арабский 91) — по сурам: в русском переводе толкование сокращено,
+# поэтому объяснение имени ищем по всему тексту, а не только в одном аяте
+for tid in (170, 91):
+    full = {}
+    for ch in range(1, 115):
+        page = 1
+        while True:
+            r = json.loads(get(f"https://api.quran.com/api/v4/tafsirs/{tid}/by_chapter/{ch}?per_page=50&page={page}"))
+            for t in r.get("tafsirs", []): full[t.get("verse_key") or f"{ch}:?{len(full)}"] = t.get("text", "")
+            nxt = (r.get("pagination") or {}).get("next_page")
+            if not nxt: break
+            page = nxt; time.sleep(0.2)
+        print("тафсир", tid, "сура", ch, len(full))
+    (RAW / f"saadi-{tid}-full.json").write_text(json.dumps(full, ensure_ascii=False), encoding="utf-8")
