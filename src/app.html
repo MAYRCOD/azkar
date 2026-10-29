@@ -618,6 +618,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .tab-item[aria-selected="true"] { color: var(--accent-ink); }
 
 /* ---------- 99 имён Аллаха ---------- */
+/* Арабский здесь без класса .ar: его прячет настройка «без арабского» в азкарах, а имена должны быть видны всегда */
 #names, #name-read { overflow-y: auto; padding-block: 16px calc(32px + env(safe-area-inset-bottom, 0px)); gap: 16px; font-size: 15px; touch-action: pan-y; }
 #names h1 { font-size: 24px; }
 .names-tile { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }   /* «99» обычным шрифтом: арабские цифры шрифт Хафс рисует в кружке номера аята */
@@ -627,13 +628,13 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .name-row { min-height: 60px; }
 .name-row .name-t { display: grid; gap: 1px; min-width: 0; }
 .name-row .name-t small { color: var(--muted); font-size: 13px; }
-.name-row .name-ar { font-family: var(--f-quran); font-size: 26px; line-height: 1.5; color: var(--gold); flex: none; direction: rtl; }
-.names-demo { margin: 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+.name-row .name-ar { font-family: var(--f-arabic); font-size: 24px; line-height: 1.6; color: var(--gold); flex: none; direction: rtl; white-space: nowrap; }
+.names-foot { margin: 0; padding-inline: 4px; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
 /* Страница имени: сверху имя крупно, ниже карточки «Значение» и «В Коране» */
 .name-body { display: grid; gap: 14px; }
 .name-hero { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 8px 0 6px; }
 .name-hero .name-num { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.name-hero .name-big { font-family: var(--f-quran); font-size: 64px; line-height: 1.6; color: var(--gold); margin: 0; direction: rtl; }
+.name-hero .name-big { font-family: var(--f-arabic); font-size: clamp(44px, 14vw, 60px); line-height: 1.7; color: var(--gold); margin: 0; direction: rtl; text-align: center; }
 .name-hero h1 { font-size: 26px; }
 .name-hero .name-mean { margin: 2px 0 0; font-size: 17px; color: var(--muted); }
 .name-card { display: grid; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow); }
@@ -642,6 +643,9 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .name-card .q-ar { font-family: var(--f-quran); font-size: calc(26px * var(--ar-k, 1)); line-height: 2.1; direction: rtl; text-align: right; }
 .name-card .name-ru { font-size: calc(15px * var(--tx-k, 1)); }
 .name-hl { color: var(--gold); }
+.name-src { font-size: 12.5px; color: var(--muted); }
+.name-note { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--press); font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+.name-had-ar { margin: 0; font-family: var(--f-arabic); font-size: calc(23px * var(--ar-k, 1)); line-height: 1.9; direction: rtl; text-align: right; }
 .name-open { justify-self: start; border: 0; background: none; padding: 4px 0 0; color: var(--accent-ink); font-size: 14px; font-weight: 600; }
 #name-read .q-nav { margin-top: 2px; }
 #name-read .q-nav span { flex: 1; }
@@ -1005,7 +1009,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
     <input type="search" id="names-search" placeholder="Поиск: милостивый, рахман…" autocomplete="off" enterkeyhint="search">
   </label>
   <div class="rows" id="names-list"></div>
-  <p class="names-demo">Пример: 3 имени из 99. Значения — черновик, проверим перед публикацией.</p>
+  <p class="names-foot" id="names-foot"></p>
 </main>
 <main class="screen" id="name-read" hidden>
   <div class="topbar"><button class="back" id="name-back">‹ Имена</button><span class="pos" id="name-pos"></span></div>
@@ -1620,44 +1624,48 @@ document.getElementById("size-reset").addEventListener("click", () => {
    ================================================================ */
 document.getElementById("names-hadith").textContent = "«" + NAMES.hadith.ru + "»";
 document.getElementById("names-hadith-src").textContent = NAMES.hadith.src;
+document.getElementById("names-foot").textContent = NAMES.list + " Значения — по переводу смыслов Корана Э. Кулиева, толкования — по тафсиру ас-Саади.";
 function renderNames() {
-  qFont();   // имена и аяты — шрифтом мусхафа, как в «Коране»
-  const q = low(document.getElementById("names-search").value.trim());
-  const list = NAMES.names.filter(x => !q || String(x.n) === q || low(x.tr).includes(q) || low(x.ru).includes(q) || low(x.tr).replace(/^[а-я]+-/, "").includes(q));
+  const q = low(document.getElementById("names-search").value.trim()).replace(/['’]/g, "");
+  const tr = x => low(x.tr).replace(/['’]/g, "");
+  const list = NAMES.names.filter(x => !q || String(x.n) === q || tr(x).includes(q) || low(x.ru).includes(q) || tr(x).replace(/^[а-я]+-/, "").includes(q));
   const box = document.getElementById("names-list");
   box.innerHTML = list.map(x => `
     <button class="row name-row" data-n="${x.n}">
       <span class="lbl"><span class="dua-num">${x.n}</span><span class="name-t"><b>${x.tr}</b><small>${x.ru}</small></span></span>
-      <span class="name-ar" lang="ar">${x.ar}</span>
+      <span class="name-ar" lang="ar">${arabic(x.ar)}</span>
     </button>`).join("") || `<p class="dua-empty">Ничего не найдено</p>`;
-  box.hidden = false;
 }
 document.getElementById("names-search").addEventListener("input", renderNames);
 document.getElementById("names-search").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
 document.getElementById("names-list").addEventListener("click", e => { const r = e.target.closest("[data-n]"); if (r) openName(+r.dataset.n); });
-// Само имя в аяте выделяем золотым. Сравниваем буквы без огласовок, без «аль-» в начале
-// и без «алифа» в конце: «ٱلرَّحۡمَٰنِ» в аяте = «ٱلرَّحۡمَٰنُ» в списке, «رَحِيمٗا» = «ٱلرَّحِيمُ»
-function nameInAyah(ayah, name) {
-  const bare = w => w.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "").replace(/^[وفب]?[اٱ]ل/, "").replace(/ا$/, "");
-  const key = bare(name);
-  return ayah.replace(/[^\s\u00A0]+/g, w => bare(w) === key ? `<span class="name-hl">${w}</span>` : w);   // номер аята стоит через неразрывный пробел
+// Имя в аяте выделяем золотым: номера нужных слов заранее посчитал tools/make_names.py (поле hl)
+function ayahWithName(A) {
+  let i = -1;
+  return A.ar.replace(/[^ \u00A0]+/g, w => (++i, A.hl.includes(i) ? `<span class="name-hl">${w}</span>` : w));   // слова — как в make_names.py: пробел и неразрывный пробел
 }
 function openName(n) {
-  qFont();
-  const i = NAMES.names.findIndex(x => x.n === n), x = NAMES.names[i], prev = NAMES.names[i - 1], next = NAMES.names[i + 1], A = x.ayah;
+  qFont();   // аят — шрифтом мусхафа, как в «Коране»
+  const i = NAMES.names.findIndex(x => x.n === n), x = NAMES.names[i], prev = NAMES.names[i - 1], next = NAMES.names[i + 1], A = x.ayah, H = x.hadith;
   document.getElementById("name-pos").textContent = `${x.n} из 99`;
+  const src = x.src && `Ас-Саади, толкование ${x.src.replace(":", ":")}${x.kind === "t" ? " · перевод с арабского" : " · перевод Э. Кулиева"}`;
   document.getElementById("name-body").innerHTML = `
     <section class="name-hero">
-      <p class="name-big" lang="ar">${x.ar}</p>
+      <p class="name-big" lang="ar">${arabic(x.ar)}</p>
       <h1>${x.tr}</h1>
       <p class="name-mean">${x.ru}</p>
     </section>
-    <section class="name-card"><span class="name-label">Значение</span><p>${x.about}</p></section>
-    <section class="name-card"><span class="name-label">В Коране</span>
-      <p class="q-ar" lang="ar">${nameInAyah(A.ar, x.ar)}</p>
+    ${x.about ? `<section class="name-card"><span class="name-label">Толкование</span><p>${x.about}</p><span class="name-src">${src}</span></section>` : ""}
+    ${x.note ? `<p class="name-note">${x.note}</p>` : ""}
+    ${A ? `<section class="name-card"><span class="name-label">В Коране</span>
+      <p class="q-ar" lang="ar">${ayahWithName(A)}</p>
       <p class="name-ru">${A.ru}</p>
       <button class="name-open" data-s="${A.s}" data-a="${A.a}">Сура ${A.sura}, ${A.a} — открыть ›</button>
-    </section>`;
+    </section>` : ""}
+    ${H ? `<section class="name-card"><span class="name-label">В хадисе</span>
+      <p class="name-had-ar" lang="ar">${arabic(H.ar)}</p>
+      <p class="name-ru">${H.ru}</p><span class="name-src">${H.src}</span>
+    </section>` : ""}`;
   document.getElementById("name-nav").innerHTML =
     (prev ? `<button class="prev" data-n="${prev.n}"><small>‹ Предыдущее</small>${prev.tr}</button>` : "<span></span>") +
     (next ? `<button class="next" data-n="${next.n}"><small>Следующее ›</small>${next.tr}</button>` : "<span></span>");

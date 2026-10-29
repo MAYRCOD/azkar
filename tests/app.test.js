@@ -128,6 +128,45 @@ const section = name => console.log("•", name);
     await ctx.close();
   }
 
+  section("99 имён Аллаха: список, поиск, страница имени, аят с выделенным именем, хадис, «назад»");
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 780 } });
+    const m = await ctx.newPage(); m.on("pageerror", e => errs.push(e.message));
+    await m.goto(URL); await W(m, 400);
+    await m.click("#go-names"); await W(m, 600);
+    check(await m.locator("#names").isVisible() && await m.evaluate(() => document.getElementById("tabbar").classList.contains("away")), "раздел имён не открылся или панель не спряталась");
+    check((await m.locator("#names-list .name-row").count()) === 99, "в списке не 99 имён");
+    const first = await m.evaluate(() => [NAMES.names[0].tr, NAMES.names[98].tr, NAMES.names.map(x => x.n).join(",") === Array.from({ length: 99 }, (_, i) => i + 1).join(",")]);
+    check(first[0] === "Аллах" && first[1] === "Ас-Сабур" && first[2], "порядок имён не тот: " + JSON.stringify(first));
+    await m.fill("#names-search", "мутаали"); await W(m, 200);
+    check((await m.locator("#names-list .name-row").count()) === 1, "поиск без апострофа («мутаали») не нашёл аль-Мута'али");
+    await m.fill("#names-search", "царь"); await W(m, 200);
+    check((await m.locator("#names-list .name-row b").allInnerTexts()).join() === "Аль-Малик", "поиск по значению («царь») не нашёл аль-Малика");
+    await m.fill("#names-search", "");
+    await m.click('#names-list [data-n="7"]'); await W(m, 600);
+    const p7 = await m.evaluate(() => ({ pos: document.getElementById("name-pos").textContent, hl: [...document.querySelectorAll(".name-hl")].map(e => e.textContent), src: document.querySelector(".name-src")?.textContent, note: !!document.querySelector(".name-note") }));
+    check(p7.pos === "7 из 99" && p7.hl.length === 1 && /ٱلۡمُؤۡمِنُ/.test(p7.hl[0]) && /59:23/.test(p7.src) && p7.note, "страница аль-Му'мина собрана не так: " + JSON.stringify(p7));
+    await m.click("#name-nav .next"); await W(m, 400);
+    check((await m.locator("#name-pos").innerText()) === "8 из 99", "«Следующее» не открыло 8-е имя");
+    await m.evaluate(() => openName(99)); await W(m, 400);
+    check(await m.locator(".name-had-ar").isVisible() && !(await m.locator(".name-open").count()) && !(await m.locator("#name-nav .next").count()), "у ас-Сабура нет хадиса или лишние кнопки");
+    // у всех имён с аятом выделено хотя бы одно слово, и ни одна страница не шире экрана
+    const all = await m.evaluate(() => NAMES.names.filter(x => x.ayah && !x.ayah.hl.length).map(x => x.n));
+    check(all.length === 0, "имена без выделенного слова в аяте: " + all);
+    await m.evaluate(() => openName(84)); await W(m, 300);
+    check(await m.evaluate(() => document.documentElement.scrollWidth) <= 390, "страница имени шире экрана");
+    await m.evaluate(() => openName(2)); await W(m, 300);
+    await m.click(".name-open"); await W(m, 1200);
+    check(await m.locator("#quran-read").isVisible() && await m.evaluate(() => qOpen) === 1, "кнопка «открыть» не открыла суру аль-Фатиха");
+    // арабский в именах виден, даже если в настройках азкаров выключен арабский
+    await m.evaluate(() => { document.body.classList.add("no-ar"); openName(1); }); await W(m, 300);
+    check(await m.locator(".name-big").isVisible(), "имя пропало при выключенном арабском в азкарах");
+    await m.evaluate(() => document.body.classList.remove("no-ar"));
+    await m.click("#name-back"); await W(m, 300); await m.click("#names-back"); await W(m, 300);
+    check(await m.locator("#home").isVisible() && !(await m.evaluate(() => document.getElementById("tabbar").classList.contains("away"))), "«‹ Главная» из имён не вернула на главную с панелью");
+    await ctx.close();
+  }
+
   section("Основные и полные: переключатель, число азкаров, чтение, отметка «прочитано», сохранение");
   {
     check(await p.locator("#set-switch").isVisible(), "нет переключателя «Основные | Полные»");
