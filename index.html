@@ -640,6 +640,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 /* ---------- 99 имён Аллаха ---------- */
 /* Арабский здесь без класса .ar: его прячет настройка «без арабского» в азкарах, а имена должны быть видны всегда */
 #names, #name-read { overflow-y: auto; padding-block: 16px calc(32px + env(safe-area-inset-bottom, 0px)); gap: 16px; font-size: 15px; touch-action: pan-y; }
+#names > *, #name-read > * { flex-shrink: 0; }   /* как на главной: иначе в колонке с прокруткой список сжимается до высоты экрана и не листается */
 #names h1 { font-size: 24px; }
 .names-tile { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }   /* «99» обычным шрифтом: арабские цифры шрифт Хафс рисует в кружке номера аята */
 .names-hadith { margin: 0; padding: 14px 16px; border-radius: 16px; background: var(--press); display: grid; gap: 6px; }

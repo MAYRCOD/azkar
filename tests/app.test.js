@@ -136,6 +136,12 @@ const section = name => console.log("•", name);
     await m.click("#go-names"); await W(m, 600);
     check(await m.locator("#names").isVisible() && await m.evaluate(() => document.getElementById("tabbar").classList.contains("away")), "раздел имён не открылся или панель не спряталась");
     check((await m.locator("#names-list .name-row").count()) === 99, "в списке не 99 имён");
+    // список не сжат до высоты экрана (иначе его не пролистать) и доходит до 99-го имени
+    const sc = await m.evaluate(() => { const e = document.getElementById("names"), l = document.getElementById("names-list");
+      const ok = l.getBoundingClientRect().height >= l.scrollHeight - 1; e.scrollTop = e.scrollHeight;
+      const last = [...l.querySelectorAll(".name-row")].pop().getBoundingClientRect(); return { ok, max: e.scrollHeight - e.clientHeight, lastVisible: last.bottom <= innerHeight }; });
+    check(sc.ok && sc.max > 3000 && sc.lastVisible, "список имён не листается до конца: " + JSON.stringify(sc));
+    await m.evaluate(() => document.getElementById("names").scrollTop = 0);
     const first = await m.evaluate(() => [NAMES.names[0].tr, NAMES.names[98].tr, NAMES.names.map(x => x.n).join(",") === Array.from({ length: 99 }, (_, i) => i + 1).join(",")]);
     check(first[0] === "Аллах" && first[1] === "Ас-Сабур" && first[2], "порядок имён не тот: " + JSON.stringify(first));
     await m.fill("#names-search", "мутаали"); await W(m, 200);
