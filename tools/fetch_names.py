@@ -1,6 +1,6 @@
 """Скачивает исходники для раздела «99 имён Аллаха» (запускается на GitHub: из среды Claude эти сайты недоступны).
 - sunnah.com: ат-Тирмизи 3507 — сам список 99 имён (страница целиком, разбираем потом);
-- quran.com: толкование ас-Саади на русском и перевод Кулиева (id 45) для аятов из tools/names-src/ayahs.txt.
+- quran.com: толкование ас-Саади на русском (и арабский оригинал — для сверки) и перевод Кулиева (id 45) для аятов из tools/names-src/ayahs.txt.
 Всё кладём как есть в tools/names-src/raw/, ничего не правим."""
 import json, pathlib, time, urllib.request
 
@@ -28,7 +28,8 @@ out = {"tafsir": saadi, "ayahs": {}}
 for k in keys:
     t = json.loads(get(f"https://api.quran.com/api/v4/tafsirs/{saadi['id']}/by_ayah/{k}"))
     tr = json.loads(get(f"https://api.quran.com/api/v4/quran/translations/45?verse_key={k}"))
-    out["ayahs"][k] = {"saadi": t.get("tafsir", t), "kuliev": tr}
+    ar = json.loads(get(f"https://api.quran.com/api/v4/tafsirs/91/by_ayah/{k}"))   # ас-Саади по-арабски — сверять русский перевод
+    out["ayahs"][k] = {"saadi": t.get("tafsir", t), "saadi_ar": ar.get("tafsir", ar), "kuliev": tr}
     print(k, len(json.dumps(t, ensure_ascii=False)))
     time.sleep(0.4)
 (RAW / "saadi-kuliev.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
