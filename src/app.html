@@ -628,7 +628,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .names-hadith figcaption { font-size: 12.5px; color: var(--muted); }
 .name-row { min-height: 60px; }
 .name-row .name-t { display: grid; gap: 1px; min-width: 0; }
-.name-row .name-t small { color: var(--muted); font-size: 13px; }
+.name-row .name-t small { color: var(--muted); font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }   /* толкование в списке — не длиннее двух строк */
 .name-row .name-ar { font-family: var(--f-arabic); font-size: 24px; line-height: 1.6; color: var(--gold); flex: none; direction: rtl; white-space: nowrap; }
 .names-foot { margin: 0; padding-inline: 4px; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
 /* Страница имени: сверху имя крупно, ниже карточки «Значение» и «В Коране» */
@@ -637,17 +637,10 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
 .name-hero .name-num { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .name-hero .name-big { font-family: var(--f-arabic); font-size: clamp(44px, 14vw, 60px); line-height: 1.7; color: var(--gold); margin: 0; direction: rtl; text-align: center; }
 .name-hero h1 { font-size: 26px; }
-.name-hero .name-mean { margin: 2px 0 0; font-size: 17px; color: var(--muted); }
 .name-card { display: grid; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow); }
 .name-label { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--gold); }
 .name-card p { margin: 0; line-height: 1.55; }
-.name-card .q-ar { font-family: var(--f-quran); font-size: calc(26px * var(--ar-k, 1)); line-height: 2.1; direction: rtl; text-align: right; }
-.name-card .name-ru { font-size: calc(15px * var(--tx-k, 1)); }
-.name-hl { color: var(--gold); }
-.name-src { font-size: 12.5px; color: var(--muted); }
-.name-note { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--press); font-size: 13.5px; line-height: 1.5; color: var(--muted); }
-.name-had-ar { margin: 0; font-family: var(--f-arabic); font-size: calc(23px * var(--ar-k, 1)); line-height: 1.9; direction: rtl; text-align: right; }
-.name-open { justify-self: start; border: 0; background: none; padding: 4px 0 0; color: var(--accent-ink); font-size: 14px; font-weight: 600; }
+.name-about { font-size: calc(17px * var(--tx-k, 1)); }
 #name-read .q-nav { margin-top: 2px; }
 #name-read .q-nav span { flex: 1; }
 
@@ -1007,7 +1000,7 @@ body.no-ar .divider, body.no-ru.no-tr .divider { display: none; }
   </figure>
   <label class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <input type="search" id="names-search" placeholder="Поиск: милостивый, рахман…" autocomplete="off" enterkeyhint="search">
+    <input type="search" id="names-search" placeholder="Поиск: рахман, милость…" autocomplete="off" enterkeyhint="search">
   </label>
   <div class="rows" id="names-list"></div>
   <p class="names-foot" id="names-foot"></p>
@@ -1625,48 +1618,30 @@ document.getElementById("size-reset").addEventListener("click", () => {
    ================================================================ */
 document.getElementById("names-hadith").textContent = "«" + NAMES.hadith.ru + "»";
 document.getElementById("names-hadith-src").textContent = NAMES.hadith.src;
-document.getElementById("names-foot").textContent = NAMES.list + " Значения — по переводу смыслов Корана Э. Кулиева, толкования — по тафсиру ас-Саади.";
+document.getElementById("names-foot").textContent = NAMES.source;
 function renderNames() {
-  const q = low(document.getElementById("names-search").value.trim()).replace(/['’]/g, "");
-  const tr = x => low(x.tr).replace(/['’]/g, "");
-  const list = NAMES.names.filter(x => !q || String(x.n) === q || tr(x).includes(q) || low(x.ru).includes(q) || tr(x).replace(/^[а-я]+-/, "").includes(q));
+  const q = low(document.getElementById("names-search").value.trim()).replace(/['’ʼ]/g, "");
+  const tr = x => low(x.tr).replace(/['’ʼ]/g, "");
+  const list = NAMES.names.filter(x => !q || String(x.n) === q || tr(x).includes(q) || low(x.about).includes(q) || tr(x).replace(/^[а-я]+-/, "").includes(q));
   const box = document.getElementById("names-list");
   box.innerHTML = list.map(x => `
     <button class="row name-row" data-n="${x.n}">
-      <span class="lbl"><span class="dua-num">${x.n}</span><span class="name-t"><b>${x.tr}</b><small>${x.ru}</small></span></span>
+      <span class="lbl"><span class="dua-num">${x.n}</span><span class="name-t"><b>${x.tr}</b><small>${x.about}</small></span></span>
       <span class="name-ar" lang="ar">${arabic(x.ar)}</span>
     </button>`).join("") || `<p class="dua-empty">Ничего не найдено</p>`;
 }
 document.getElementById("names-search").addEventListener("input", renderNames);
 document.getElementById("names-search").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
 document.getElementById("names-list").addEventListener("click", e => { const r = e.target.closest("[data-n]"); if (r) openName(+r.dataset.n); });
-// Имя в аяте выделяем золотым: номера нужных слов заранее посчитал tools/make_names.py (поле hl)
-function ayahWithName(A) {
-  let i = -1;
-  return A.ar.replace(/[^ \u00A0]+/g, w => (++i, A.hl.includes(i) ? `<span class="name-hl">${w}</span>` : w));   // слова — как в make_names.py: пробел и неразрывный пробел
-}
 function openName(n) {
-  qFont();   // аят — шрифтом мусхафа, как в «Коране»
-  const i = NAMES.names.findIndex(x => x.n === n), x = NAMES.names[i], prev = NAMES.names[i - 1], next = NAMES.names[i + 1], A = x.ayah, H = x.hadith;
+  const i = NAMES.names.findIndex(x => x.n === n), x = NAMES.names[i], prev = NAMES.names[i - 1], next = NAMES.names[i + 1];
   document.getElementById("name-pos").textContent = `${x.n} из 99`;
-  const src = x.src && `Ас-Саади, толкование ${x.src.replace(":", ":")}${x.kind === "t" ? " · перевод с арабского" : " · перевод Э. Кулиева"}`;
   document.getElementById("name-body").innerHTML = `
     <section class="name-hero">
       <p class="name-big" lang="ar">${arabic(x.ar)}</p>
       <h1>${x.tr}</h1>
-      <p class="name-mean">${x.ru}</p>
     </section>
-    ${x.about ? `<section class="name-card"><span class="name-label">Толкование</span><p>${x.about}</p><span class="name-src">${src}</span></section>` : ""}
-    ${x.note ? `<p class="name-note">${x.note}</p>` : ""}
-    ${A ? `<section class="name-card"><span class="name-label">В Коране</span>
-      <p class="q-ar" lang="ar">${ayahWithName(A)}</p>
-      <p class="name-ru">${A.ru}</p>
-      <button class="name-open" data-s="${A.s}" data-a="${A.a}">Сура ${A.sura}, ${A.a} — открыть ›</button>
-    </section>` : ""}
-    ${H ? `<section class="name-card"><span class="name-label">В хадисе</span>
-      <p class="name-had-ar" lang="ar">${arabic(H.ar)}</p>
-      <p class="name-ru">${H.ru}</p><span class="name-src">${H.src}</span>
-    </section>` : ""}`;
+    <section class="name-card"><span class="name-label">Значение</span><p class="name-about">${x.about}</p></section>`;
   document.getElementById("name-nav").innerHTML =
     (prev ? `<button class="prev" data-n="${prev.n}"><small>‹ Предыдущее</small>${prev.tr}</button>` : "<span></span>") +
     (next ? `<button class="next" data-n="${next.n}"><small>Следующее ›</small>${next.tr}</button>` : "<span></span>");
@@ -1674,7 +1649,6 @@ function openName(n) {
   else document.getElementById("name-read").scrollTop = 0;
 }
 document.getElementById("name-nav").addEventListener("click", e => { const b = e.target.closest("[data-n]"); if (b) { haptic("tap"); openName(+b.dataset.n); } });
-document.getElementById("name-body").addEventListener("click", e => { const b = e.target.closest(".name-open"); if (b) openSurah(+b.dataset.s, +b.dataset.a); });
 document.getElementById("names-back").addEventListener("click", () => showScreen("home"));
 document.getElementById("name-back").addEventListener("click", () => showScreen("names"));
 
