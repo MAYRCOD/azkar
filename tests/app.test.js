@@ -863,6 +863,19 @@ const section = name => console.log("•", name);
     check(await vis("duas"), "короткое медленное движение вбок закрыло Дуа");
     await gesture(40, 400, 260, 10);
     check(await vis("home"), "свайп вправо в Дуа не вернул на главную");
+    // свайп от самого левого края, палец при этом уходит вниз: страница едет только вбок,
+    // прокрутка заморожена (на iPhone страница уезжала по диагонали «резинкой»)
+    await k.click("#go-duas"); await W(k, 600);
+    await k.$eval("#duas", e => e.scrollTop = 120); await W(k, 100);
+    await touch("touchStart", 3, 300);
+    for (let i = 1; i <= 3; i++) { await touch("touchMove", 3 + i * 10, 300); await W(k, 16); }
+    const mid = [];
+    for (let i = 1; i <= 8; i++) { await touch("touchMove", 33 + i * 18, 300 + i * 25); await W(k, 16);
+      mid.push(await k.evaluate(() => { const d = document.getElementById("duas"); return { top: d.scrollTop, of: d.style.overflowY, tf: d.style.transform }; })); }
+    check(mid.every(m => m.top === 120 && m.of === "hidden" && /^translateX\(/.test(m.tf)), "при свайпе от края страница прокручивалась или ехала не только вбок: " + JSON.stringify(mid.slice(-2)));
+    await touch("touchEnd"); await W(k, 500);
+    check(await vis("home"), "свайп от левого края не вернул на главную");
+    check(await k.evaluate(() => !document.getElementById("duas").style.overflowY), "после свайпа прокрутка Дуа осталась замороженной");
     await k.click("#go-duas"); await W(k, 600);
     await k.click('[data-cat="eat-before"]'); await W(k, 600);
     await gesture(40, 400, 260, 10);

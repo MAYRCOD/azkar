@@ -2803,7 +2803,7 @@ document.querySelector("#quran-read .q-text").addEventListener("click", e => {
 function swipeBack(id, backTo, skip = () => false) {
   const page = document.getElementById(id);
   let g = null;
-  const reset = () => { page.style.transition = ""; page.style.transform = ""; page.style.opacity = ""; };
+  const reset = () => { page.style.transition = ""; page.style.transform = ""; page.style.opacity = ""; page.style.overflowY = ""; };
   page.addEventListener("touchstart", e => {
     if (e.touches.length !== 1 || skip()) { g = null; return; }
     const t = e.touches[0];
@@ -2815,8 +2815,13 @@ function swipeBack(id, backTo, skip = () => false) {
     if (!g.dir) {
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
       g.dir = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5 ? "back" : "scroll";
+      // Жест «назад» — страница едет только вбок. Прокрутку вверх-вниз на это время замораживаем:
+      // иначе (чаще всего, когда палец начал у самого левого края) iPhone одновременно тянул
+      // страницу вниз «резинкой» и она уезжала по диагонали
+      if (g.dir === "back") { g.top = Math.max(0, page.scrollTop); page.style.overflowY = "hidden"; page.scrollTop = g.top; }
     }
     if (g.dir !== "back") return;
+    if (e.cancelable) e.preventDefault();   // браузер не прокручивает и не «пружинит», пока едем вбок
     const now = performance.now();
     g.v = (t.clientX - g.last[0]) / Math.max(1, now - g.last[1]);   // скорость последнего движения, px/мс
     g.last = [t.clientX, now];
@@ -2824,13 +2829,13 @@ function swipeBack(id, backTo, skip = () => false) {
     page.style.transition = "none";
     page.style.transform = `translateX(${g.dx}px)`;
     page.style.opacity = String(1 - g.dx / innerWidth * 0.4);
-  }, { passive: true });
+  }, { passive: false });   // false — иначе preventDefault выше не сработает
   const end = () => {
     if (!g || g.dir !== "back") { g = null; return; }
     const go = g.dx > innerWidth / 3 || (g.v > 0.5 && g.dx > 40);
     g = null;
     page.style.transition = "transform .2s ease-out, opacity .2s ease-out";
-    if (!go) { page.style.transform = ""; page.style.opacity = ""; setTimeout(reset, 220); return; }
+    if (!go) { page.style.transform = ""; page.style.opacity = ""; page.style.overflowY = ""; setTimeout(reset, 220); return; }
     page.style.transform = `translateX(${innerWidth}px)`; page.style.opacity = "0";
     haptic("tap");
     setTimeout(() => { showScreen(backTo); reset(); }, 200);
