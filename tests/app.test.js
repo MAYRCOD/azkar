@@ -499,6 +499,28 @@ const section = name => console.log("•", name);
       check(b.far, "далёкие карточки должны быть скрыты");
       check(!b.classes.includes("moving"), "после свайпа не должно оставаться отметки «moving»");
     }
+    // Длинный азкар прокрутили вниз, ушли на соседний и вернулись — он снова с начала.
+    // Пока стоишь на карточке, её прокрутку не трогаем
+    {
+      const sc = i => t.evaluate(i => document.querySelectorAll("#track .slide")[i].querySelector(".scroll").scrollTop, i);
+      const long = await t.evaluate(() => [...document.querySelectorAll("#track .slide")].findIndex((s, k) => k < items.length - 1 && s.querySelector(".scroll").scrollHeight > s.querySelector(".scroll").clientHeight + 100));
+      check(long >= 0, "нет длинной карточки с прокруткой для проверки");
+      if (long >= 0) {
+        await t.evaluate(i => { goTo(i, false); document.querySelectorAll("#track .slide")[i].querySelector(".scroll").scrollTop = 100; }, long); await W(t, 600);
+        check(await sc(long) >= 99, "прокрутка текущей карточки сбросилась, хотя с неё не уходили");
+        await t.evaluate(i => goTo(i + 1), long);
+        check(await sc(long) >= 99, "карточка сбросилась сразу, пока уезжала (должна — когда лента доедет)");
+        await W(t, 600);
+        check(await sc(long) === 0, "прокрученная карточка не вернулась к началу после ухода с неё");
+        // и при уходе настоящим свайпом пальца
+        await touchSwipe(60, 300, 250);   // назад, на длинную
+        await t.evaluate(i => { document.querySelectorAll("#track .slide")[i].querySelector(".scroll").scrollTop = 100; }, long);
+        await touchSwipe(330, 300, -250);   // вперёд пальцем
+        check(await tpos() === `${long + 2} из 17` && await sc(long) === 0, "после свайпа вперёд прокрученная карточка не вернулась к началу");
+        await touchSwipe(60, 300, 250); await W(t, 700);     // назад
+        check(await tpos() === `${long + 1} из 17` && await sc(long) === 0, "вернулись к прошлому азкару, а он всё ещё прокручен вниз");
+      }
+    }
     await t.context().close();
   }
 

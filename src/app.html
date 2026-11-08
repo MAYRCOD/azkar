@@ -1962,6 +1962,15 @@ function goTo(i, animate = true) {
     sl.classList.toggle("active", k === index);
     sl.classList.toggle("far", Math.abs(k - index) > 1);   // видны текущая и соседние
   });
+  // Ушли с карточки — она снова с начала: вернулись к длинному азкару, а он не стоит прокрученным вниз.
+  // Ждём, пока лента доедет (.38s), чтобы уезжающая карточка не дёрнулась на глазах
+  clearTimeout(goTo.reset);
+  goTo.reset = setTimeout(() => {
+    [...track.children].forEach((sl, k) => {
+      const sc = sl.querySelector(".scroll");
+      if (k !== index && sc && sc.scrollTop) sc.scrollTop = 0;
+    });
+  }, animate ? 400 : 0);
   document.getElementById("pos").textContent =
     index < items.length ? `${index + 1} из ${items.length}` : "Готово";
 }
