@@ -15,13 +15,18 @@
   src/mushaf-fonts/pN.woff2 — шрифт страницы N (verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/pN.woff2).
         Файлы не меняем. Встраиваются только как часть приложения, с указанием источника (условия Quran Foundation).
   src/quran-src/pages-tanzil.json — джуз для подписи страницы.
+  src/quran-src/hafsData_v18.json — в каких аятах стоит знак ۞ (начало четверти хизба).
+        В раскладке этот знак склеен с первым словом аята в один «глиф» из двух символов: первый символ — ۞.
+        Отделяем его в отдельный элемент (тип "r"), иначе в приложении он стоит вплотную к слову
+        (стр. 302, аль-Кахф 75), а в печатном издании между ним и словом обычный промежуток.
 
 Пишет src/data/quran/mushaf/:
   index.json — какие страницы есть: {page, s, a — первый аят, который начинается на странице,
                es, ea — последний аят на странице (он может продолжаться на следующей)}
   N.json     — строки страницы: {"t":"w","c":0|1,"w":[[глиф, сура, аят, тип], …]}, {"t":"h","s":сура}, {"t":"b"}.
+               Тип: "w" — слово, "e" — знак конца аята, "r" — знак ۞ перед первым словом аята.
                На страницах 1–2 — только 8 строк (пустые хвостовые строки раскладки отброшены).
-Проверки: на каждой странице 15 строк; каждая строка слов не пустая; аяты идут по порядку без пропусков;
+Проверки: на каждой странице 15 строк; знак ۞ отделён во всех аятах, где он есть, и только в них; каждая строка слов не пустая; аяты идут по порядку без пропусков;
 все глифы есть в шрифте страницы.
 Запуск: python3 tools/make_mushaf.py
 """
@@ -39,6 +44,10 @@ def main() -> None:
     layout = json.loads((SRC / "mushaf" / "layout-v4.json").read_text(encoding="utf-8"))
     tanzil = json.loads((SRC / "pages-tanzil.json").read_text(encoding="utf-8"))["ayahs"]
     juz_of = {(int(s), i + 1): pj[1] for s, rows in tanzil.items() for i, pj in enumerate(rows)}
+    hafs = json.loads((SRC / "hafsData_v18.json").read_text(encoding="utf-8"))
+    rub = {(x["sora"], x["aya_no"]) for x in hafs if x["aya_text"].startswith("۞")}
+    assert not [x for x in hafs if "۞" in x["aya_text"] and not x["aya_text"].startswith("۞")], "۞ не в начале аята"
+    rub_done = set()
 
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.json"):
@@ -70,6 +79,11 @@ def main() -> None:
                     if wi == 1:
                         start = start or (s, a)   # первый аят, который НАЧИНАЕТСЯ на этой странице
                     end = (s, a)
+                    if wi == 1 and (s, a) in rub:   # ۞ склеен с первым словом — отдельным элементом
+                        assert t == "w" and len(g) >= 2, f"стр. {n}, {s}:{a}: нет знака ۞ перед словом"
+                        ws.append([g[0], s, a, "r"])
+                        g = g[1:]
+                        rub_done.add((s, a))
                     ws.append([g, s, a, t])
                 lines.append({"t": "w", "c": r[2], "w": ws})
             else:
@@ -79,6 +93,8 @@ def main() -> None:
                                                   ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         start = start or first   # страница целиком из продолжения аята (не бывает, но на всякий случай)
         pages.append({"page": n, "s": start[0], "a": start[1], "es": end[0], "ea": end[1]})
+    if len(pages) == 604:   # все страницы на месте — ۞ должен быть отделён во всех 199 аятах
+        assert rub_done == rub, f"۞ не отделён: {sorted(rub - rub_done)[:5]}"
     (OUT / "index.json").write_text(json.dumps({"pages": pages}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print("Мусхаф: страницы", ", ".join(str(x["page"]) for x in pages))
 

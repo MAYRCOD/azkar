@@ -964,6 +964,29 @@ const section = name => console.log("•", name);
     await k.evaluate(() => mControls(true)); await W(k, 250); await k.click("#q-page"); await W(k, 400);
     await k.fill("#q-go-input", "450"); await k.press("#q-go-input", "Enter"); await W(k, 2000);
     check(await page() === "450", "«Страница 450» в мусхафе открыла " + await page());
+    // Знак ۞ (четверть хизба) — отдельно от первого слова аята, с промежутком (на стр. 302, аль-Кахф 75, стоял вплотную).
+    // Данные всех 604 страниц: 199 знаков, каждый — один символ, сразу перед первым словом своего аята
+    const rub = await k.evaluate(async () => {
+      let n = 0, bad = [];
+      for (let b = 1; b <= 31; b++) {
+        const block = await qGet(`mushaf/pages-${b}`);
+        for (const [pg, d] of Object.entries(block)) if (pg !== "_f") d.lines.filter(l => l.t === "w").forEach(l => l.w.forEach((w, i) => {
+          if (w[3] !== "r") return;
+          n++;
+          const nx = l.w[i + 1];
+          if ([...w[0]].length !== 1 || !nx || nx[3] !== "w" || nx[1] !== w[1] || nx[2] !== w[2]) bad.push(`${pg}:${w[1]}:${w[2]}`);
+        }));
+      }
+      return { n, bad };
+    });
+    check(rub.n === 199 && !rub.bad.length, "знак ۞ в данных мусхафа: " + JSON.stringify(rub).slice(0, 200));
+    await k.evaluate(() => mOpen(18, 75, false)); await W(k, 2000);
+    const r302 = await k.evaluate(() => {
+      const sp = [...document.querySelectorAll('.mp[data-page="302"] .ml')[0].children];
+      const a = sp[0].getBoundingClientRect(), b = sp[1].getBoundingClientRect();
+      return { first: sp[0].dataset.k, len: sp[0].textContent.length, next: sp[1].dataset.k, apart: a.left >= b.right - 0.5 };
+    });
+    check(r302.first === "18:75" && r302.len === 1 && r302.next === "18:75" && r302.apart, "۞ на стр. 302 не отдельно от слова: " + JSON.stringify(r302));
     await ctx.close();
   }
 
